@@ -132,6 +132,10 @@ export interface AlumniStory {
   achievements?: string[];
   quote: string;
   photo_url?: string;
+  has_video?: boolean;
+  video_duration?: string;
+  video_thumbnail?: string;
+  video_url?: string;
   status: 'Published' | 'Draft' | 'Pending Review' | 'Archived';
   is_sample?: boolean; // For sample/demo stories
   created_at: string;

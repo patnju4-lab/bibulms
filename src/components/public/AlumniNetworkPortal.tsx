@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { AlumniDirectory } from './AlumniDirectory';
+import { AlumniStoriesSection } from './AlumniStoriesSection';
 import { AlumniAdminManager } from '../admin/AlumniAdminManager';
 import { Alumni } from '../../types/alumni';
 import {
@@ -831,62 +832,7 @@ export const AlumniNetworkPortal: React.FC = () => {
         {/* ======================================================== */}
         {/* TAB: ALUMNI STORIES */}
         {/* ======================================================== */}
-        {activeTab === 'stories' && (
-          <div className="space-y-8">
-            <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-              <div className="border-b border-slate-100 pb-4">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#002366]/10 text-[#002366] text-xs font-bold uppercase tracking-wider mb-1">
-                  <BookOpen className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span>Transforming Nations for Christ</span>
-                </div>
-                <h2 className="text-2xl sm:text-3xl font-display font-black text-[#002366]">
-                  Alumni Impact Stories & Testimonies
-                </h2>
-                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                  Discover how BIBU graduates apply theological scholarship to plant churches, establish crisis care centers, and train the next generation of ministers.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {ALUMNI_STORIES_DATA.map((story) => (
-                  <div
-                    key={story.id}
-                    className="bg-slate-50 rounded-2xl border border-slate-200 p-6 space-y-4 flex flex-col justify-between"
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-xs text-slate-500">
-                        <span className="font-bold text-[#002366]">{story.country}</span>
-                        <span className="font-mono">{story.created_at ? story.created_at.slice(0, 10) : 'Verified Archive'}</span>
-                      </div>
-
-                      <h3 className="text-base font-bold text-[#002366] leading-snug">
-                        {story.title}
-                      </h3>
-
-                      <div className="text-xs font-semibold text-slate-700">
-                        {story.alumni_name} ({story.graduation_year})
-                      </div>
-
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {story.summary}
-                      </p>
-
-                      <blockquote className="border-l-2 border-[#C5A059] pl-3 py-1 text-xs italic text-slate-700 bg-white/60 rounded-r-lg">
-                        "{story.quote}"
-                      </blockquote>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-200">
-                      <span className="text-[10px] text-slate-400 font-mono">
-                        DEMO STORY RECORD — Replace with Verified Alumni Story
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+        {activeTab === 'stories' && <AlumniStoriesSection />}
 
         {/* ======================================================== */}
         {/* TAB: VERIFY GRADUATE */}
