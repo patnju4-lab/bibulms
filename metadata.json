@@ -1,0 +1,8 @@
+{
+  "name": "Breakthrough International Bible University LMS",
+  "description": "Comprehensive Online Bible School, Theological Learning, Examination & Academic Administration Management System for Breakthrough International Bible University (BIBU), Phoenix, Arizona, USA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

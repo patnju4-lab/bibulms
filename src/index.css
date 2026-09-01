@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Cinzel", "Playfair Display", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  --color-bibu-blue: #002366;
+  --color-bibu-navy: #001A4D;
+  --color-bibu-gold: #C5A059;
+  --color-bibu-gold-hover: #B38E46;
+  --color-bibu-gold-light: #FDF8ED;
+  --color-bibu-bg: #F8F9FB;
+  --color-bibu-subtle: #E6E8ED;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #F8F9FB;
+  color: #1E293B;
+}
+
+/* Academic and Bold Typography Utilities */
+.font-display {
+  font-family: var(--font-serif);
+}
+
+.tracking-ultra-wide {
+  letter-spacing: 0.15em;
+}
