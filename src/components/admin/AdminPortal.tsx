@@ -32,6 +32,7 @@ import { UsersAndPortalsTab } from './tabs/UsersAndPortalsTab';
 import { BulletinsManagementTab } from './tabs/BulletinsManagementTab';
 import { AlumniStatistics } from './AlumniStatistics';
 import { AlumniAdminManager } from './AlumniAdminManager';
+import { RplAdminManager } from './RplAdminManager';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -49,7 +50,7 @@ export const AdminPortal: React.FC = () => {
     alumniList
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'alumni-stats' | 'alumni-records' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('alumni-stats');
+  const [activeTab, setActiveTab] = useState<'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('rpl-manager');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -140,6 +141,18 @@ export const AdminPortal: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+        <button
+          onClick={() => setActiveTab('rpl-manager')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'rpl-manager'
+              ? 'border-[#002366] text-[#002366]'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Award className="w-4 h-4 text-[#C5A059]" />
+          <span>RPL Credit Assessment</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('alumni-stats')}
           className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
@@ -248,6 +261,9 @@ export const AdminPortal: React.FC = () => {
           <span>Live Site CMS</span>
         </button>
       </div>
+
+      {/* TAB: RPL Manager */}
+      {activeTab === 'rpl-manager' && <RplAdminManager />}
 
       {/* TAB: Alumni Statistics & Analytics */}
       {activeTab === 'alumni-stats' && <AlumniStatistics />}

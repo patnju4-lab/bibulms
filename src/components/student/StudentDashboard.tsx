@@ -6,6 +6,7 @@ import { Bulletin, Course } from '../../types';
 import { BulletinDetailModal } from '../public/BulletinDetailModal';
 import { Notifications } from './Notifications';
 import { CourseCatalogBrowser } from './CourseCatalogBrowser';
+import { RplStudentModule } from './RplStudentModule';
 import {
   GraduationCap,
   BookOpen,
@@ -54,7 +55,7 @@ export const StudentDashboard: React.FC = () => {
     requestCourseEnrolment
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl'>('overview');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
   const [progressFilter, setProgressFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -325,12 +326,31 @@ export const StudentDashboard: React.FC = () => {
           <BookOpen className="w-4 h-4 text-[#C5A059]" />
           <span>Course Catalog & Enrolment</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('rpl')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'rpl'
+              ? 'bg-[#002366] text-white shadow-sm'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <Award className="w-4 h-4 text-[#C5A059]" />
+          <span>Prior Learning (RPL)</span>
+        </button>
       </div>
 
       {/* Conditional View: Notifications Tab */}
       {activeTab === 'notifications' && (
         <div className="space-y-6 animate-in fade-in">
           <Notifications mode="embedded" />
+        </div>
+      )}
+
+      {/* Conditional View: RPL Tab */}
+      {activeTab === 'rpl' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplStudentModule />
         </div>
       )}
 
