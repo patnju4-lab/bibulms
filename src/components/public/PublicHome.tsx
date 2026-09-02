@@ -21,7 +21,13 @@ import {
   Lock,
   Briefcase,
   Shield,
-  KeyRound
+  KeyRound,
+  Tv,
+  Radio,
+  Video,
+  Mic,
+  Play,
+  Youtube
 } from 'lucide-react';
 
 export const PublicHome: React.FC = () => {
@@ -300,6 +306,110 @@ export const PublicHome: React.FC = () => {
                   Pastoral roundtables, missionary cohorts & 24/7 global intercessory prayer network.
                 </p>
               </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.5 TV & Radio Digital Broadcasting Showcase */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="bg-gradient-to-br from-[#001438] via-[#002366] to-[#0A2E73] rounded-3xl p-6 sm:p-10 border-2 border-[#C5A059]/40 shadow-2xl text-white space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/40 text-[#C5A059] text-xs font-bold uppercase tracking-widest">
+                <Tv className="w-4 h-4 text-[#C5A059]" />
+                <span>Global Media & Broadcasting Center</span>
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-display font-bold text-white leading-tight">
+                Breakthrough International Bible University TV & Radio
+              </h2>
+              <p className="text-sm text-slate-300">
+                Broadcasting sound biblical doctrine, expository preaching, keynote lectures, and 24/7 global worship streams to over 50 nations.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => {
+                  setCurrentView('media-center');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-5 py-3 bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black uppercase tracking-wider text-xs rounded-xl shadow-lg transition-all hover:scale-105"
+              >
+                📺 Enter Full Media Center
+              </button>
+              <button
+                onClick={() => {
+                  setCurrentView('bibu-radio');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2"
+              >
+                <Radio className="w-4 h-4 text-[#C5A059]" />
+                <span>Listen Live 24/7</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 4 Feature Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              onClick={() => {
+                setCurrentView('bibu-tv');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="p-5 bg-slate-900/60 hover:bg-slate-900/90 rounded-2xl border border-slate-700/60 hover:border-[#C5A059] cursor-pointer transition-all space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-500/20 text-[#C5A059] flex items-center justify-center border border-blue-400/30">
+                <Video className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white group-hover:text-[#C5A059] transition-colors">BIBU TV</h4>
+              <p className="text-xs text-slate-300">Keynote convocation broadcasts, faculty theological lectures, and ministry series in HD.</p>
+            </div>
+
+            <div
+              onClick={() => {
+                setCurrentView('bibu-radio');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="p-5 bg-slate-900/60 hover:bg-slate-900/90 rounded-2xl border border-slate-700/60 hover:border-[#C5A059] cursor-pointer transition-all space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-[#C5A059] flex items-center justify-center border border-amber-400/30">
+                <Radio className="w-5 h-5" />
+              </div>
+              <h4 className="text-base font-bold text-white group-hover:text-[#C5A059] transition-colors">BIBU Radio 24/7</h4>
+              <p className="text-xs text-slate-300">Continuous digital radio with praise & worship, expository audio sermons, and live talkshows.</p>
+            </div>
+
+            <div
+              onClick={() => {
+                setCurrentView('live-tv');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="p-5 bg-slate-900/60 hover:bg-slate-900/90 rounded-2xl border border-slate-700/60 hover:border-rose-400 cursor-pointer transition-all space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center border border-rose-400/30">
+                <Flame className="w-5 h-5" />
+              </div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-base font-bold text-white group-hover:text-rose-400 transition-colors">Live TV Room</h4>
+                <span className="text-[9px] bg-rose-600 text-white font-black px-2 py-0.5 rounded-full animate-pulse">LIVE</span>
+              </div>
+              <p className="text-xs text-slate-300">Participate in live interactive broadcasts with live global community chat & notes.</p>
+            </div>
+
+            <div
+              onClick={() => {
+                setCurrentView('youtube-channel');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="p-5 bg-slate-900/60 hover:bg-slate-900/90 rounded-2xl border border-slate-700/60 hover:border-rose-500 cursor-pointer transition-all space-y-2 group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-rose-600/20 text-rose-400 flex items-center justify-center border border-rose-500/30">
+                <Youtube className="w-5 h-5 fill-current" />
+              </div>
+              <h4 className="text-base font-bold text-white group-hover:text-rose-400 transition-colors">YouTube Channel</h4>
+              <p className="text-xs text-slate-300">Subscribe to our official channel for archived playlists, course modules, and podcasts.</p>
             </div>
           </div>
         </div>

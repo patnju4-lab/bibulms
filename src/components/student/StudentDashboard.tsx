@@ -7,6 +7,7 @@ import { BulletinDetailModal } from '../public/BulletinDetailModal';
 import { Notifications } from './Notifications';
 import { CourseCatalogBrowser } from './CourseCatalogBrowser';
 import { RplStudentModule } from './RplStudentModule';
+import { StudentMediaSection } from './StudentMediaSection';
 import {
   GraduationCap,
   BookOpen,
@@ -31,7 +32,8 @@ import {
   Target,
   BarChart3,
   Bookmark,
-  Play
+  Play,
+  Tv
 } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
@@ -55,7 +57,7 @@ export const StudentDashboard: React.FC = () => {
     requestCourseEnrolment
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media'>('overview');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
   const [progressFilter, setProgressFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -338,7 +340,26 @@ export const StudentDashboard: React.FC = () => {
           <Award className="w-4 h-4 text-[#C5A059]" />
           <span>Prior Learning (RPL)</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('media')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'media'
+              ? 'bg-[#002366] text-[#C5A059] shadow-sm font-black'
+              : 'bg-amber-50 text-[#002366] hover:bg-amber-100 border border-amber-200'
+          }`}
+        >
+          <Tv className="w-4 h-4 text-[#C5A059]" />
+          <span>📺 TV & Radio Media</span>
+        </button>
       </div>
+
+      {/* Conditional View: Media Tab */}
+      {activeTab === 'media' && (
+        <div className="space-y-6 animate-in fade-in">
+          <StudentMediaSection />
+        </div>
+      )}
 
       {/* Conditional View: Notifications Tab */}
       {activeTab === 'notifications' && (

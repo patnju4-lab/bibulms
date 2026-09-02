@@ -86,6 +86,31 @@ import {
   INITIAL_EXAM_ATTENDANCES,
   INITIAL_AUDIT_LOGS
 } from '../data/examCentresData';
+import {
+  MediaCategory,
+  MediaChannel,
+  MediaVideo,
+  MediaPlaylist,
+  TVProgram,
+  RadioProgram,
+  RadioSettings,
+  YouTubeSettings,
+  MediaPresenter,
+  StudentMediaProgress,
+  MediaAnalyticsData
+} from '../types/media';
+import {
+  INITIAL_MEDIA_CHANNELS,
+  INITIAL_YOUTUBE_SETTINGS,
+  INITIAL_RADIO_SETTINGS,
+  INITIAL_RADIO_SCHEDULE,
+  INITIAL_TV_PROGRAMS,
+  INITIAL_MEDIA_VIDEOS,
+  INITIAL_MEDIA_PLAYLISTS,
+  INITIAL_MEDIA_PRESENTERS,
+  INITIAL_STUDENT_MEDIA_PROGRESS,
+  INITIAL_MEDIA_ANALYTICS
+} from '../data/mediaData';
 
 export type CurrentView = 
   | 'home'
@@ -124,7 +149,20 @@ export type CurrentView =
   | 'centre-rep-portal'
   | 'exam-attendance'
   | 'centre-directory'
-  | 'centre-reports';
+  | 'centre-reports'
+  // BIBU TV & Radio Media Center Subsections
+  | 'media-center'
+  | 'bibu-tv'
+  | 'bibu-radio'
+  | 'live-tv'
+  | 'live-radio'
+  | 'media-programs'
+  | 'media-sermons'
+  | 'media-news'
+  | 'media-podcasts'
+  | 'media-archives'
+  | 'youtube-channel'
+  | 'faculty-media';
 
 export interface RegisterUserData {
   name: string;
@@ -370,6 +408,49 @@ interface AppContextType {
   verifyCertificateCode: (code: string) => Certificate | undefined;
   globalSearchQuery: string;
   setGlobalSearchQuery: (query: string) => void;
+
+  // BIBU TV & Radio Media Center System
+  mediaChannels: MediaChannel[];
+  mediaVideos: MediaVideo[];
+  mediaPlaylists: MediaPlaylist[];
+  tvPrograms: TVProgram[];
+  radioPrograms: RadioProgram[];
+  radioSettings: RadioSettings;
+  youtubeSettings: YouTubeSettings;
+  mediaPresenters: MediaPresenter[];
+  studentMediaProgress: StudentMediaProgress[];
+  mediaAnalytics: MediaAnalyticsData;
+  activePlayingVideo: MediaVideo | null;
+  setActivePlayingVideo: (video: MediaVideo | null) => void;
+  isRadioPlaying: boolean;
+  setIsRadioPlaying: (playing: boolean) => void;
+  radioVolume: number;
+  setRadioVolume: (volume: number) => void;
+  isRadioMuted: boolean;
+  setIsRadioMuted: (muted: boolean) => void;
+  toggleRadioPlay: () => void;
+  selectedMediaCategory: MediaCategory | 'All';
+  setSelectedMediaCategory: (cat: MediaCategory | 'All') => void;
+  
+  // Media CRUD & Operations
+  addMediaVideo: (video: Omit<MediaVideo, 'id' | 'viewsCount' | 'likesCount'>) => MediaVideo;
+  updateMediaVideo: (id: string, updates: Partial<MediaVideo>) => void;
+  deleteMediaVideo: (id: string) => void;
+  addTVProgram: (program: Omit<TVProgram, 'id'>) => TVProgram;
+  updateTVProgram: (id: string, updates: Partial<TVProgram>) => void;
+  deleteTVProgram: (id: string) => void;
+  addRadioProgram: (program: Omit<RadioProgram, 'id'>) => RadioProgram;
+  updateRadioProgram: (id: string, updates: Partial<RadioProgram>) => void;
+  deleteRadioProgram: (id: string) => void;
+  updateRadioSettings: (settings: Partial<RadioSettings>) => void;
+  updateYouTubeSettings: (settings: Partial<YouTubeSettings>) => void;
+  addMediaPresenter: (presenter: Omit<MediaPresenter, 'id'>) => MediaPresenter;
+  updateMediaPresenter: (id: string, updates: Partial<MediaPresenter>) => void;
+  deleteMediaPresenter: (id: string) => void;
+  toggleStudentBookmarkVideo: (videoId: string) => void;
+  toggleStudentFavoriteVideo: (videoId: string) => void;
+  updateStudentVideoProgress: (videoId: string, watchedSeconds: number, totalSeconds: number) => void;
+  recordVideoView: (videoId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -592,6 +673,104 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [selectedCentreId, setSelectedCentreId] = useState<string | null>(null);
   const [selectedCountyCode, setSelectedCountyCode] = useState<number | null>(null);
   const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
+
+  // BIBU TV & Radio Media States
+  const [mediaChannels, setMediaChannels] = useState<MediaChannel[]>(() => {
+    const saved = localStorage.getItem('bibu_media_channels');
+    return saved ? JSON.parse(saved) : INITIAL_MEDIA_CHANNELS;
+  });
+
+  const [mediaVideos, setMediaVideos] = useState<MediaVideo[]>(() => {
+    const saved = localStorage.getItem('bibu_media_videos');
+    return saved ? JSON.parse(saved) : INITIAL_MEDIA_VIDEOS;
+  });
+
+  const [mediaPlaylists, setMediaPlaylists] = useState<MediaPlaylist[]>(() => {
+    const saved = localStorage.getItem('bibu_media_playlists');
+    return saved ? JSON.parse(saved) : INITIAL_MEDIA_PLAYLISTS;
+  });
+
+  const [tvPrograms, setTvPrograms] = useState<TVProgram[]>(() => {
+    const saved = localStorage.getItem('bibu_tv_programs');
+    return saved ? JSON.parse(saved) : INITIAL_TV_PROGRAMS;
+  });
+
+  const [radioPrograms, setRadioPrograms] = useState<RadioProgram[]>(() => {
+    const saved = localStorage.getItem('bibu_radio_programs');
+    return saved ? JSON.parse(saved) : INITIAL_RADIO_SCHEDULE;
+  });
+
+  const [radioSettings, setRadioSettings] = useState<RadioSettings>(() => {
+    const saved = localStorage.getItem('bibu_radio_settings');
+    return saved ? JSON.parse(saved) : INITIAL_RADIO_SETTINGS;
+  });
+
+  const [youtubeSettings, setYoutubeSettings] = useState<YouTubeSettings>(() => {
+    const saved = localStorage.getItem('bibu_youtube_settings');
+    return saved ? JSON.parse(saved) : INITIAL_YOUTUBE_SETTINGS;
+  });
+
+  const [mediaPresenters, setMediaPresenters] = useState<MediaPresenter[]>(() => {
+    const saved = localStorage.getItem('bibu_media_presenters');
+    return saved ? JSON.parse(saved) : INITIAL_MEDIA_PRESENTERS;
+  });
+
+  const [studentMediaProgress, setStudentMediaProgress] = useState<StudentMediaProgress[]>(() => {
+    const saved = localStorage.getItem('bibu_student_media_progress');
+    return saved ? JSON.parse(saved) : INITIAL_STUDENT_MEDIA_PROGRESS;
+  });
+
+  const [mediaAnalytics, setMediaAnalytics] = useState<MediaAnalyticsData>(() => {
+    const saved = localStorage.getItem('bibu_media_analytics');
+    return saved ? JSON.parse(saved) : INITIAL_MEDIA_ANALYTICS;
+  });
+
+  const [activePlayingVideo, setActivePlayingVideo] = useState<MediaVideo | null>(null);
+  const [isRadioPlaying, setIsRadioPlaying] = useState<boolean>(false);
+  const [radioVolume, setRadioVolume] = useState<number>(85);
+  const [isRadioMuted, setIsRadioMuted] = useState<boolean>(false);
+  const [selectedMediaCategory, setSelectedMediaCategory] = useState<MediaCategory | 'All'>('All');
+
+  // Media Local Storage Sync
+  useEffect(() => {
+    localStorage.setItem('bibu_media_channels', JSON.stringify(mediaChannels));
+  }, [mediaChannels]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_media_videos', JSON.stringify(mediaVideos));
+  }, [mediaVideos]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_media_playlists', JSON.stringify(mediaPlaylists));
+  }, [mediaPlaylists]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_tv_programs', JSON.stringify(tvPrograms));
+  }, [tvPrograms]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_radio_programs', JSON.stringify(radioPrograms));
+  }, [radioPrograms]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_radio_settings', JSON.stringify(radioSettings));
+  }, [radioSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_youtube_settings', JSON.stringify(youtubeSettings));
+  }, [youtubeSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_media_presenters', JSON.stringify(mediaPresenters));
+  }, [mediaPresenters]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_student_media_progress', JSON.stringify(studentMediaProgress));
+  }, [studentMediaProgress]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_media_analytics', JSON.stringify(mediaAnalytics));
+  }, [mediaAnalytics]);
 
   // Sync to local storage
   useEffect(() => {
@@ -2835,6 +3014,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setExamSessions(INITIAL_EXAMINATION_SESSIONS);
     setExamAttendanceRecords(INITIAL_EXAM_ATTENDANCES);
     setAuditLogs(INITIAL_AUDIT_LOGS);
+    setMediaChannels(INITIAL_MEDIA_CHANNELS);
+    setMediaVideos(INITIAL_MEDIA_VIDEOS);
+    setMediaPlaylists(INITIAL_MEDIA_PLAYLISTS);
+    setTvPrograms(INITIAL_TV_PROGRAMS);
+    setRadioPrograms(INITIAL_RADIO_SCHEDULE);
+    setRadioSettings(INITIAL_RADIO_SETTINGS);
+    setYoutubeSettings(INITIAL_YOUTUBE_SETTINGS);
+    setMediaPresenters(INITIAL_MEDIA_PRESENTERS);
+    setStudentMediaProgress(INITIAL_STUDENT_MEDIA_PROGRESS);
+    setMediaAnalytics(INITIAL_MEDIA_ANALYTICS);
   };
 
   const verifyCertificateCode = (code: string): Certificate | undefined => {
@@ -2843,6 +3032,163 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       c.certificateNumber.toUpperCase() === clean || 
       c.verificationCode.toUpperCase() === clean
     );
+  };
+
+  // Media Operations
+  const addMediaVideo = (videoData: Omit<MediaVideo, 'id' | 'viewsCount' | 'likesCount'>): MediaVideo => {
+    const newVideo: MediaVideo = {
+      ...videoData,
+      id: `vid-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+      viewsCount: 0,
+      likesCount: 0
+    };
+    setMediaVideos(prev => [newVideo, ...prev]);
+    return newVideo;
+  };
+
+  const updateMediaVideo = (id: string, updates: Partial<MediaVideo>) => {
+    setMediaVideos(prev => prev.map(v => v.id === id ? { ...v, ...updates } : v));
+  };
+
+  const deleteMediaVideo = (id: string) => {
+    setMediaVideos(prev => prev.filter(v => v.id !== id));
+  };
+
+  const addTVProgram = (programData: Omit<TVProgram, 'id'>): TVProgram => {
+    const newProg: TVProgram = {
+      ...programData,
+      id: `tv-prog-${Date.now()}`
+    };
+    setTvPrograms(prev => [...prev, newProg]);
+    return newProg;
+  };
+
+  const updateTVProgram = (id: string, updates: Partial<TVProgram>) => {
+    setTvPrograms(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const deleteTVProgram = (id: string) => {
+    setTvPrograms(prev => prev.filter(p => p.id !== id));
+  };
+
+  const addRadioProgram = (programData: Omit<RadioProgram, 'id'>): RadioProgram => {
+    const newProg: RadioProgram = {
+      ...programData,
+      id: `radio-prog-${Date.now()}`
+    };
+    setRadioPrograms(prev => [...prev, newProg]);
+    return newProg;
+  };
+
+  const updateRadioProgram = (id: string, updates: Partial<RadioProgram>) => {
+    setRadioPrograms(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const deleteRadioProgram = (id: string) => {
+    setRadioPrograms(prev => prev.filter(p => p.id !== id));
+  };
+
+  const updateRadioSettings = (settings: Partial<RadioSettings>) => {
+    setRadioSettings(prev => ({ ...prev, ...settings }));
+  };
+
+  const updateYouTubeSettings = (settings: Partial<YouTubeSettings>) => {
+    setYoutubeSettings(prev => ({ ...prev, ...settings }));
+  };
+
+  const addMediaPresenter = (presenterData: Omit<MediaPresenter, 'id'>): MediaPresenter => {
+    const newPres: MediaPresenter = {
+      ...presenterData,
+      id: `pres-${Date.now()}`
+    };
+    setMediaPresenters(prev => [...prev, newPres]);
+    return newPres;
+  };
+
+  const updateMediaPresenter = (id: string, updates: Partial<MediaPresenter>) => {
+    setMediaPresenters(prev => prev.map(p => p.id === id ? { ...p, ...updates } : p));
+  };
+
+  const deleteMediaPresenter = (id: string) => {
+    setMediaPresenters(prev => prev.filter(p => p.id !== id));
+  };
+
+  const toggleRadioPlay = () => {
+    setIsRadioPlaying(prev => !prev);
+  };
+
+  const toggleStudentBookmarkVideo = (videoId: string) => {
+    if (!currentUser) return;
+    setStudentMediaProgress(prev => {
+      const existing = prev.find(p => p.studentId === currentUser.id && p.videoId === videoId);
+      if (existing) {
+        return prev.map(p => p.studentId === currentUser.id && p.videoId === videoId ? { ...p, isBookmarked: !p.isBookmarked } : p);
+      } else {
+        return [...prev, {
+          studentId: currentUser.id,
+          videoId,
+          watchedSeconds: 0,
+          totalSeconds: 0,
+          completed: false,
+          lastWatchedAt: new Date().toISOString(),
+          isBookmarked: true,
+          isFavorite: false
+        }];
+      }
+    });
+  };
+
+  const toggleStudentFavoriteVideo = (videoId: string) => {
+    if (!currentUser) return;
+    setStudentMediaProgress(prev => {
+      const existing = prev.find(p => p.studentId === currentUser.id && p.videoId === videoId);
+      if (existing) {
+        return prev.map(p => p.studentId === currentUser.id && p.videoId === videoId ? { ...p, isFavorite: !p.isFavorite } : p);
+      } else {
+        return [...prev, {
+          studentId: currentUser.id,
+          videoId,
+          watchedSeconds: 0,
+          totalSeconds: 0,
+          completed: false,
+          lastWatchedAt: new Date().toISOString(),
+          isBookmarked: false,
+          isFavorite: true
+        }];
+      }
+    });
+  };
+
+  const updateStudentVideoProgress = (videoId: string, watchedSeconds: number, totalSeconds: number) => {
+    if (!currentUser) return;
+    const completed = totalSeconds > 0 && (watchedSeconds / totalSeconds >= 0.9);
+    setStudentMediaProgress(prev => {
+      const existing = prev.find(p => p.studentId === currentUser.id && p.videoId === videoId);
+      if (existing) {
+        return prev.map(p => p.studentId === currentUser.id && p.videoId === videoId ? {
+          ...p,
+          watchedSeconds: Math.max(p.watchedSeconds, watchedSeconds),
+          totalSeconds: totalSeconds || p.totalSeconds,
+          completed: completed || p.completed,
+          lastWatchedAt: new Date().toISOString()
+        } : p);
+      } else {
+        return [...prev, {
+          studentId: currentUser.id,
+          videoId,
+          watchedSeconds,
+          totalSeconds,
+          completed,
+          lastWatchedAt: new Date().toISOString(),
+          isBookmarked: false,
+          isFavorite: false
+        }];
+      }
+    });
+  };
+
+  const recordVideoView = (videoId: string) => {
+    setMediaVideos(prev => prev.map(v => v.id === videoId ? { ...v, viewsCount: v.viewsCount + 1 } : v));
   };
 
   return (
@@ -3044,6 +3390,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         verifyCertificateCode,
         globalSearchQuery,
         setGlobalSearchQuery,
+
+        // BIBU TV & Radio Media Center
+        mediaChannels,
+        mediaVideos,
+        mediaPlaylists,
+        tvPrograms,
+        radioPrograms,
+        radioSettings,
+        youtubeSettings,
+        mediaPresenters,
+        studentMediaProgress,
+        mediaAnalytics,
+        activePlayingVideo,
+        setActivePlayingVideo,
+        isRadioPlaying,
+        setIsRadioPlaying,
+        radioVolume,
+        setRadioVolume,
+        isRadioMuted,
+        setIsRadioMuted,
+        toggleRadioPlay,
+        selectedMediaCategory,
+        setSelectedMediaCategory,
+        addMediaVideo,
+        updateMediaVideo,
+        deleteMediaVideo,
+        addTVProgram,
+        updateTVProgram,
+        deleteTVProgram,
+        addRadioProgram,
+        updateRadioProgram,
+        deleteRadioProgram,
+        updateRadioSettings,
+        updateYouTubeSettings,
+        addMediaPresenter,
+        updateMediaPresenter,
+        deleteMediaPresenter,
+        toggleStudentBookmarkVideo,
+        toggleStudentFavoriteVideo,
+        updateStudentVideoProgress,
+        recordVideoView,
       }}
     >
       {children}

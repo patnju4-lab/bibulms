@@ -27,7 +27,17 @@ import {
   Briefcase,
   Sliders,
   Bell,
-  UserCheck
+  UserCheck,
+  Tv,
+  Radio,
+  Video,
+  Mic,
+  Flame,
+  Calendar,
+  Newspaper,
+  Headphones,
+  Archive,
+  Youtube
 } from 'lucide-react';
 import { Role } from '../../types';
 
@@ -47,6 +57,7 @@ export const Navbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [academicsDropdownOpen, setAcademicsDropdownOpen] = useState(false);
+  const [mediaDropdownOpen, setMediaDropdownOpen] = useState(false);
   const [portalsDropdownOpen, setPortalsDropdownOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -54,6 +65,7 @@ export const Navbar: React.FC = () => {
     setCurrentView(view);
     setMobileMenuOpen(false);
     setAcademicsDropdownOpen(false);
+    setMediaDropdownOpen(false);
     setPortalsDropdownOpen(false);
     setUserMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -303,6 +315,165 @@ export const Navbar: React.FC = () => {
                   <Library className="w-4 h-4 text-[#C5A059]" />
                   <span>Digital Theological Library</span>
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* TV & Radio Media Center Dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => {
+                setMediaDropdownOpen(!mediaDropdownOpen);
+                setAcademicsDropdownOpen(false);
+                setPortalsDropdownOpen(false);
+              }}
+              className={`flex items-center gap-1.5 transition-colors py-1 px-2 rounded-lg font-black uppercase tracking-wider text-xs ${
+                [
+                  'media-center',
+                  'bibu-tv',
+                  'bibu-radio',
+                  'live-tv',
+                  'live-radio',
+                  'media-programs',
+                  'media-sermons',
+                  'media-news',
+                  'media-podcasts',
+                  'media-archives',
+                  'youtube-channel'
+                ].includes(currentView)
+                  ? 'bg-[#C5A059] text-[#002366] shadow-sm'
+                  : 'text-amber-300 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Tv className="w-3.5 h-3.5" />
+              <span>📺 TV & Radio</span>
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {mediaDropdownOpen && (
+              <div
+                onMouseLeave={() => setMediaDropdownOpen(false)}
+                className="absolute top-full left-0 mt-1 w-72 bg-white text-slate-800 rounded-xl shadow-2xl border-t-4 border-[#C5A059] border-x border-b border-slate-200 py-2 z-50 animate-in fade-in slide-in-from-top-1"
+              >
+                <div className="px-3 pb-2 border-b border-slate-100 flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#002366]">
+                    BIBU Global Media Center
+                  </span>
+                  <button
+                    onClick={() => navigate('media-center')}
+                    className="text-[9px] text-[#002366] hover:text-[#C5A059] font-bold underline uppercase"
+                  >
+                    Media Hub &rarr;
+                  </button>
+                </div>
+
+                <div className="py-1">
+                  <button
+                    onClick={() => navigate('bibu-tv')}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Video className="w-4 h-4 text-[#C5A059]" />
+                      <div>
+                        <div>1. BIBU TV</div>
+                        <div className="text-[10px] font-normal text-slate-500">Video lectures & masterclasses</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] bg-blue-100 text-[#002366] font-bold px-1.5 py-0.5 rounded">HD</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('bibu-radio')}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Radio className="w-4 h-4 text-[#C5A059]" />
+                      <div>
+                        <div>2. BIBU Radio</div>
+                        <div className="text-[10px] font-normal text-slate-500">24/7 Gospel & audio preaching</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">24/7</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('live-tv')}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 flex items-center justify-between bg-rose-50/40"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Flame className="w-4 h-4 text-rose-600" />
+                      <div>
+                        <div className="font-bold">3. Live TV Broadcast</div>
+                        <div className="text-[10px] font-normal text-slate-500">Live convocation room & chat</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] bg-rose-600 text-white font-bold px-1.5 py-0.5 rounded animate-pulse">LIVE</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('live-radio')}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Mic className="w-4 h-4 text-[#C5A059]" />
+                      <div>
+                        <div>4. Live Radio Studio</div>
+                        <div className="text-[10px] font-normal text-slate-500">Master audio desk & shoutouts</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">ON AIR</span>
+                  </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    onClick={() => navigate('media-programs')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center gap-2"
+                  >
+                    <Calendar className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>5. Programs Schedule</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('media-sermons')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center gap-2"
+                  >
+                    <BookOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>6. Sermons & Teachings</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('media-news')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center gap-2"
+                  >
+                    <Newspaper className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>7. News & Announcements</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('media-podcasts')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center gap-2"
+                  >
+                    <Headphones className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>8. Podcasts</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('media-archives')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center gap-2"
+                  >
+                    <Archive className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>9. Archived Programs</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('youtube-channel')}
+                    className="w-full text-left px-3.5 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 flex items-center gap-2 border-t border-slate-100 mt-1"
+                  >
+                    <Youtube className="w-3.5 h-3.5 fill-current" />
+                    <span>10. Official YouTube Channel</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -617,6 +788,77 @@ export const Navbar: React.FC = () => {
             >
               University Bulletins
             </button>
+          </div>
+
+          {/* Mobile TV & Radio Section */}
+          <div className="pt-2 border-t border-white/10 space-y-2">
+            <div className="text-[10px] font-black uppercase tracking-wider text-amber-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <Tv className="w-3.5 h-3.5" />
+                <span>📺 BIBU TV & RADIO MEDIA CENTER</span>
+              </span>
+              <button onClick={() => navigate('media-center')} className="text-white hover:underline text-[9px]">
+                Hub →
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+              <button
+                onClick={() => navigate('bibu-tv')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center gap-1.5"
+              >
+                <Video className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>BIBU TV</span>
+              </button>
+              <button
+                onClick={() => navigate('bibu-radio')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center gap-1.5"
+              >
+                <Radio className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>BIBU Radio</span>
+              </button>
+              <button
+                onClick={() => navigate('live-tv')}
+                className="text-left p-2 rounded-lg bg-rose-600/20 text-rose-300 border border-rose-500/30 flex items-center gap-1.5"
+              >
+                <Flame className="w-3.5 h-3.5 text-rose-400" />
+                <span>Live TV</span>
+              </button>
+              <button
+                onClick={() => navigate('live-radio')}
+                className="text-left p-2 rounded-lg bg-amber-500/20 text-[#C5A059] border border-amber-500/30 flex items-center gap-1.5"
+              >
+                <Mic className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Live Radio</span>
+              </button>
+              <button
+                onClick={() => navigate('media-programs')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center gap-1.5"
+              >
+                <Calendar className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Programs</span>
+              </button>
+              <button
+                onClick={() => navigate('media-sermons')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center gap-1.5"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Sermons</span>
+              </button>
+              <button
+                onClick={() => navigate('media-podcasts')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 flex items-center gap-1.5"
+              >
+                <Headphones className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Podcasts</span>
+              </button>
+              <button
+                onClick={() => navigate('youtube-channel')}
+                className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10 text-rose-400 flex items-center gap-1.5"
+              >
+                <Youtube className="w-3.5 h-3.5 fill-current" />
+                <span>YouTube</span>
+              </button>
+            </div>
           </div>
 
           <div className="pt-2 border-t border-white/10 space-y-2">

@@ -39,6 +39,20 @@ import { ExamTaker } from './components/student/ExamTaker';
 import { TranscriptView } from './components/student/TranscriptView';
 import { FinancePortal } from './components/student/FinancePortal';
 
+// TV & Radio Media Center Components
+import { MediaHub } from './components/media/MediaHub';
+import { BibuTVPage } from './components/media/BibuTVPage';
+import { BibuRadioPage } from './components/media/BibuRadioPage';
+import { LiveTVPage } from './components/media/LiveTVPage';
+import { LiveRadioPage } from './components/media/LiveRadioPage';
+import { MediaProgramsPage } from './components/media/MediaProgramsPage';
+import { MediaSermonsPage } from './components/media/MediaSermonsPage';
+import { MediaNewsPage } from './components/media/MediaNewsPage';
+import { MediaPodcastsPage } from './components/media/MediaPodcastsPage';
+import { MediaArchivesPage } from './components/media/MediaArchivesPage';
+import { YouTubeChannelPage } from './components/media/YouTubeChannelPage';
+import { PersistentRadioPlayer } from './components/media/PersistentRadioPlayer';
+
 // Faculty & Admin Portals
 import { FacultyPortal } from './components/faculty/FacultyPortal';
 import { AdminPortal } from './components/admin/AdminPortal';
@@ -214,6 +228,31 @@ const MainContent: React.FC = () => {
           </ProtectedPortalWrapper>
         );
 
+      // TV & Radio Media Center Subsections
+      case 'media-center':
+      case 'media':
+        return <MediaHub />;
+      case 'bibu-tv':
+        return <BibuTVPage />;
+      case 'bibu-radio':
+        return <BibuRadioPage />;
+      case 'live-tv':
+        return <LiveTVPage />;
+      case 'live-radio':
+        return <LiveRadioPage />;
+      case 'media-programs':
+        return <MediaProgramsPage />;
+      case 'media-sermons':
+        return <MediaSermonsPage />;
+      case 'media-news':
+        return <MediaNewsPage />;
+      case 'media-podcasts':
+        return <MediaPodcastsPage />;
+      case 'media-archives':
+        return <MediaArchivesPage />;
+      case 'youtube-channel':
+        return <YouTubeChannelPage />;
+
       default:
         return <PublicHome />;
     }
@@ -223,11 +262,12 @@ const MainContent: React.FC = () => {
     <div className="min-h-screen bg-[#F8F9FB] flex flex-col font-sans text-[#1E293B] selection:bg-[#C5A059] selection:text-[#002366]">
       <Navbar />
       <RoleSwitcher />
-      <main className="flex-1 pb-12">
+      <main className="flex-1 pb-16">
         {renderView()}
       </main>
       <Footer />
       <AuthModal />
+      <PersistentRadioPlayer />
     </div>
   );
 };

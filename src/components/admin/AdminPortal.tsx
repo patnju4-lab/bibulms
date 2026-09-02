@@ -34,6 +34,8 @@ import { AlumniStatistics } from './AlumniStatistics';
 import { AlumniAdminManager } from './AlumniAdminManager';
 import { RplAdminManager } from './RplAdminManager';
 import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal';
+import { TVRadioManagement } from './TVRadioManagement';
+import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -50,10 +52,11 @@ export const AdminPortal: React.FC = () => {
     updateUniversityInfo,
     alumniList,
     examinationCentres,
-    kenyaCounties
+    kenyaCounties,
+    mediaVideos
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'exam-centres' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('exam-centres');
+  const [activeTab, setActiveTab] = useState<'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('exam-centres');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -154,6 +157,18 @@ export const AdminPortal: React.FC = () => {
         >
           <Globe className="w-4 h-4 text-[#C5A059]" />
           <span>Global Exam Centres & 47 Counties ({examinationCentres.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('tv-radio')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'tv-radio'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/60 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <Tv className="w-4 h-4 text-[#C5A059]" />
+          <span>📺 TV & Radio CMS ({mediaVideos.length})</span>
         </button>
 
         <button
@@ -279,6 +294,9 @@ export const AdminPortal: React.FC = () => {
 
       {/* TAB: Global Exam Centres & 47 Counties System */}
       {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}
+
+      {/* TAB: TV & Radio Media Management */}
+      {activeTab === 'tv-radio' && <TVRadioManagement />}
 
       {/* TAB: RPL Manager */}
       {activeTab === 'rpl-manager' && <RplAdminManager />}
