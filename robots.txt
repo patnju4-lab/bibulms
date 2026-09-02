@@ -1,0 +1,33 @@
+# Robots.txt for Breakthrough International Bible University (BIBU)
+# Base URL: https://bibu-lms.ai.studio/
+
+User-agent: *
+
+# Allow crawling of all public-facing university sections
+Allow: /
+Allow: /about
+Allow: /schools
+Allow: /programs
+Allow: /admissions
+Allow: /rpl
+Allow: /verify
+Allow: /library
+Allow: /contact
+Allow: /bulletins
+Allow: /portal-access
+Allow: /portals
+
+# Disallow protected student academic environment, LMS & administrative areas
+Disallow: /student-dashboard
+Disallow: /classroom
+Disallow: /exam-taker
+Disallow: /transcript
+Disallow: /finance
+Disallow: /faculty-portal
+Disallow: /admin-portal
+Disallow: /account
+Disallow: /my-account
+Disallow: /api/
+
+# Sitemap Location
+Sitemap: https://bibu-lms.ai.studio/sitemap.xml
