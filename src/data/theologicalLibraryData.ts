@@ -403,6 +403,320 @@ The "law of the Spirit of life" refers not to a legalistic code, but to the sove
     citationMla: 'Alvarez, Deborah K. Academic Theological Research & Dissertation Writing Manual. BIBU Graduate Press, 2025.',
     citationChicago: 'Alvarez, Deborah K. 2025. Academic Theological Research & Dissertation Writing Manual. Phoenix, AZ: BIBU Graduate Press.',
     citationHarvard: 'Alvarez, D.K., 2025. Academic Theological Research & Dissertation Writing Manual. Phoenix, AZ: BIBU Graduate Press.'
+  },
+
+  // 8. MULTIMEDIA EXPANSION: VIDEO COURSES & LECTURES
+  {
+    id: 'lib-res-media-001',
+    title: 'Mastering New Testament Exegesis & Pauline Greek Syntax (Romans 8 Masterclass)',
+    author: 'Dr. Thomas E. Wright, Ph.D., D.D.',
+    publisher: 'BIBU Faculty Media Studio (Phoenix, AZ)',
+    category: 'Biblical Studies',
+    collectionCategory: 'Exegetical Commentaries',
+    resourceType: 'Video Course',
+    format: 'Video Course',
+    pagesOrDuration: '3 Modules (6 Video Lessons • 3h 15m)',
+    year: 2026,
+    academicLevel: 'Master',
+    language: 'English (with Greek syntax diagramming)',
+    scriptureReferences: ['Romans 8:1-17', 'Romans 8:18-30', 'Romans 8:31-39', '2 Timothy 2:15'],
+    keywords: ['Greek Exegesis', 'Romans 8', 'Pauline Theology', 'Video Course', 'Justification', 'Union with Christ'],
+    isbnOrDoi: 'BIBU-VID-2026-EXEG-01',
+    peerReviewed: true,
+    licenseType: 'BIBU Institutional License',
+    licenseClassification: 'BIBU-owned',
+    downloadAllowed: true,
+    isPopular: true,
+    isFeatured: true,
+    isRecommended: true,
+    coverColor: 'bg-[#002366]',
+    assignedCourseCodes: ['HER-301', 'THE-201'],
+    videoUrl: 'https://cdn.bibu.edu/media/video/romans8_masterclass.mp4',
+    videoDurationSeconds: 11700,
+    completionThresholdPercent: 90,
+    description: 'An advanced video masterclass guiding theological students through sentence-by-sentence diagramming, original language clause structure, and redemptive applications of Romans 8.',
+    abstract: 'Taught by Senior Professor Dr. Thomas E. Wright, this university-level video course equips pastors and scholars with rigorous exegetical methods to distinguish biblical authorial intent from cultural eisegesis.',
+    videoModules: [
+      {
+        id: 'vmod-1',
+        moduleNumber: 1,
+        title: 'Module 1: Foundations of Exegetical Methodology & Greek Syntax',
+        description: 'Historical grammatical frameworks, original language syntax, and hermeneutic principles.',
+        lessons: [
+          {
+            id: 'vles-101',
+            lessonNumber: 1,
+            title: 'Lesson 1: What is Exegesis? (Exēgeomai vs Eisēgeomai)',
+            duration: '22:15',
+            durationSeconds: 1335,
+            videoUrl: 'https://cdn.bibu.edu/media/video/exegesis_101.mp4',
+            description: 'Distinguishing divine authorial intent from modern reader subjectivism.',
+            requiredReading: 'Hermeneutics Manual, Chapter 1 (pp. 1–35)',
+            quizQuestionsCount: 10,
+            assignmentTitle: 'Exegetical Analysis of 2 Timothy 2:15',
+            transcript: [
+              {
+                id: 'vt-1',
+                timestampSeconds: 0,
+                formattedTimestamp: '00:00',
+                speaker: 'Dr. Thomas E. Wright, Ph.D.',
+                text: 'Welcome to the Breakthrough International Bible University Masterclass on Biblical Exegesis.'
+              },
+              {
+                id: 'vt-2',
+                timestampSeconds: 24,
+                formattedTimestamp: '00:24',
+                speaker: 'Dr. Thomas E. Wright, Ph.D.',
+                text: 'Today we address the definitive distinction between Exegesis (drawing out the meaning the Holy Spirit breathed into the text) versus Eisegesis (reading our personal cultural assumptions into Scripture).',
+                scriptureRef: '2 Timothy 2:15'
+              },
+              {
+                id: 'vt-3',
+                timestampSeconds: 85,
+                formattedTimestamp: '01:25',
+                speaker: 'Dr. Thomas E. Wright, Ph.D.',
+                text: 'In Koine Greek, the verb exēgeomai denotes to lead out, narrate, or unfold. We stand under the authority of the Word, not above it.'
+              },
+              {
+                id: 'vt-4',
+                timestampSeconds: 150,
+                formattedTimestamp: '02:30',
+                speaker: 'Dr. Thomas E. Wright, Ph.D.',
+                text: 'Look at Paul’s instruction in Romans 8:1: Ouden ara nyn katakrima tois en Christō Iēsou. Every particle and verbal case carries immense theological weight.',
+                scriptureRef: 'Romans 8:1'
+              }
+            ]
+          },
+          {
+            id: 'vles-102',
+            lessonNumber: 2,
+            title: 'Lesson 2: Historical & Cultural Contextual Framing',
+            duration: '28:40',
+            durationSeconds: 1720,
+            videoUrl: 'https://cdn.bibu.edu/media/video/exegesis_102.mp4',
+            description: 'Greco-Roman epistolary rhetoric and First Century Roman church dynamics.',
+            transcript: [
+              {
+                id: 'vt-5',
+                timestampSeconds: 0,
+                formattedTimestamp: '00:00',
+                speaker: 'Dr. Thomas E. Wright, Ph.D.',
+                text: 'In this second lesson, we explore the historical-cultural horizon of the Roman congregation in AD 57.'
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    citationApa: 'Wright, T. E. (2026). Mastering New Testament Exegesis & Pauline Greek Syntax. BIBU Media Press.',
+    citationMla: 'Wright, Thomas E. Mastering New Testament Exegesis & Pauline Greek Syntax. BIBU Media Press, 2026.',
+    citationChicago: 'Wright, Thomas E. 2026. Mastering New Testament Exegesis & Pauline Greek Syntax. Phoenix, AZ: BIBU Media Press.',
+    citationHarvard: 'Wright, T.E., 2026. Mastering New Testament Exegesis & Pauline Greek Syntax. Phoenix, AZ: BIBU Media Press.'
+  },
+
+  // 9. MULTIMEDIA EXPANSION: AUDIO COURSES & AUDIOBOOKS
+  {
+    id: 'lib-res-media-002',
+    title: 'Systematic Theology Audio Masterclass: Prolegomena & the Doctrine of God',
+    author: 'Dr. Jonathan Vance, Th.D. & Rev. Dr. Robert Lindqvist',
+    publisher: 'BIBU Audio Scholastic Series (Phoenix, AZ)',
+    category: 'Theology',
+    collectionCategory: 'Systematic Theology',
+    resourceType: 'Audio Course',
+    format: 'Audio Course',
+    pagesOrDuration: '4 Modules (8 Audio Lessons • 4h 30m)',
+    year: 2026,
+    academicLevel: 'Master',
+    language: 'English',
+    scriptureReferences: ['Genesis 1:1', 'Deuteronomy 6:4', 'Exodus 3:14', 'John 1:1-18', 'Romans 11:33-36'],
+    keywords: ['Systematic Theology', 'Doctrine of God', 'Audio Course', 'Trinity', 'Inerrancy', 'Theology Proper'],
+    isbnOrDoi: 'BIBU-AUD-2026-THEO-02',
+    peerReviewed: true,
+    licenseType: 'BIBU Institutional License',
+    licenseClassification: 'Faculty-created',
+    downloadAllowed: true,
+    isPopular: true,
+    isFeatured: true,
+    isRecommended: true,
+    coverColor: 'bg-[#002366]',
+    assignedCourseCodes: ['THE-201', 'HER-301'],
+    audioUrl: 'https://cdn.bibu.edu/media/audio/systematic_theology_mod1.mp3',
+    audioDurationSeconds: 16200,
+    completionThresholdPercent: 90,
+    description: 'Immerse yourself in exhaustive lectures on the Triune God, divine simplicity, aseity, providence, and the inerrancy of Scripture, recorded with crystal-clear academic narration.',
+    abstract: 'Co-taught by Dr. Jonathan Vance and Rev. Dr. Robert Lindqvist, this comprehensive audio course provides seminary students with doctrinal clarity and synchronized read-along study texts.',
+    audioChapters: [
+      {
+        id: 'achap-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: The Epistemological Necessity of Divine Revelation',
+        duration: '24:18',
+        durationSeconds: 1458,
+        audioUrl: 'https://cdn.bibu.edu/media/audio/systheo_chap1.mp3',
+        description: 'Why human reason cannot know God truly apart from His self-disclosure in Holy Scripture.',
+        transcript: [
+          {
+            id: 'at-1',
+            timestampSeconds: 0,
+            formattedTimestamp: '00:00',
+            speaker: 'Dr. Jonathan Vance',
+            text: 'Welcome to Chapter 1 of the Systematic Theology Masterclass at Breakthrough International Bible University.'
+          },
+          {
+            id: 'at-2',
+            timestampSeconds: 30,
+            formattedTimestamp: '00:30',
+            speaker: 'Dr. Jonathan Vance',
+            text: 'We begin with Prolegomena—the preliminary principles of theological science. How does finite man come to know the infinite and holy God?'
+          },
+          {
+            id: 'at-3',
+            timestampSeconds: 90,
+            formattedTimestamp: '01:30',
+            speaker: 'Dr. Jonathan Vance',
+            text: 'Scripture affirms that God has not remained silent. He has spoken propositionally and infallibly through His prophets, apostles, and supremely in His Son Jesus Christ.',
+            scriptureRef: 'Hebrews 1:1-2'
+          }
+        ]
+      },
+      {
+        id: 'achap-2',
+        chapterNumber: 2,
+        title: 'Chapter 2: Theology Proper & the Triune Nature of God',
+        duration: '32:45',
+        durationSeconds: 1965,
+        audioUrl: 'https://cdn.bibu.edu/media/audio/systheo_chap2.mp3',
+        description: 'Exposition of the Nicene-Constantinopolitan Trinitarian framework: One Divine Essence in Three Co-equal Persons.',
+        transcript: [
+          {
+            id: 'at-4',
+            timestampSeconds: 0,
+            formattedTimestamp: '00:00',
+            speaker: 'Rev. Dr. Robert Lindqvist',
+            text: 'In Chapter 2, we contemplate Theology Proper: the holy attributes, aseity, and eternal triune fellowship of Father, Son, and Holy Spirit.'
+          }
+        ]
+      }
+    ],
+    synchronizedParagraphs: [
+      {
+        id: 'sp-1',
+        paragraphNumber: 1,
+        timestampStartSeconds: 0,
+        timestampEndSeconds: 28,
+        text: 'Christian theological inquiry does not begin with autonomous human philosophy, but with the humble reception of God’s self-attesting Word (theopneustos).'
+      },
+      {
+        id: 'sp-2',
+        paragraphNumber: 2,
+        timestampStartSeconds: 29,
+        timestampEndSeconds: 88,
+        text: 'The doctrine of God governs every other locus of systematic theology. Because God is immutable, sovereign, and holy, His redemptive decrees remain unshakable.'
+      },
+      {
+        id: 'sp-3',
+        paragraphNumber: 3,
+        timestampStartSeconds: 89,
+        timestampEndSeconds: 160,
+        text: 'In Christ, the fullness of deity dwells bodily (Colossians 2:9). Systematic theology connects the eternal counsel of God with active Christian discipleship.'
+      }
+    ],
+    citationApa: 'Vance, J., & Lindqvist, R. (2026). Systematic Theology Audio Masterclass. BIBU Audio Press.',
+    citationMla: 'Vance, Jonathan, and Robert Lindqvist. Systematic Theology Audio Masterclass. BIBU Audio Press, 2026.',
+    citationChicago: 'Vance, Jonathan, and Robert Lindqvist. 2026. Systematic Theology Audio Masterclass. Phoenix, AZ: BIBU Audio Press.',
+    citationHarvard: 'Vance, J. and Lindqvist, R., 2026. Systematic Theology Audio Masterclass. Phoenix, AZ: BIBU Audio Press.'
+  },
+
+  // 10. MULTIMEDIA EXPANSION: VIDEO BOOK
+  {
+    id: 'lib-res-media-003',
+    title: 'The Visual Hermeneutics Treatise: Slide-Annotated Video Monograph',
+    author: 'Dr. Thomas E. Wright, Ph.D. & Academic Media Team',
+    publisher: 'BIBU Media Publications',
+    category: 'Biblical Studies',
+    collectionCategory: 'Bible Studies',
+    resourceType: 'Video Book',
+    format: 'Video Book',
+    pagesOrDuration: '1 Visual Video Book (1h 45m)',
+    year: 2026,
+    academicLevel: 'Bachelor',
+    language: 'English',
+    scriptureReferences: ['Nehemiah 8:8', '2 Timothy 2:15', '2 Peter 1:20-21'],
+    keywords: ['Hermeneutics', 'Video Book', 'Slide Presentation', 'Exegesis', 'Visual Learning'],
+    isbnOrDoi: 'BIBU-VBOOK-2026-03',
+    peerReviewed: true,
+    licenseType: 'BIBU Institutional License',
+    licenseClassification: 'BIBU-owned',
+    downloadAllowed: true,
+    isPopular: true,
+    isFeatured: true,
+    coverColor: 'bg-[#002366]',
+    assignedCourseCodes: ['HER-301'],
+    videoUrl: 'https://cdn.bibu.edu/media/video/visual_hermeneutics.mp4',
+    videoDurationSeconds: 6300,
+    completionThresholdPercent: 90,
+    description: 'A rich visual book integrating synchronized text slides, theological charts, Greek syntactic diagrams, and voiceover exposition.',
+    abstract: 'Engineered for students who learn best through visual synthesis and diagrammatic breakdowns of biblical texts.',
+    citationApa: 'Wright, T. E. (2026). The Visual Hermeneutics Treatise. BIBU Media Publications.',
+    citationMla: 'Wright, Thomas E. The Visual Hermeneutics Treatise. BIBU Media Publications, 2026.',
+    citationChicago: 'Wright, Thomas E. 2026. The Visual Hermeneutics Treatise. Phoenix, AZ: BIBU Media Publications.',
+    citationHarvard: 'Wright, T.E., 2026. The Visual Hermeneutics Treatise. Phoenix, AZ: BIBU Media Publications.'
+  },
+
+  // 11. MULTIMEDIA EXPANSION: AUDIOBOOK
+  {
+    id: 'lib-res-media-004',
+    title: 'The Reformed Pastor: Annotated Institutional Audio Edition',
+    author: 'Richard Baxter (Annotated with modern pastoral insights by Dr. Michael C. Sterling)',
+    publisher: 'BIBU Heritage Audio Library',
+    category: 'Leadership',
+    collectionCategory: 'Pastoral Ministry',
+    resourceType: 'Audio Book',
+    format: 'Audio Book',
+    pagesOrDuration: '6 Audio Chapters (8h 15m)',
+    year: 2025,
+    academicLevel: 'All',
+    language: 'English',
+    scriptureReferences: ['Acts 20:28', '1 Peter 5:1-4', '1 Timothy 4:16'],
+    keywords: ['Pastoral Ministry', 'Audiobook', 'Classic Theology', 'Shepherding', 'Personal Holiness'],
+    isbnOrDoi: 'BIBU-ABOOK-2025-04',
+    peerReviewed: true,
+    licenseType: 'Public Domain & Academic Commentary',
+    licenseClassification: 'Public domain',
+    downloadAllowed: true,
+    isPopular: true,
+    isFeatured: true,
+    coverColor: 'bg-[#14532D]',
+    assignedCourseCodes: ['PAS-401'],
+    audioUrl: 'https://cdn.bibu.edu/media/audio/reformed_pastor_full.mp3',
+    audioDurationSeconds: 29700,
+    completionThresholdPercent: 90,
+    description: 'The monumental classic on pastoral care, personal godliness, and the oversight of souls, newly narrated with academic commentaries for modern theological interns.',
+    abstract: 'Baxter’s urgent call to pastoral faithfulness in Acts 20:28: Take heed therefore unto yourselves, and to all the flock over which the Holy Ghost hath made you overseers.',
+    audioChapters: [
+      {
+        id: 'ab-chap-1',
+        chapterNumber: 1,
+        title: 'Chapter 1: The Pastor’s Personal Walk with God',
+        duration: '45:00',
+        durationSeconds: 2700,
+        audioUrl: 'https://cdn.bibu.edu/media/audio/baxter_chap1.mp3',
+        description: 'Exhortations on keeping a clear conscience and mortifying sin in the minister’s private life.'
+      },
+      {
+        id: 'ab-chap-2',
+        chapterNumber: 2,
+        title: 'Chapter 2: The Nature and Pastoral Care of the Flock',
+        duration: '52:10',
+        durationSeconds: 3130,
+        audioUrl: 'https://cdn.bibu.edu/media/audio/baxter_chap2.mp3',
+        description: 'Knowing each sheep by name and catechizing families in the home.'
+      }
+    ],
+    citationApa: 'Baxter, R., & Sterling, M. C. (2025). The Reformed Pastor: Annotated Audio Edition. BIBU Heritage Audio.',
+    citationMla: 'Baxter, Richard, and Michael C. Sterling. The Reformed Pastor: Annotated Audio Edition. BIBU Heritage Audio, 2025.',
+    citationChicago: 'Baxter, Richard, and Michael C. Sterling. 2025. The Reformed Pastor: Annotated Audio Edition. Phoenix, AZ: BIBU Heritage Audio.',
+    citationHarvard: 'Baxter, R. and Sterling, M.C., 2025. The Reformed Pastor. Phoenix, AZ: BIBU Heritage Audio.'
   }
 ];
 

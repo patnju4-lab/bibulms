@@ -62,6 +62,30 @@ import {
   INITIAL_RPL_APPLICATIONS as DETAILED_RPL_APPLICATIONS,
   INITIAL_RPL_PROGRAM_RULES
 } from '../data/rplData';
+import {
+  KenyaCounty,
+  GlobalCountry,
+  ExaminationCentre,
+  CentreStudent,
+  NationalRepresentative,
+  ExaminationSession,
+  CentreExamAttendanceRecord,
+  CentreExamRegistration,
+  AuditLogEntry,
+  AttendanceStatus,
+  ApplicationWorkflowStatus,
+  StudentTransferAudit,
+  CentreStudentDocument
+} from '../types/examCentres';
+import {
+  KENYA_47_COUNTIES,
+  GLOBAL_COUNTRIES,
+  INITIAL_EXAMINATION_CENTRES,
+  INITIAL_CENTRE_STUDENTS,
+  INITIAL_EXAMINATION_SESSIONS,
+  INITIAL_EXAM_ATTENDANCES,
+  INITIAL_AUDIT_LOGS
+} from '../data/examCentresData';
 
 export type CurrentView = 
   | 'home'
@@ -93,7 +117,14 @@ export type CurrentView =
   | 'register'
   | 'create-account'
   | 'account'
-  | 'my-account';
+  | 'my-account'
+  | 'exam-centres'
+  | 'kenya-counties'
+  | 'national-rep-portal'
+  | 'centre-rep-portal'
+  | 'exam-attendance'
+  | 'centre-directory'
+  | 'centre-reports';
 
 export interface RegisterUserData {
   name: string;
@@ -299,6 +330,40 @@ interface AppContextType {
   verifyAlumniGraduate: (query: { alumniId?: string; certificateNumber?: string; studentId?: string }) => Alumni | undefined;
   graduateStudentToAlumni: (studentId: string, graduationData?: Partial<Alumni>) => Alumni;
 
+  // Global Examination Centre & 47-County Student Registration System
+  kenyaCounties: KenyaCounty[];
+  globalCountries: GlobalCountry[];
+  examinationCentres: ExaminationCentre[];
+  centreStudents: CentreStudent[];
+  examSessions: ExaminationSession[];
+  examAttendanceRecords: CentreExamAttendanceRecord[];
+  auditLogs: AuditLogEntry[];
+  selectedCentreId: string | null;
+  setSelectedCentreId: (id: string | null) => void;
+  selectedCountyCode: number | null;
+  setSelectedCountyCode: (code: number | null) => void;
+  selectedCountryCode: string | null;
+  setSelectedCountryCode: (code: string | null) => void;
+
+  addExaminationCentre: (centreData: Omit<ExaminationCentre, 'id' | 'centreCode' | 'enrolledStudentsCount' | 'registeredCandidatesCount' | 'availableSeats'>) => ExaminationCentre;
+  updateExaminationCentre: (id: string, updates: Partial<ExaminationCentre>) => void;
+  deleteExaminationCentre: (id: string) => void;
+  registerStudentWithCentre: (studentData: Partial<CentreStudent>) => { student: CentreStudent; studentNumber: string };
+  updateCentreStudent: (id: string, updates: Partial<CentreStudent>) => void;
+  deleteCentreStudent: (id: string) => void;
+  transferStudentCentre: (studentId: string, toCentreId: string, reason: string, adminName?: string) => { success: boolean; message: string };
+  checkDuplicateStudent: (data: { nationalIdOrPassport?: string; email?: string; phone?: string; studentNumber?: string; excludeId?: string }) => CentreStudent | undefined;
+  verifyStudentDocument: (studentId: string, documentId: string, status: 'Verified' | 'Rejected', verifiedBy: string, remarks?: string) => void;
+  recordExamAttendance: (record: Partial<CentreExamAttendanceRecord>) => void;
+  updateAttendanceStatus: (attendanceId: string, status: AttendanceStatus, remarks?: string, timeOut?: string) => void;
+  addKenyaCounty: (county: Omit<KenyaCounty, 'id'>) => KenyaCounty;
+  updateKenyaCounty: (id: string, updates: Partial<KenyaCounty>) => void;
+  addGlobalCountry: (country: Omit<GlobalCountry, 'id'>) => GlobalCountry;
+  updateGlobalCountry: (id: string, updates: Partial<GlobalCountry>) => void;
+  logAuditEvent: (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => void;
+  generateStudentNumber: (countryCode: string, cityOrCounty: string) => string;
+  generateCentreCode: (countryCode: string, cityOrCounty: string) => string;
+
   resetToDefaultData: () => void;
 
   // Search & Global Helpers
@@ -488,7 +553,75 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_ALUMNI_DATABASE;
   });
 
+  // Global Examination Centre & Student Registration System States
+  const [kenyaCounties, setKenyaCounties] = useState<KenyaCounty[]>(() => {
+    const saved = localStorage.getItem('bibu_kenya_counties');
+    return saved ? JSON.parse(saved) : KENYA_47_COUNTIES;
+  });
+
+  const [globalCountries, setGlobalCountries] = useState<GlobalCountry[]>(() => {
+    const saved = localStorage.getItem('bibu_global_countries');
+    return saved ? JSON.parse(saved) : GLOBAL_COUNTRIES;
+  });
+
+  const [examinationCentres, setExaminationCentres] = useState<ExaminationCentre[]>(() => {
+    const saved = localStorage.getItem('bibu_examination_centres');
+    return saved ? JSON.parse(saved) : INITIAL_EXAMINATION_CENTRES;
+  });
+
+  const [centreStudents, setCentreStudents] = useState<CentreStudent[]>(() => {
+    const saved = localStorage.getItem('bibu_centre_students');
+    return saved ? JSON.parse(saved) : INITIAL_CENTRE_STUDENTS;
+  });
+
+  const [examSessions, setExamSessions] = useState<ExaminationSession[]>(() => {
+    const saved = localStorage.getItem('bibu_exam_sessions');
+    return saved ? JSON.parse(saved) : INITIAL_EXAMINATION_SESSIONS;
+  });
+
+  const [examAttendanceRecords, setExamAttendanceRecords] = useState<CentreExamAttendanceRecord[]>(() => {
+    const saved = localStorage.getItem('bibu_exam_attendance');
+    return saved ? JSON.parse(saved) : INITIAL_EXAM_ATTENDANCES;
+  });
+
+  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>(() => {
+    const saved = localStorage.getItem('bibu_audit_logs');
+    return saved ? JSON.parse(saved) : INITIAL_AUDIT_LOGS;
+  });
+
+  const [selectedCentreId, setSelectedCentreId] = useState<string | null>(null);
+  const [selectedCountyCode, setSelectedCountyCode] = useState<number | null>(null);
+  const [selectedCountryCode, setSelectedCountryCode] = useState<string | null>(null);
+
   // Sync to local storage
+  useEffect(() => {
+    localStorage.setItem('bibu_kenya_counties', JSON.stringify(kenyaCounties));
+  }, [kenyaCounties]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_global_countries', JSON.stringify(globalCountries));
+  }, [globalCountries]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_examination_centres', JSON.stringify(examinationCentres));
+  }, [examinationCentres]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_centre_students', JSON.stringify(centreStudents));
+  }, [centreStudents]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_exam_sessions', JSON.stringify(examSessions));
+  }, [examSessions]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_exam_attendance', JSON.stringify(examAttendanceRecords));
+  }, [examAttendanceRecords]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_audit_logs', JSON.stringify(auditLogs));
+  }, [auditLogs]);
+
   useEffect(() => {
     localStorage.setItem('bibu_alumni_database', JSON.stringify(alumniList));
   }, [alumniList]);
@@ -2194,6 +2327,484 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newAlumni;
   };
 
+  // ==========================================
+  // GLOBAL EXAMINATION CENTRE & STUDENT REGISTRATION METHODS
+  // ==========================================
+
+  const logAuditEvent = (entry: Omit<AuditLogEntry, 'id' | 'timestamp'>) => {
+    const newLog: AuditLogEntry = {
+      id: `audit-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      timestamp: new Date().toISOString(),
+      ...entry,
+    };
+    setAuditLogs(prev => [newLog, ...prev]);
+  };
+
+  const generateStudentNumber = (countryCode: string = 'KE', cityOrCounty: string = 'NAI'): string => {
+    const year = new Date().getFullYear();
+    const cCode = (countryCode || 'KE').toUpperCase().slice(0, 3);
+    const locCode = (cityOrCounty || 'GEN').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3) || 'GEN';
+    const seq = String(centreStudents.length + 1).padStart(4, '0');
+    return `BIBU/${year}/${cCode}/${locCode}/${seq}`;
+  };
+
+  const generateCentreCode = (countryCode: string = 'KE', cityOrCounty: string = 'NAI'): string => {
+    const cCode = (countryCode || 'KE').toUpperCase().slice(0, 2);
+    const locCode = (cityOrCounty || 'CTR').replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3);
+    const countForLoc = examinationCentres.filter(c => c.countryCode === cCode).length + 1;
+    const num = String(countForLoc).padStart(3, '0');
+    return `BIBU-${cCode}-${num}-${locCode}`;
+  };
+
+  const checkDuplicateStudent = (data: {
+    nationalIdOrPassport?: string;
+    email?: string;
+    phone?: string;
+    studentNumber?: string;
+    excludeId?: string;
+  }): CentreStudent | undefined => {
+    return centreStudents.find(s => {
+      if (data.excludeId && s.id === data.excludeId) return false;
+      if (data.nationalIdOrPassport && s.nationalIdOrPassport && s.nationalIdOrPassport.trim().toLowerCase() === data.nationalIdOrPassport.trim().toLowerCase()) return true;
+      if (data.email && s.email && s.email.trim().toLowerCase() === data.email.trim().toLowerCase()) return true;
+      if (data.phone && s.phone && s.phone.replace(/[^0-9]/g, '') === data.phone.replace(/[^0-9]/g, '')) return true;
+      if (data.studentNumber && s.studentNumber && s.studentNumber.trim().toUpperCase() === data.studentNumber.trim().toUpperCase()) return true;
+      return false;
+    });
+  };
+
+  const addExaminationCentre = (centreData: Omit<ExaminationCentre, 'id' | 'centreCode' | 'enrolledStudentsCount' | 'registeredCandidatesCount' | 'availableSeats'>): ExaminationCentre => {
+    const autoCode = generateCentreCode(centreData.countryCode, centreData.cityOrTown || centreData.countyOrState || 'CTR');
+    const newCentre: ExaminationCentre = {
+      id: `ctr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      centreCode: autoCode,
+      enrolledStudentsCount: 0,
+      registeredCandidatesCount: 0,
+      availableSeats: centreData.capacity,
+      ...centreData,
+    };
+
+    setExaminationCentres(prev => [newCentre, ...prev]);
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'CENTRE_CREATED',
+      affectedEntity: `Centre ${newCentre.centreName} (${newCentre.centreCode})`,
+      affectedId: newCentre.id,
+      ipAddress: '192.168.1.1',
+      details: `Created new examination centre: ${newCentre.centreName} (${newCentre.centreCode}) in ${newCentre.countryName}, ${newCentre.countyOrState || newCentre.cityOrTown}.`,
+    });
+
+    return newCentre;
+  };
+
+  const updateExaminationCentre = (id: string, updates: Partial<ExaminationCentre>) => {
+    setExaminationCentres(prev => prev.map(c => {
+      if (c.id === id) {
+        const updated = { ...c, ...updates };
+        if (updates.capacity !== undefined) {
+          updated.availableSeats = Math.max(0, updates.capacity - updated.registeredCandidatesCount);
+        }
+        return updated;
+      }
+      return c;
+    }));
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'CENTRE_UPDATED',
+      affectedEntity: `Examination Centre ID ${id}`,
+      affectedId: id,
+      ipAddress: '192.168.1.1',
+      details: `Updated examination centre details for ID ${id}.`,
+    });
+  };
+
+  const deleteExaminationCentre = (id: string) => {
+    const target = examinationCentres.find(c => c.id === id);
+    setExaminationCentres(prev => prev.filter(c => c.id !== id));
+
+    if (target) {
+      logAuditEvent({
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        userRole: currentUser.role,
+        action: 'CENTRE_STATUS_CHANGED',
+        affectedEntity: `Centre ${target.centreName} (${target.centreCode})`,
+        affectedId: id,
+        ipAddress: '192.168.1.1',
+        details: `Deleted examination centre: ${target.centreName} (${target.centreCode}).`,
+      });
+    }
+  };
+
+  const registerStudentWithCentre = (studentData: Partial<CentreStudent>): { student: CentreStudent; studentNumber: string } => {
+    const targetCentre = examinationCentres.find(c => c.id === studentData.examinationCentreId);
+    const countryCode = targetCentre?.countryCode || studentData.countryCode || 'KE';
+    const cityOrCounty = targetCentre?.countyOrState || targetCentre?.cityOrTown || studentData.countyOrState || 'NAI';
+    const autoStudentNum = studentData.studentNumber || generateStudentNumber(countryCode, cityOrCounty);
+
+    const nowIso = new Date().toISOString();
+    const newStudent: CentreStudent = {
+      id: `stud-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      studentNumber: autoStudentNum,
+      applicationNumber: studentData.applicationNumber || `APP-${new Date().getFullYear()}-${countryCode}-${String(centreStudents.length + 1).padStart(4, '0')}`,
+      firstName: studentData.firstName || 'Student',
+      lastName: studentData.lastName || 'Candidate',
+      middleName: studentData.middleName || '',
+      fullName: studentData.fullName || `${studentData.firstName || ''} ${studentData.lastName || ''}`.trim(),
+      email: studentData.email || `student.${Date.now()}@bibu-edu.org`,
+      phone: studentData.phone || '+254700000000',
+      nationalIdOrPassport: studentData.nationalIdOrPassport || '',
+      dateOfBirth: studentData.dateOfBirth || '1995-01-01',
+      gender: studentData.gender || 'Male',
+      nationality: studentData.nationality || 'Kenyan',
+      residentialAddress: studentData.residentialAddress || 'Nairobi, Kenya',
+      continent: studentData.continent || targetCentre?.continent || 'AFRICA',
+      country: studentData.country || targetCentre?.countryName || 'Kenya',
+      countryCode: countryCode,
+      countyOrState: studentData.countyOrState || targetCentre?.countyOrState || 'Nairobi',
+      countyCode: targetCentre?.countyCode || studentData.countyCode || 47,
+      cityOrTown: studentData.cityOrTown || targetCentre?.cityOrTown || 'Nairobi',
+      examinationCentreId: targetCentre?.id || studentData.examinationCentreId || '',
+      examinationCentreCode: targetCentre?.centreCode || studentData.examinationCentreCode || '',
+      examinationCentreName: targetCentre?.centreName || studentData.examinationCentreName || '',
+      schoolId: studentData.schoolId || 'sch-theology',
+      schoolName: studentData.schoolName || 'School of Theological Studies',
+      programId: studentData.programId || 'prog-bth',
+      programName: studentData.programName || 'Bachelor of Theology (B.Th)',
+      academicLevel: studentData.academicLevel || 'Bachelor',
+      modeOfStudy: studentData.modeOfStudy || 'Digital Online & Centre-Based',
+      intake: studentData.intake || 'September 2026',
+      academicYear: studentData.academicYear || '2026/2027',
+      studyDurationMonths: studentData.studyDurationMonths || 36,
+      admissionDate: studentData.admissionDate || nowIso.split('T')[0],
+      registrationDate: studentData.registrationDate || nowIso.split('T')[0],
+      previousInstitution: studentData.previousInstitution || 'Secondary School / Bible College',
+      highestQualification: studentData.highestQualification || 'Diploma',
+      qualificationGrade: studentData.qualificationGrade || 'Credit',
+      yearCompleted: studentData.yearCompleted || 2022,
+      admissionStatus: studentData.admissionStatus || 'Admitted',
+      studentStatus: 'Active',
+      feeStatus: studentData.feeStatus || 'Fully Paid',
+      courseworkStatus: 'In Good Standing',
+      examinationEligibility: 'Eligible & Cleared',
+      currentExamSeatNumber: targetCentre ? `SEAT-${targetCentre.centreCode.slice(-3)}-${String((targetCentre.registeredCandidatesCount || 0) + 1).padStart(3, '0')}` : undefined,
+      currentExamRoom: targetCentre?.rooms?.[0]?.roomName || 'Main Examination Hall',
+      currentGpa: 3.8,
+      creditsEarned: 0,
+      totalRequiredCredits: 120,
+      documents: studentData.documents || [
+        {
+          id: `doc-${Date.now()}-1`,
+          documentType: 'National ID',
+          fileName: 'national_id_card.pdf',
+          fileSize: '1.2 MB',
+          uploadDate: nowIso,
+          verificationStatus: 'Verified',
+        },
+        {
+          id: `doc-${Date.now()}-2`,
+          documentType: 'KCSE Certificate',
+          fileName: 'academic_certificate.pdf',
+          fileSize: '2.4 MB',
+          uploadDate: nowIso,
+          verificationStatus: 'Verified',
+        }
+      ],
+      centreTransferHistory: [],
+      createdAt: nowIso,
+      updatedAt: nowIso,
+      ...studentData,
+    };
+
+    setCentreStudents(prev => [newStudent, ...prev]);
+
+    // Update centre counts if centre assigned
+    if (targetCentre) {
+      setExaminationCentres(prev => prev.map(c => {
+        if (c.id === targetCentre.id) {
+          const newRegistered = (c.registeredCandidatesCount || 0) + 1;
+          const newEnrolled = (c.enrolledStudentsCount || 0) + 1;
+          return {
+            ...c,
+            registeredCandidatesCount: newRegistered,
+            enrolledStudentsCount: newEnrolled,
+            availableSeats: Math.max(0, c.capacity - newRegistered),
+          };
+        }
+        return c;
+      }));
+    }
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'STUDENT_ADMISSION_CREATED',
+      affectedEntity: `Student ${newStudent.fullName} (${newStudent.studentNumber})`,
+      affectedId: newStudent.id,
+      ipAddress: '192.168.1.1',
+      details: `Admitted and registered student ${newStudent.fullName} (${newStudent.studentNumber}) allocated to centre ${newStudent.examinationCentreName} (${newStudent.examinationCentreCode}).`,
+    });
+
+    return { student: newStudent, studentNumber: autoStudentNum };
+  };
+
+  const updateCentreStudent = (id: string, updates: Partial<CentreStudent>) => {
+    setCentreStudents(prev => prev.map(s => {
+      if (s.id === id) {
+        return { ...s, ...updates, updatedAt: new Date().toISOString() };
+      }
+      return s;
+    }));
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'STUDENT_CENTRE_ASSIGNED',
+      affectedEntity: `Student ID ${id}`,
+      affectedId: id,
+      ipAddress: '192.168.1.1',
+      details: `Updated student record for ID ${id}.`,
+    });
+  };
+
+  const deleteCentreStudent = (id: string) => {
+    const target = centreStudents.find(s => s.id === id);
+    setCentreStudents(prev => prev.filter(s => s.id !== id));
+
+    if (target) {
+      logAuditEvent({
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        userRole: currentUser.role,
+        action: 'STUDENT_CENTRE_ASSIGNED',
+        affectedEntity: `Student ${target.fullName} (${target.studentNumber})`,
+        affectedId: id,
+        ipAddress: '192.168.1.1',
+        details: `Deleted student record ${target.fullName} (${target.studentNumber}).`,
+      });
+    }
+  };
+
+  const transferStudentCentre = (studentId: string, toCentreId: string, reason: string, adminName?: string): { success: boolean; message: string } => {
+    const student = centreStudents.find(s => s.id === studentId);
+    if (!student) {
+      return { success: false, message: 'Student record not found.' };
+    }
+
+    const targetCentre = examinationCentres.find(c => c.id === toCentreId);
+    if (!targetCentre) {
+      return { success: false, message: 'Target examination centre not found.' };
+    }
+
+    if (student.examinationCentreId === toCentreId) {
+      return { success: false, message: 'Student is already assigned to this examination centre.' };
+    }
+
+    if (targetCentre.availableSeats <= 0 && targetCentre.capacity > 0) {
+      return { success: false, message: `Target centre ${targetCentre.centreName} has reached full candidate capacity (${targetCentre.capacity}).` };
+    }
+
+    const previousCentreId = student.examinationCentreId;
+    const nowIso = new Date().toISOString();
+
+    const newTransferAudit: StudentTransferAudit = {
+      id: `trf-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      transferDate: nowIso,
+      fromCentreId: student.examinationCentreId,
+      fromCentreCode: student.examinationCentreCode,
+      fromCentreName: student.examinationCentreName,
+      fromCountry: student.country,
+      fromCounty: student.countyOrState,
+      toCentreId: targetCentre.id,
+      toCentreCode: targetCentre.centreCode,
+      toCentreName: targetCentre.centreName,
+      toCountry: targetCentre.countryName,
+      toCounty: targetCentre.countyOrState,
+      authorizedByAdminName: adminName || currentUser.name || 'Academic Registrar',
+      authorizedByAdminRole: currentUser.role,
+      reason: reason || 'Student relocation / Centre transfer request',
+      approvalStatus: 'Approved',
+      studentNotificationSent: true,
+      notificationTimestamp: nowIso,
+    };
+
+    setCentreStudents(prev => prev.map(s => {
+      if (s.id === studentId) {
+        return {
+          ...s,
+          examinationCentreId: targetCentre.id,
+          examinationCentreCode: targetCentre.centreCode,
+          examinationCentreName: targetCentre.centreName,
+          currentExamSeatNumber: `SEAT-${targetCentre.centreCode.slice(-3)}-${String((targetCentre.registeredCandidatesCount || 0) + 1).padStart(3, '0')}`,
+          currentExamRoom: targetCentre.rooms?.[0]?.roomName || 'Main Examination Hall',
+          centreTransferHistory: [newTransferAudit, ...(s.centreTransferHistory || [])],
+          updatedAt: nowIso,
+        };
+      }
+      return s;
+    }));
+
+    // Update previous centre and new centre counts
+    setExaminationCentres(prev => prev.map(c => {
+      if (c.id === previousCentreId) {
+        const newCount = Math.max(0, (c.registeredCandidatesCount || 1) - 1);
+        return {
+          ...c,
+          registeredCandidatesCount: newCount,
+          availableSeats: Math.max(0, c.capacity - newCount),
+        };
+      }
+      if (c.id === targetCentre.id) {
+        const newCount = (c.registeredCandidatesCount || 0) + 1;
+        return {
+          ...c,
+          registeredCandidatesCount: newCount,
+          availableSeats: Math.max(0, c.capacity - newCount),
+        };
+      }
+      return c;
+    }));
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'STUDENT_CENTRE_TRANSFERRED',
+      affectedEntity: `Student ${student.fullName} (${student.studentNumber})`,
+      affectedId: studentId,
+      previousValue: `${student.examinationCentreName} (${student.examinationCentreCode})`,
+      newValue: `${targetCentre.centreName} (${targetCentre.centreCode})`,
+      ipAddress: '192.168.1.1',
+      details: `Transferred student ${student.fullName} (${student.studentNumber}) from ${student.examinationCentreName} to ${targetCentre.centreName} (${targetCentre.centreCode}). Reason: ${reason}.`,
+    });
+
+    return { success: true, message: `Successfully transferred student to ${targetCentre.centreName} (${targetCentre.centreCode}).` };
+  };
+
+  const verifyStudentDocument = (studentId: string, documentId: string, status: 'Verified' | 'Rejected', verifiedBy: string, remarks?: string) => {
+    const nowIso = new Date().toISOString();
+    setCentreStudents(prev => prev.map(s => {
+      if (s.id === studentId) {
+        const updatedDocs = (s.documents || []).map(d => {
+          if (d.id === documentId) {
+            return {
+              ...d,
+              verificationStatus: status,
+              verifiedBy: verifiedBy || currentUser.name,
+              verificationDate: nowIso,
+              remarks: status === 'Rejected' ? remarks : d.remarks,
+            };
+          }
+          return d;
+        });
+        return { ...s, documents: updatedDocs, updatedAt: nowIso };
+      }
+      return s;
+    }));
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: status === 'Verified' ? 'DOCUMENT_VERIFIED' : 'DOCUMENT_REJECTED',
+      affectedEntity: `Student Document ${documentId}`,
+      affectedId: studentId,
+      ipAddress: '192.168.1.1',
+      details: `Document ${documentId} for student ${studentId} marked as ${status} by ${verifiedBy}.`,
+    });
+  };
+
+  const recordExamAttendance = (record: Partial<CentreExamAttendanceRecord>) => {
+    const nowIso = new Date().toISOString();
+    const newRecord: CentreExamAttendanceRecord = {
+      id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      examSessionId: record.examSessionId || 'ses-001',
+      examinationId: record.examinationId || 'crs-herm-301',
+      courseCode: record.courseCode || 'HERM-301',
+      courseTitle: record.courseTitle || 'Biblical Hermeneutics Final Exam',
+      centreId: record.centreId || '',
+      centreCode: record.centreCode || '',
+      studentId: record.studentId || '',
+      studentNumber: record.studentNumber || '',
+      studentName: record.studentName || '',
+      nationalIdOrPassport: record.nationalIdOrPassport || '',
+      seatNumber: record.seatNumber || 'A-01',
+      roomNumber: record.roomNumber || 'Room 101',
+      attendanceStatus: record.attendanceStatus || 'Present',
+      idVerified: record.idVerified ?? true,
+      examCardPresented: record.examCardPresented ?? true,
+      timeIn: record.timeIn || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timeOut: record.timeOut,
+      invigilatorName: record.invigilatorName || currentUser.name,
+      studentSignatureRecorded: record.studentSignatureRecorded ?? true,
+      remarks: record.remarks,
+      updatedAt: nowIso,
+      ...record,
+    };
+
+    setExamAttendanceRecords(prev => [newRecord, ...prev]);
+
+    logAuditEvent({
+      userName: currentUser.name,
+      userEmail: currentUser.email,
+      userRole: currentUser.role,
+      action: 'ATTENDANCE_RECORDED',
+      affectedEntity: `Exam Attendance ${newRecord.studentName}`,
+      affectedId: newRecord.id,
+      ipAddress: '192.168.1.1',
+      details: `Recorded exam attendance (${newRecord.attendanceStatus}) for ${newRecord.studentName} at centre ${newRecord.centreCode}.`,
+    });
+  };
+
+  const updateAttendanceStatus = (attendanceId: string, status: AttendanceStatus, remarks?: string, timeOut?: string) => {
+    setExamAttendanceRecords(prev => prev.map(a => {
+      if (a.id === attendanceId) {
+        return {
+          ...a,
+          attendanceStatus: status,
+          remarks: remarks || a.remarks,
+          timeOut: timeOut || a.timeOut,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return a;
+    }));
+  };
+
+  const addKenyaCounty = (county: Omit<KenyaCounty, 'id'>): KenyaCounty => {
+    const newCounty: KenyaCounty = {
+      id: `county-${county.countyCode}`,
+      ...county,
+    };
+    setKenyaCounties(prev => [...prev, newCounty]);
+    return newCounty;
+  };
+
+  const updateKenyaCounty = (id: string, updates: Partial<KenyaCounty>) => {
+    setKenyaCounties(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const addGlobalCountry = (country: Omit<GlobalCountry, 'id'>): GlobalCountry => {
+    const newCountry: GlobalCountry = {
+      id: `country-${country.countryCode.toLowerCase()}`,
+      ...country,
+    };
+    setGlobalCountries(prev => [...prev, newCountry]);
+    return newCountry;
+  };
+
+  const updateGlobalCountry = (id: string, updates: Partial<GlobalCountry>) => {
+    setGlobalCountries(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
   // Reset / Restore default mock data
   const resetToDefaultData = () => {
     localStorage.clear();
@@ -2217,6 +2828,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSupportTickets(INITIAL_SUPPORT_TICKETS);
     setCompletedLessonIds(['les-herm-101']);
     setAlumniList(INITIAL_ALUMNI_DATABASE);
+    setKenyaCounties(KENYA_47_COUNTIES);
+    setGlobalCountries(GLOBAL_COUNTRIES);
+    setExaminationCentres(INITIAL_EXAMINATION_CENTRES);
+    setCentreStudents(INITIAL_CENTRE_STUDENTS);
+    setExamSessions(INITIAL_EXAMINATION_SESSIONS);
+    setExamAttendanceRecords(INITIAL_EXAM_ATTENDANCES);
+    setAuditLogs(INITIAL_AUDIT_LOGS);
   };
 
   const verifyCertificateCode = (code: string): Certificate | undefined => {
@@ -2386,6 +3004,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         importAlumniRecords,
         verifyAlumniGraduate,
         graduateStudentToAlumni,
+
+        // Global Examination Centre & 47-County Student Registration System
+        kenyaCounties,
+        globalCountries,
+        examinationCentres,
+        centreStudents,
+        examSessions,
+        examAttendanceRecords,
+        auditLogs,
+        selectedCentreId,
+        setSelectedCentreId,
+        selectedCountyCode,
+        setSelectedCountyCode,
+        selectedCountryCode,
+        setSelectedCountryCode,
+
+        addExaminationCentre,
+        updateExaminationCentre,
+        deleteExaminationCentre,
+        registerStudentWithCentre,
+        updateCentreStudent,
+        deleteCentreStudent,
+        transferStudentCentre,
+        checkDuplicateStudent,
+        verifyStudentDocument,
+        recordExamAttendance,
+        updateAttendanceStatus,
+        addKenyaCounty,
+        updateKenyaCounty,
+        addGlobalCountry,
+        updateGlobalCountry,
+        logAuditEvent,
+        generateStudentNumber,
+        generateCentreCode,
 
         resetToDefaultData,
 

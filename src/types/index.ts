@@ -9,8 +9,16 @@ export type Role =
   | 'alumni' 
   | 'ministry_member' 
   | 'moderator' 
+  | 'national_rep'
+  | 'centre_rep'
+  | 'regional_rep'
+  | 'county_rep'
+  | 'invigilator'
+  | 'finance_admin'
   | 'admin' 
   | 'superadmin';
+
+export * from './examCentres';
 
 export type AccountType =
   | 'Prospective Student'
@@ -363,18 +371,189 @@ export type LibraryResourceType =
   | 'Faculty Publication'
   | 'Historical Patristic Text'
   | 'Audio Lecture'
+  | 'Audio Book'
+  | 'Audio Course'
   | 'Video Seminar'
+  | 'Video Book'
+  | 'Video Course'
+  | 'Research Paper'
   | 'E-Book / Monograph';
 
 export type LibraryCollectionCategory =
   | 'All'
-  | 'Bible Studies'
+  | 'E-Books'
+  | 'Audio Books'
+  | 'Audio Courses'
+  | 'Video Books'
+  | 'Video Courses'
+  | 'Academic Treatises'
+  | 'Research Papers'
   | 'Exegetical Commentaries'
+  | 'Greek & Hebrew'
+  | 'Church History'
+  | 'Pastoral Protocols'
+  | 'Journals'
+  | 'Faculty Publications'
+  | 'My Library'
+  // Legacy category support
+  | 'Bible Studies'
   | 'Greek & Hebrew Research'
   | 'Religion & Church History'
   | 'Pastoral Ministry'
-  | 'Pastoral Protocols'
-  | 'Academic Research & Theses';
+  | 'Academic Research & Theses'
+  | 'Systematic Theology';
+
+export type MediaLicenseType = 
+  | 'BIBU-owned'
+  | 'Faculty-created'
+  | 'Public domain'
+  | 'Open Educational Resource'
+  | 'Creative Commons'
+  | 'Licensed'
+  | 'Permission granted'
+  | 'Restricted'
+  | 'Streaming only'
+  | 'Download prohibited';
+
+export interface TranscriptItem {
+  id: string;
+  timestampSeconds: number;
+  formattedTimestamp: string;
+  speaker?: string;
+  text: string;
+  scriptureRef?: string;
+  paragraphId?: number;
+}
+
+export interface MediaChapter {
+  id: string;
+  chapterNumber: number;
+  title: string;
+  duration?: string;
+  durationSeconds?: number;
+  durationFormatted?: string;
+  pageStart?: number;
+  pageEnd?: number;
+  audioUrl?: string;
+  videoUrl?: string;
+  summary?: string;
+  description?: string;
+  transcript?: TranscriptItem[];
+  scriptureRefs?: string[];
+  completed?: boolean;
+}
+
+export interface AudioLesson {
+  id: string;
+  lessonNumber: number;
+  title: string;
+  duration: string;
+  durationSeconds: number;
+  audioUrl: string;
+  description: string;
+  transcript: TranscriptItem[];
+  downloadAllowed?: boolean;
+  readingRef?: string;
+  completed?: boolean;
+}
+
+export interface AudioCourseModule {
+  id: string;
+  moduleNumber: number;
+  title: string;
+  description: string;
+  lessons: AudioLesson[];
+}
+
+export interface VideoLesson {
+  id: string;
+  lessonNumber: number;
+  title: string;
+  duration: string;
+  durationSeconds: number;
+  videoUrl: string;
+  posterUrl?: string;
+  description: string;
+  transcript: TranscriptItem[];
+  requiredReading?: string;
+  quizQuestionsCount?: number;
+  assignmentTitle?: string;
+  slidesUrl?: string;
+  chapterMarkers?: { title: string; timestampSeconds: number }[];
+  completed?: boolean;
+}
+
+export interface VideoCourseModule {
+  id: string;
+  moduleNumber: number;
+  title: string;
+  description: string;
+  lessons: VideoLesson[];
+}
+
+export interface SynchronizedParagraph {
+  id: string;
+  paragraphNumber: number;
+  heading?: string;
+  text: string;
+  audioStartSeconds?: number;
+  audioEndSeconds?: number;
+  timestampStartSeconds?: number;
+  timestampEndSeconds?: number;
+  scriptureRefs?: string[];
+}
+
+export interface UserMediaBookmark {
+  id: string;
+  resourceId: string;
+  resourceTitle: string;
+  resourceType: string;
+  mediaFormat: 'ebook' | 'audio' | 'video' | 'research' | 'course';
+  timestampSeconds?: number;
+  formattedTimestamp?: string;
+  pageNumber?: number;
+  chapterOrLessonTitle?: string;
+  label: string;
+  createdAt: string;
+}
+
+export interface UserMediaNote {
+  id: string;
+  resourceId: string;
+  resourceTitle: string;
+  mediaFormat: 'ebook' | 'audio' | 'video' | 'transcript' | 'lesson';
+  timestampSeconds?: number;
+  formattedTimestamp?: string;
+  pageNumber?: number;
+  lessonId?: string;
+  scriptureRef?: string;
+  selectedText?: string;
+  noteContent: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface UnifiedLearningProgress {
+  resourceId: string;
+  mediaFormat: 'ebook' | 'audiobook' | 'audio_course' | 'videobook' | 'video_course' | 'document';
+  pagesRead?: number;
+  totalPages?: number;
+  secondsListened?: number;
+  totalAudioDuration?: number;
+  secondsWatched?: number;
+  totalVideoDuration?: number;
+  currentChapterIndex?: number;
+  currentChapterTitle?: string;
+  currentLessonId?: string;
+  currentLessonTitle?: string;
+  lastTimestamp?: number;
+  lastFormattedTimestamp?: string;
+  lastSessionDate: string;
+  percentageCompleted: number;
+  isCompleted: boolean;
+  completionDate?: string;
+  sessionsCount: number;
+}
 
 export interface LibraryResource {
   id: string;
@@ -384,13 +563,14 @@ export interface LibraryResource {
   category: 'Bible' | 'Theology' | 'Biblical Studies' | 'Church History' | 'Missions' | 'Leadership' | 'Christian Counseling' | 'Christian Education' | 'Research' | 'Pastoral Protocols' | 'Biblical Languages';
   collectionCategory?: LibraryCollectionCategory;
   resourceType?: LibraryResourceType;
-  format: 'PDF' | 'Book Excerpt' | 'Audio Lecture' | 'Video Lecture' | 'Journal';
+  format: 'PDF' | 'Book Excerpt' | 'Audio Lecture' | 'Video Lecture' | 'Journal' | 'Audio Book' | 'Audio Course' | 'Video Book' | 'Video Course';
   pagesOrDuration: string;
   year: number;
   description: string;
   abstract?: string;
   downloadUrl?: string;
   coverColor: string;
+  coverImage?: string;
   isPopular?: boolean;
   isFeatured?: boolean;
   isRecommended?: boolean;
@@ -399,11 +579,32 @@ export interface LibraryResource {
   scriptureReferences?: string[];
   keywords?: string[];
   isbnOrDoi?: string;
+  edition?: string;
   peerReviewed?: boolean;
-  licenseType?: 'Public Domain' | 'Open Access' | 'BIBU Institutional License' | 'Creative Commons' | 'Authorized Academic Use';
+  licenseType?: 'Public Domain' | 'Open Access' | 'BIBU Institutional License' | 'Creative Commons' | 'Authorized Academic Use' | 'Public Domain & Academic Commentary';
+  licenseClassification?: MediaLicenseType;
+  rightsStatement?: string;
   assignedCourseCodes?: string[];
   fullTextContent?: string;
   tableOfContents?: { title: string; page: number }[];
+  
+  // Multimedia features
+  audioUrl?: string;
+  videoUrl?: string;
+  audioDurationSeconds?: number;
+  videoDurationSeconds?: number;
+  audioChapters?: MediaChapter[];
+  videoChapters?: MediaChapter[];
+  audioModules?: AudioCourseModule[];
+  videoModules?: VideoCourseModule[];
+  synchronizedParagraphs?: SynchronizedParagraph[];
+  transcript?: TranscriptItem[];
+  downloadAllowed?: boolean;
+  completionThresholdPercent?: number; // default 90%
+  supportingSlidesUrl?: string;
+  diagrams?: { title: string; description: string; imageUrl?: string }[];
+  canSwitchFormats?: boolean; // WATCH | READ | LISTEN
+
   citationApa?: string;
   citationMla?: string;
   citationChicago?: string;

@@ -192,6 +192,29 @@ export const PortalAccessHub: React.FC = () => {
       userRequirementText: 'Chancellor, Academic Registrar & System Administrators'
     },
     {
+      id: 'exam-centres-portal',
+      title: 'GLOBAL EXAMINATION CENTRES & 47 COUNTIES',
+      subtitle: 'Examination Centres, County Reps & Student Allocations',
+      buttonText: 'ENTER EXAM CENTRES SYSTEM',
+      code: 'BIBU-PORTAL-06',
+      icon: Globe2,
+      targetView: 'exam-centres' as CurrentView,
+      allowedRoles: ['admin', 'registrar', 'superadmin', 'faculty', 'student', 'examiner'] as Role[],
+      accentColor: 'blue',
+      badgeColor: 'bg-blue-100 text-blue-900 border-blue-200',
+      description:
+        'Complete management system for BIBU examination centres in all 47 counties of Kenya and national representatives worldwide. Real-time student centre allocation, capacity limits, transfers, and exam invigilation rosters.',
+      keyFeatures: [
+        'All 47 Counties of Kenya Network & County Representatives',
+        'Worldwide National Representatives & International Centres',
+        'Mandatory Student Centre Registration & Permanent Student Numbers',
+        'Student Centre Relocation & Transfer Management with Audit Logs',
+        'Seat Capacity Enforcement & Facility Tracking (Starlink, Generators, CCTV)',
+        'Exam Session Invigilation & Digital Attendance Rosters'
+      ],
+      userRequirementText: 'National Representatives, County Directors, Invigilators & Registrars'
+    },
+    {
       id: 'alumni-portal',
       title: 'ALUMNI & MINISTERIAL NETWORK',
       subtitle: 'Global Alumni & Ministry Fellowship',

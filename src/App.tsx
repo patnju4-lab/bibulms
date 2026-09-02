@@ -42,6 +42,7 @@ import { FinancePortal } from './components/student/FinancePortal';
 // Faculty & Admin Portals
 import { FacultyPortal } from './components/faculty/FacultyPortal';
 import { AdminPortal } from './components/admin/AdminPortal';
+import { GlobalExamCentresPortal } from './components/examCentres/GlobalExamCentresPortal';
 
 const MainContent: React.FC = () => {
   const { currentView } = useApp();
@@ -168,6 +169,24 @@ const MainContent: React.FC = () => {
             targetView="admin-portal"
           >
             <AdminPortal />
+          </ProtectedPortalWrapper>
+        );
+
+      // Global Examination Centres & 47 Counties Hub
+      case 'exam-centres':
+      case 'kenya-counties':
+      case 'national-rep-portal':
+      case 'centre-rep-portal':
+      case 'exam-attendance':
+      case 'centre-directory':
+      case 'centre-reports':
+        return (
+          <ProtectedPortalWrapper
+            portalKey="admin"
+            portalName="Global Examination Centre & Candidate Registration System"
+            targetView="exam-centres"
+          >
+            <GlobalExamCentresPortal />
           </ProtectedPortalWrapper>
         );
 

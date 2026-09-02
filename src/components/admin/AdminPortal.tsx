@@ -33,6 +33,7 @@ import { BulletinsManagementTab } from './tabs/BulletinsManagementTab';
 import { AlumniStatistics } from './AlumniStatistics';
 import { AlumniAdminManager } from './AlumniAdminManager';
 import { RplAdminManager } from './RplAdminManager';
+import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal';
 
 export const AdminPortal: React.FC = () => {
   const {
@@ -47,10 +48,12 @@ export const AdminPortal: React.FC = () => {
     bulletins,
     universityInfo,
     updateUniversityInfo,
-    alumniList
+    alumniList,
+    examinationCentres,
+    kenyaCounties
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('rpl-manager');
+  const [activeTab, setActiveTab] = useState<'exam-centres' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('exam-centres');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -141,6 +144,18 @@ export const AdminPortal: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+        <button
+          onClick={() => setActiveTab('exam-centres')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'exam-centres'
+              ? 'border-[#002366] text-[#002366] bg-blue-50/50'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-[#C5A059]" />
+          <span>Global Exam Centres & 47 Counties ({examinationCentres.length})</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('rpl-manager')}
           className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
@@ -261,6 +276,9 @@ export const AdminPortal: React.FC = () => {
           <span>Live Site CMS</span>
         </button>
       </div>
+
+      {/* TAB: Global Exam Centres & 47 Counties System */}
+      {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}
 
       {/* TAB: RPL Manager */}
       {activeTab === 'rpl-manager' && <RplAdminManager />}

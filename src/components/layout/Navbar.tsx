@@ -447,6 +447,21 @@ export const Navbar: React.FC = () => {
                     {isGuest && <Lock className="w-3 h-3 text-slate-400" />}
                   </button>
 
+                  {/* Global Examination Centres & 47 Counties Hub */}
+                  <button
+                    onClick={() => handlePortalAccess('exam-centres', ['admin', 'registrar', 'faculty', 'student'], 'Global Exam Centres Hub')}
+                    className="w-full text-left px-3.5 py-2 hover:bg-[#F0F4FF] text-xs font-bold text-[#002366] flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Globe2 className="w-4 h-4 text-[#C5A059]" />
+                      <div>
+                        <div>Global Exam Centres & 47 Counties</div>
+                        <div className="text-[10px] font-normal text-slate-500">Centres, County Reps & Allocations</div>
+                      </div>
+                    </div>
+                    {isGuest && <Lock className="w-3 h-3 text-slate-400" />}
+                  </button>
+
                   {/* Alumni Portal */}
                   <button
                     onClick={() => handlePortalAccess('alumni', ['alumni', 'student', 'faculty', 'admin'], 'Alumni Portal')}
