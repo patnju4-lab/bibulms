@@ -26,7 +26,7 @@ export type AccountType =
 
 export type VerificationStatus = 'verified' | 'pending_verification' | 'unverified';
 
-export type AcademicLevel = 'Certificate' | 'Diploma' | 'Bachelor' | 'Master' | 'Doctorate';
+export type AcademicLevel = 'Certificate' | 'Diploma' | 'Bachelor' | 'Master' | 'Doctorate' | 'Faculty / Postdoc' | 'All';
 
 export interface UserLoginRecord {
   id: string;
@@ -352,18 +352,137 @@ export interface Certificate {
   registrarName: string;
 }
 
+export type LibraryResourceType = 
+  | 'Exegetical Commentary'
+  | 'Systematic Treatise'
+  | 'Greek & Hebrew Lexicon'
+  | 'Grammar & Syntax Manual'
+  | 'Pastoral Protocol'
+  | 'Academic Journal Article'
+  | 'Theses & Dissertations'
+  | 'Faculty Publication'
+  | 'Historical Patristic Text'
+  | 'Audio Lecture'
+  | 'Video Seminar'
+  | 'E-Book / Monograph';
+
+export type LibraryCollectionCategory =
+  | 'All'
+  | 'Bible Studies'
+  | 'Exegetical Commentaries'
+  | 'Greek & Hebrew Research'
+  | 'Religion & Church History'
+  | 'Pastoral Ministry'
+  | 'Pastoral Protocols'
+  | 'Academic Research & Theses';
+
 export interface LibraryResource {
   id: string;
   title: string;
   author: string;
-  category: 'Bible' | 'Theology' | 'Biblical Studies' | 'Church History' | 'Missions' | 'Leadership' | 'Christian Counseling' | 'Christian Education' | 'Research';
+  publisher?: string;
+  category: 'Bible' | 'Theology' | 'Biblical Studies' | 'Church History' | 'Missions' | 'Leadership' | 'Christian Counseling' | 'Christian Education' | 'Research' | 'Pastoral Protocols' | 'Biblical Languages';
+  collectionCategory?: LibraryCollectionCategory;
+  resourceType?: LibraryResourceType;
   format: 'PDF' | 'Book Excerpt' | 'Audio Lecture' | 'Video Lecture' | 'Journal';
   pagesOrDuration: string;
   year: number;
   description: string;
+  abstract?: string;
   downloadUrl?: string;
   coverColor: string;
   isPopular?: boolean;
+  isFeatured?: boolean;
+  isRecommended?: boolean;
+  academicLevel?: AcademicLevel;
+  language?: string;
+  scriptureReferences?: string[];
+  keywords?: string[];
+  isbnOrDoi?: string;
+  peerReviewed?: boolean;
+  licenseType?: 'Public Domain' | 'Open Access' | 'BIBU Institutional License' | 'Creative Commons' | 'Authorized Academic Use';
+  assignedCourseCodes?: string[];
+  fullTextContent?: string;
+  tableOfContents?: { title: string; page: number }[];
+  citationApa?: string;
+  citationMla?: string;
+  citationChicago?: string;
+  citationHarvard?: string;
+}
+
+export interface PastoralProtocol {
+  id: string;
+  title: string;
+  code: string;
+  category: 'Pastoral Care' | 'Sacraments & Ordinances' | 'Safeguarding & Protection' | 'Counseling & Mental Health' | 'Leadership & Discipline' | 'Crisis & Chaplaincy';
+  targetAudience: string;
+  version: string;
+  lastReviewed: string;
+  authoritativeBody: string;
+  purpose: string;
+  scope: string;
+  theologicalFoundation: string;
+  scripturePassages: string[];
+  keyDefinitions: { term: string; definition: string }[];
+  keyResponsibilities: { role: string; responsibility: string }[];
+  stepByStepProcedure: {
+    stepNumber: number;
+    title: string;
+    description: string;
+    criticalNotes?: string;
+  }[];
+  ethicalConsiderations: string[];
+  safeguardingNotes: string;
+  documentationRequirements: string[];
+  mandatoryReferralThresholds: string[];
+  downloadFileName?: string;
+}
+
+export interface BiblicalWordEntry {
+  id: string;
+  strongsNumber: string; // e.g. G26, H7307
+  originalWord: string; // Greek / Hebrew font
+  transliteration: string; // e.g. agape, ruach
+  language: 'Greek' | 'Hebrew' | 'Aramaic';
+  partOfSpeech: string;
+  pronunciation: string;
+  rootWord?: string;
+  shortDefinition: string;
+  theologicalSignificance: string;
+  occurrenceCount: number;
+  testament: 'Old Testament' | 'New Testament';
+  keyPassages: { verse: string; excerpt: string; context: string }[];
+  semanticNuances: string[];
+  relatedStrongs: string[];
+  scholarlyNotes: string;
+}
+
+export interface FacultyReadingAssignment {
+  id: string;
+  courseId: string;
+  courseCode: string;
+  courseTitle: string;
+  instructorName: string;
+  resourceId: string;
+  resourceTitle: string;
+  resourceAuthor: string;
+  requiredPages: string;
+  dueDate: string;
+  instructions: string;
+  isRequired: boolean;
+  totalEnrolledStudents: number;
+  completedStudentsCount: number;
+}
+
+export interface StudentLibraryAnnotation {
+  id: string;
+  resourceId: string;
+  studentId: string;
+  pageNumber: number;
+  selectedText: string;
+  noteText: string;
+  color: 'yellow' | 'green' | 'blue' | 'purple' | 'amber';
+  createdAt: string;
 }
 
 export interface SupportTicket {
