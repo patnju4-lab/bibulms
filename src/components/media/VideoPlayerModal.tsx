@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { MediaVideo } from '../../types/media';
+import { VideoShareModal } from './VideoShareModal';
+import { HermeneuticsStoryboardModal } from './HermeneuticsStoryboardModal';
+import { HERMENEUTICS_STORYBOARD_SCENES } from '../../data/storyboardData';
 import {
   X,
   Play,
@@ -17,7 +20,10 @@ import {
   Sparkles,
   ExternalLink,
   CheckCircle2,
-  GraduationCap
+  GraduationCap,
+  Film,
+  Layers,
+  ArrowRight
 } from 'lucide-react';
 
 interface VideoPlayerModalProps {
@@ -37,8 +43,11 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
     recordVideoView
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'transcript' | 'related'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notes' | 'transcript' | 'storyboard' | 'related'>('overview');
   const [copiedLink, setCopiedLink] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isStoryboardModalOpen, setIsStoryboardModalOpen] = useState(false);
+  const [storyboardSceneIndex, setStoryboardSceneIndex] = useState(0);
 
   if (!video) return null;
 
@@ -50,9 +59,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
   const isFavorite = userProgress?.isFavorite || false;
 
   const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2500);
+    setIsShareModalOpen(true);
   };
 
   const relatedVideos = mediaVideos
@@ -222,6 +229,20 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
               Theological Summary
             </button>
             <button
+              onClick={() => setActiveTab('storyboard')}
+              className={`pb-2 px-3 border-b-2 transition-colors flex items-center gap-1.5 ${
+                activeTab === 'storyboard'
+                  ? 'border-[#C5A059] text-[#C5A059]'
+                  : 'border-transparent text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span>Storyboard & Script</span>
+              <span className="text-[10px] bg-[#C5A059]/20 text-[#C5A059] px-1.5 py-0.2 rounded font-bold">
+                9 Scenes
+              </span>
+            </button>
+            <button
               onClick={() => setActiveTab('related')}
               className={`pb-2 px-3 border-b-2 transition-colors ${
                 activeTab === 'related'
@@ -326,6 +347,74 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
             </div>
           )}
 
+          {activeTab === 'storyboard' && (
+            <div className="space-y-4">
+              <div className="p-4 bg-gradient-to-r from-[#001744] to-[#0A1A44] rounded-xl border border-[#C5A059]/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded bg-[#C5A059] text-[#002366] text-[10px] font-black uppercase tracking-wider">
+                      BIBU TV Studio
+                    </span>
+                    <span className="text-xs text-slate-300 font-medium">
+                      10:00 Video Storyboard & Teleprompter Script
+                    </span>
+                  </div>
+                  <h4 className="text-sm font-bold text-white">
+                    Foundations of Biblical Hermeneutics: The Historical-Grammatical Method
+                  </h4>
+                  <p className="text-xs text-slate-300">
+                    Includes word-for-word audio narration, on-screen graphics, the 7-step method flowchart, and Philippians 4:13 case study.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setStoryboardSceneIndex(0);
+                    setIsStoryboardModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md hover:scale-105 shrink-0 flex items-center justify-center gap-2"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Launch Studio Player</span>
+                </button>
+              </div>
+
+              {/* Quick Scene Selector Grid */}
+              <div className="space-y-2">
+                <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                  9-Scene Sequence:
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {HERMENEUTICS_STORYBOARD_SCENES.map((scene, idx) => (
+                    <div
+                      key={scene.id}
+                      onClick={() => {
+                        setStoryboardSceneIndex(idx);
+                        setIsStoryboardModalOpen(true);
+                      }}
+                      className="p-3 bg-slate-900/90 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-[#C5A059]/50 transition-all cursor-pointer group space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="font-bold text-white group-hover:text-[#C5A059] transition-colors">
+                          Scene {scene.sceneNumber}
+                        </span>
+                        <span className="font-mono text-[#C5A059] text-[10px]">
+                          {scene.timeRange}
+                        </span>
+                      </div>
+                      <div className="text-xs font-semibold text-slate-200 truncate">
+                        {scene.title}
+                      </div>
+                      <div className="text-[10px] text-slate-400 line-clamp-1">
+                        {scene.visuals}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'related' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {relatedVideos.map((item) => (
@@ -361,6 +450,20 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
           )}
         </div>
       </div>
+
+      {/* Social Sharing Modal */}
+      <VideoShareModal
+        video={video}
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+      />
+
+      {/* Hermeneutics Storyboard Modal */}
+      <HermeneuticsStoryboardModal
+        isOpen={isStoryboardModalOpen}
+        onClose={() => setIsStoryboardModalOpen(false)}
+        initialSceneIndex={storyboardSceneIndex}
+      />
     </div>
   );
 };

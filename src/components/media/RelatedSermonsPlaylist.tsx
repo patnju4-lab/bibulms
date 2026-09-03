@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { MediaVideo } from '../../types/media';
 import defaultPlaylistJson from '../../data/relatedSermonsPlaylist.json';
+import { VideoShareModal } from './VideoShareModal';
 import {
   Play,
   ListVideo,
@@ -16,7 +17,8 @@ import {
   Sparkles,
   ChevronRight,
   Database,
-  CheckCircle2
+  CheckCircle2,
+  Share2
 } from 'lucide-react';
 
 export interface RelatedSermonsPlaylistData {
@@ -55,6 +57,7 @@ export interface RelatedSermonsPlaylistData {
 interface RelatedSermonsPlaylistProps {
   activeVideoId: string;
   onSelectVideo: (video: MediaVideo) => void;
+  onShareVideo?: (video: MediaVideo) => void;
   viewMode?: 'sidebar' | 'grid';
   onToggleViewMode?: (mode: 'sidebar' | 'grid') => void;
   className?: string;
@@ -63,6 +66,7 @@ interface RelatedSermonsPlaylistProps {
 export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
   activeVideoId,
   onSelectVideo,
+  onShareVideo,
   viewMode = 'sidebar',
   onToggleViewMode,
   className = ''
@@ -74,6 +78,43 @@ export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dataSource, setDataSource] = useState<'fetch' | 'bundled'>('bundled');
   const [lastFetchedAt, setLastFetchedAt] = useState<string>('Just now');
+  const [shareModalVideo, setShareModalVideo] = useState<MediaVideo | null>(null);
+
+  const toMediaVideo = (video: RelatedSermonsPlaylistData['videos'][0]): MediaVideo => ({
+    id: video.id,
+    title: video.title,
+    subtitle: video.subtitle,
+    description: video.description,
+    youtubeVideoId: video.youtubeVideoId,
+    youtubeUrl: video.youtubeUrl || `https://www.youtube.com/watch?v=${video.youtubeVideoId}${video.startTimeSeconds ? `&t=${video.startTimeSeconds}s` : ''}`,
+    startTimeSeconds: video.startTimeSeconds,
+    category: video.category,
+    thumbnail: video.thumbnail,
+    presenter: video.presenter,
+    presenterTitle: video.presenterTitle,
+    presenterPhoto: video.presenterPhoto,
+    speakerName: video.presenter,
+    speakerTitle: video.presenterTitle,
+    duration: video.duration,
+    durationSeconds: video.durationSeconds,
+    publishedDate: video.publishedDate,
+    viewsCount: video.viewsCount,
+    likesCount: video.likesCount,
+    bibleReferences: video.bibleReferences,
+    scriptureReference: video.scriptureReference,
+    tags: video.tags,
+    featured: true
+  });
+
+  const handleShareVideoClick = (video: RelatedSermonsPlaylistData['videos'][0], e: React.MouseEvent) => {
+    e.stopPropagation();
+    const mediaVid = toMediaVideo(video);
+    if (onShareVideo) {
+      onShareVideo(mediaVid);
+    } else {
+      setShareModalVideo(mediaVid);
+    }
+  };
 
   // Fetch playlist from mocked JSON data structure
   const fetchPlaylistFromMockJson = async () => {
@@ -316,23 +357,35 @@ export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
 
                   {/* Sermon Info */}
                   <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-1.5">
-                      {isCurrentlyPlaying ? (
-                        <span className="bg-[#C5A059] text-[#002366] text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded flex items-center gap-1 animate-pulse">
-                          <Sparkles className="w-2.5 h-2.5" />
-                          <span>Now Playing</span>
-                        </span>
-                      ) : (
-                        <span className="bg-slate-800 text-slate-300 text-[9px] font-medium px-1.5 py-0.2 rounded truncate max-w-[120px]">
-                          {video.category}
-                        </span>
-                      )}
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 truncate">
+                        {isCurrentlyPlaying ? (
+                          <span className="bg-[#C5A059] text-[#002366] text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded flex items-center gap-1 animate-pulse">
+                            <Sparkles className="w-2.5 h-2.5" />
+                            <span>Now Playing</span>
+                          </span>
+                        ) : (
+                          <span className="bg-slate-800 text-slate-300 text-[9px] font-medium px-1.5 py-0.2 rounded truncate max-w-[110px]">
+                            {video.category}
+                          </span>
+                        )}
 
-                      {video.startTimeSeconds && (
-                        <span className="text-[9px] font-mono text-amber-400">
-                          @ {Math.floor(video.startTimeSeconds / 60)}:{(video.startTimeSeconds % 60).toString().padStart(2, '0')}
-                        </span>
-                      )}
+                        {video.startTimeSeconds && (
+                          <span className="text-[9px] font-mono text-amber-400 shrink-0">
+                            @ {Math.floor(video.startTimeSeconds / 60)}:{(video.startTimeSeconds % 60).toString().padStart(2, '0')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Share Button on Sidebar Card */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleShareVideoClick(video, e)}
+                        title="Share sermon video"
+                        className="p-1 rounded-md text-slate-400 hover:text-[#C5A059] hover:bg-slate-800 transition-colors shrink-0"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
 
                     <h4 className={`text-xs font-bold line-clamp-2 leading-snug group-hover:text-[#C5A059] transition-colors ${
@@ -417,6 +470,16 @@ export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
                         {video.duration}
                       </span>
 
+                      {/* Share button on thumbnail hover */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleShareVideoClick(video, e)}
+                        className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-black/75 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow hover:scale-110 z-10"
+                        title="Share this sermon video"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
                       {isCurrentlyPlaying && (
                         <span className="absolute top-1.5 left-1.5 bg-[#C5A059] text-[#002366] text-[9px] font-black uppercase px-2 py-0.5 rounded shadow animate-pulse">
                           Now Playing
@@ -457,10 +520,21 @@ export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
 
                       <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
                         <span>{video.viewsCount.toLocaleString()} views</span>
-                        <span className="text-[#C5A059] font-bold group-hover:underline flex items-center gap-0.5">
-                          <span>Play</span>
-                          <ChevronRight className="w-3 h-3" />
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => handleShareVideoClick(video, e)}
+                            className="px-2 py-1 rounded bg-slate-800/80 hover:bg-slate-700 text-[#C5A059] hover:text-white font-bold flex items-center gap-1 transition-colors"
+                            title="Share sermon"
+                          >
+                            <Share2 className="w-3 h-3 text-rose-400" />
+                            <span>Share</span>
+                          </button>
+                          <span className="text-[#C5A059] font-bold group-hover:underline flex items-center gap-0.5">
+                            <span>Play</span>
+                            <ChevronRight className="w-3 h-3" />
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -499,6 +573,13 @@ export const RelatedSermonsPlaylist: React.FC<RelatedSermonsPlaylistProps> = ({
           <ExternalLink className="w-3 h-3" />
         </a>
       </div>
+
+      {/* Share Modal */}
+      <VideoShareModal
+        video={shareModalVideo}
+        isOpen={!!shareModalVideo}
+        onClose={() => setShareModalVideo(null)}
+      />
     </div>
   );
 };

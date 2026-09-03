@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { VideoPlayerModal } from './VideoPlayerModal';
+import { VideoShareModal } from './VideoShareModal';
+import { HermeneuticsStoryboardModal } from './HermeneuticsStoryboardModal';
+import { HERMENEUTICS_STORYBOARD_SCENES } from '../../data/storyboardData';
 import { RelatedSermonsPlaylist } from './RelatedSermonsPlaylist';
 import { MediaVideo } from '../../types/media';
 import {
@@ -31,7 +34,9 @@ import {
   Check,
   ListVideo,
   LayoutGrid,
-  List
+  List,
+  Film,
+  ArrowRight
 } from 'lucide-react';
 
 export const BreakthroughTVPage: React.FC = () => {
@@ -46,6 +51,9 @@ export const BreakthroughTVPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedVideoModal, setSelectedVideoModal] = useState<MediaVideo | null>(null);
+  const [shareVideoModal, setShareVideoModal] = useState<MediaVideo | null>(null);
+  const [isStoryboardModalOpen, setIsStoryboardModalOpen] = useState(false);
+  const [storyboardInitialScene, setStoryboardInitialScene] = useState(0);
   const [copiedLink, setCopiedLink] = useState(false);
   const [playlistViewMode, setPlaylistViewMode] = useState<'sidebar' | 'grid'>('sidebar');
   const [isPlaylistVisible, setIsPlaylistVisible] = useState(true);
@@ -122,11 +130,14 @@ export const BreakthroughTVPage: React.FC = () => {
   }, [mediaVideos, searchQuery, selectedCategory]);
 
   const handleShare = () => {
-    if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(window.location.href);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
+    if (activeTheaterVideo) {
+      setShareVideoModal(activeTheaterVideo);
     }
+  };
+
+  const handleOpenShareModal = (video: MediaVideo, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setShareVideoModal(video);
   };
 
   const handleSelectVideo = (video: MediaVideo) => {
@@ -210,6 +221,20 @@ export const BreakthroughTVPage: React.FC = () => {
               >
                 <Layers className="w-3.5 h-3.5 text-blue-400" />
                 <span>Media Hub</span>
+              </button>
+              <button
+                onClick={() => {
+                  setStoryboardInitialScene(0);
+                  setIsStoryboardModalOpen(true);
+                }}
+                className="px-3 py-1.5 rounded-lg bg-[#001744]/90 border border-[#C5A059]/60 hover:bg-[#002366] text-[#C5A059] flex items-center gap-1.5 transition-all font-bold shadow-sm hover:scale-105"
+                title="Open the 10-Minute Biblical Hermeneutics Video Storyboard"
+              >
+                <Film className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Hermeneutics Storyboard</span>
+                <span className="text-[9px] bg-[#C5A059] text-[#002366] font-black px-1.5 py-0.2 rounded">
+                  NEW
+                </span>
               </button>
               <a
                 href="#live-stream-section"
@@ -522,6 +547,7 @@ export const BreakthroughTVPage: React.FC = () => {
                     <RelatedSermonsPlaylist
                       activeVideoId={activeTheaterVideo.youtubeVideoId || activeTheaterVideo.id}
                       onSelectVideo={handleSelectVideo}
+                      onShareVideo={handleOpenShareModal}
                       viewMode="sidebar"
                       onToggleViewMode={(mode) => setPlaylistViewMode(mode)}
                     />
@@ -643,6 +669,22 @@ export const BreakthroughTVPage: React.FC = () => {
                             <ExternalLink className="w-3.5 h-3.5 text-rose-200" />
                           </a>
 
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setStoryboardInitialScene(0);
+                              setIsStoryboardModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-[#001744] to-[#002366] hover:from-[#002366] hover:to-[#0A1A44] text-[#C5A059] border border-[#C5A059]/60 hover:border-[#C5A059] rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg hover:scale-105 group"
+                            title="Open the 10-Minute Biblical Hermeneutics scene-by-scene storyboard, script, and 7-step flowchart"
+                          >
+                            <Film className="w-4 h-4 text-[#C5A059] group-hover:scale-110 transition-transform" />
+                            <span>Scene-by-Scene Storyboard</span>
+                            <span className="px-1.5 py-0.5 rounded bg-[#C5A059] text-[#002366] text-[10px] font-black font-mono">
+                              10:00
+                            </span>
+                          </button>
+
                           {startSec && (
                             <span className="text-xs text-slate-400 hidden md:inline">
                               Starts playback at <strong>{Math.floor(startSec / 60)}:{(startSec % 60).toString().padStart(2, '0')}</strong> ({startSec}s)
@@ -667,6 +709,7 @@ export const BreakthroughTVPage: React.FC = () => {
                   <RelatedSermonsPlaylist
                     activeVideoId={activeTheaterVideo.youtubeVideoId || activeTheaterVideo.id}
                     onSelectVideo={handleSelectVideo}
+                    onShareVideo={handleOpenShareModal}
                     viewMode="grid"
                     onToggleViewMode={(mode) => setPlaylistViewMode(mode)}
                   />
@@ -675,6 +718,194 @@ export const BreakthroughTVPage: React.FC = () => {
             </section>
           );
         })()}
+
+        {/* ========================================================= */}
+        {/* SECTION 3.5: BIBU TV — SCENE-BY-SCENE VIDEO STORYBOARD   */}
+        {/* ========================================================= */}
+        <section id="bibu-storyboard-section" className="space-y-6">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#080E21] via-[#001744] to-[#0A1A44] border-2 border-[#C5A059]/40 p-6 sm:p-8 lg:p-10 shadow-2xl">
+            {/* Background Ambient Glow */}
+            <div className="absolute top-0 right-0 w-96 h-96 bg-[#C5A059]/10 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-1/3 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
+
+            <div className="relative z-10 space-y-6">
+              {/* Header Banner */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-800/80">
+                <div className="space-y-2.5 max-w-3xl">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="px-3 py-1 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/50 text-[#C5A059] font-black text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      <Film className="w-3.5 h-3.5" />
+                      <span>BIBU TV Production Storyboard</span>
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-blue-900/40 border border-blue-700/50 text-blue-300 text-xs font-semibold">
+                      10-Minute Masterclass (0:00–10:00)
+                    </span>
+                    <span className="px-2.5 py-0.5 rounded-full bg-emerald-900/40 border border-emerald-700/50 text-emerald-300 text-xs font-semibold">
+                      Word-for-Word Narration Script
+                    </span>
+                  </div>
+
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-display font-black text-white tracking-tight leading-tight">
+                    Foundations of Biblical Hermeneutics
+                  </h2>
+
+                  <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
+                    The complete scene-by-scene broadcast storyboard and teleprompter script for BIBU TV's flagship 10-minute lecture on the <strong className="text-[#C5A059]">Historical-Grammatical Method</strong>, featuring full on-screen visual directions, the 7-step method flowchart, lower-thirds specifications, and the Philippians 4:13 case study.
+                  </p>
+                </div>
+
+                {/* Main Action Buttons */}
+                <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
+                  <button
+                    onClick={() => {
+                      setStoryboardInitialScene(0);
+                      setIsStoryboardModalOpen(true);
+                    }}
+                    className="px-6 py-3.5 rounded-xl bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black text-sm uppercase tracking-wider transition-all shadow-xl hover:scale-105 flex items-center justify-center gap-2"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    <span>Launch Interactive Studio</span>
+                  </button>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        setStoryboardInitialScene(5); // Step 6: 7-step flowchart
+                        setIsStoryboardModalOpen(true);
+                      }}
+                      className="px-3 py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <Layers className="w-3.5 h-3.5 text-[#C5A059]" />
+                      <span>7-Step Method</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setStoryboardInitialScene(6); // Step 7: Phil 4:13
+                        setIsStoryboardModalOpen(true);
+                      }}
+                      className="px-3 py-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-xs font-bold text-slate-200 flex items-center justify-center gap-1.5 transition-colors"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+                      <span>Phil 4:13 Study</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 9-Scene Timeline Grid */}
+              <div>
+                <div className="flex items-center justify-between pb-3">
+                  <h3 className="text-sm font-black uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[#C5A059]" />
+                    <span>Complete 9-Scene Master Timeline</span>
+                  </h3>
+                  <span className="text-xs text-slate-400">
+                    Click any scene to inspect visuals, script & audio
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {HERMENEUTICS_STORYBOARD_SCENES.map((scene, idx) => (
+                    <div
+                      key={scene.id}
+                      onClick={() => {
+                        setStoryboardInitialScene(idx);
+                        setIsStoryboardModalOpen(true);
+                      }}
+                      className="group p-4 rounded-xl bg-slate-900/70 hover:bg-slate-800/90 border border-slate-800 hover:border-[#C5A059]/60 transition-all cursor-pointer shadow-md hover:shadow-xl hover:-translate-y-0.5 space-y-2.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-[#002366] text-[#C5A059] border border-[#C5A059]/40 flex items-center justify-center text-xs font-black">
+                            {scene.sceneNumber}
+                          </span>
+                          <span className="font-bold text-white text-sm group-hover:text-[#C5A059] transition-colors">
+                            {scene.title}
+                          </span>
+                        </div>
+                        <span className="px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-[11px] font-mono text-[#C5A059]">
+                          {scene.timeRange}
+                        </span>
+                      </div>
+
+                      <div className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                        <strong className="text-slate-300">Visuals: </strong>
+                        {scene.visuals}
+                      </div>
+
+                      {scene.onScreenText.length > 0 && (
+                        <div className="p-2 rounded-lg bg-black/40 border border-slate-800/60 text-[11px] font-semibold text-amber-200/90 flex items-center gap-1.5">
+                          <Sparkles className="w-3 h-3 text-[#C5A059] shrink-0" />
+                          <span className="truncate">{scene.onScreenText[0]}</span>
+                        </div>
+                      )}
+
+                      <div className="pt-1 flex items-center justify-between text-[11px] text-slate-400">
+                        <span>Lecturer: {scene.lecturerVisibilityPercent}% visible</span>
+                        <span className="text-[#C5A059] font-bold group-hover:translate-x-1 transition-transform inline-flex items-center gap-1">
+                          Open Scene <ArrowRight className="w-3 h-3" />
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Bottom Quick-Reference Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-[#C5A059] font-bold text-xs uppercase tracking-wider">
+                    <Shield className="w-4 h-4" />
+                    <span>Production Directives</span>
+                  </div>
+                  <ul className="text-xs text-slate-300 space-y-1.5 list-disc list-inside leading-relaxed">
+                    <li>Lecturer on camera <strong>50–60%</strong> of lecture.</li>
+                    <li>Lower-third: <span className="text-[#C5A059] font-mono">BIBU THEOLOGY LECTURE — Foundations of Biblical Hermeneutics</span></li>
+                    <li>Professional theological lecture aesthetic.</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-[#C5A059] font-bold text-xs uppercase tracking-wider">
+                    <Layers className="w-4 h-4" />
+                    <span>7-Step Method Flowchart</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Observe text → Historical context → Literary genre → Word studies → Cross-references → Theological principle → Modern application.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setStoryboardInitialScene(5);
+                      setIsStoryboardModalOpen(true);
+                    }}
+                    className="text-xs text-[#C5A059] hover:underline font-bold inline-flex items-center gap-1"
+                  >
+                    Examine full step-by-step flowchart →
+                  </button>
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-2">
+                  <div className="flex items-center gap-2 text-[#C5A059] font-bold text-xs uppercase tracking-wider">
+                    <BookOpen className="w-4 h-4" />
+                    <span>Philippians 4:13 Context Chain</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Surrounding context (vv. 10–14): Roman prison cell, Christian contentment in poverty & abundance — not athletic/financial success.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setStoryboardInitialScene(6);
+                      setIsStoryboardModalOpen(true);
+                    }}
+                    className="text-xs text-[#C5A059] hover:underline font-bold inline-flex items-center gap-1"
+                  >
+                    Open 5-stage context diagram →
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ========================================================= */}
         {/* SECTION 4: YOUTUBE LIVE (WITH ACTIVE OR OFFLINE STATE)     */}
@@ -1017,6 +1248,16 @@ export const BreakthroughTVPage: React.FC = () => {
                         {video.duration}
                       </span>
 
+                      {/* Share Button on Thumbnail Hover */}
+                      <button
+                        type="button"
+                        onClick={(e) => handleOpenShareModal(video, e)}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/80 hover:bg-rose-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:scale-110 z-10"
+                        title="Share this sermon video"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+
                       {/* Category Tag */}
                       <span className="absolute top-2 left-2 bg-[#002366]/90 text-[#C5A059] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-[#C5A059]/30">
                         {video.category}
@@ -1043,14 +1284,25 @@ export const BreakthroughTVPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center justify-between text-[10px] pt-1">
-                          <button
-                            onClick={(e) => handleOpenModal(video, e)}
-                            className="text-[#C5A059] hover:underline font-bold flex items-center gap-1"
-                          >
-                            <span>Open Details</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </button>
-                          <span className="text-slate-500">
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={(e) => handleOpenShareModal(video, e)}
+                              className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-[#C5A059] hover:text-white border border-slate-700/80 hover:border-[#C5A059]/60 font-bold flex items-center gap-1.5 transition-all shadow-sm group/btn"
+                              title="Share sermon video"
+                            >
+                              <Share2 className="w-3 h-3 text-rose-500 group-hover/btn:scale-110 transition-transform" />
+                              <span>Share</span>
+                            </button>
+                            <button
+                              onClick={(e) => handleOpenModal(video, e)}
+                              className="text-slate-400 hover:text-white font-medium flex items-center gap-1 transition-colors"
+                            >
+                              <span>Open Details</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                          <span className="text-slate-500 font-mono">
                             {new Date(video.publishedAt || video.publishedDate || '2026-08-01').toLocaleDateString()}
                           </span>
                         </div>
@@ -1130,6 +1382,20 @@ export const BreakthroughTVPage: React.FC = () => {
           onClose={() => setSelectedVideoModal(null)}
         />
       )}
+
+      {/* Video Share Modal when user clicks "Share" on any video card */}
+      <VideoShareModal
+        video={shareVideoModal}
+        isOpen={!!shareVideoModal}
+        onClose={() => setShareVideoModal(null)}
+      />
+
+      {/* BIBU TV — Scene-by-Scene Video Storyboard Modal */}
+      <HermeneuticsStoryboardModal
+        isOpen={isStoryboardModalOpen}
+        onClose={() => setIsStoryboardModalOpen(false)}
+        initialSceneIndex={storyboardInitialScene}
+      />
     </div>
   );
 };
