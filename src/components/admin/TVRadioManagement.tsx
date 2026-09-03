@@ -59,15 +59,18 @@ export const TVRadioManagement: React.FC = () => {
     title: '',
     description: '',
     youtubeVideoId: '',
-    thumbnailUrl: 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800',
+    youtubeUrl: '',
+    startTimeSeconds: undefined,
+    thumbnailUrl: '',
     duration: '45:00',
-    category: 'Theology & Doctrine',
+    publishedDate: new Date().toISOString().split('T')[0],
+    category: 'Bible Teaching',
     speakerName: '',
-    speakerTitle: 'Professor of Biblical Studies',
+    speakerTitle: 'BIBU Faculty Lecturer',
     scriptureReference: '',
     isFeatured: false,
     isLive: false,
-    tags: ['theology', 'bibu']
+    tags: ['BIBU TV', 'Bible Teaching']
   });
 
   // Radio Stream Form state
@@ -78,18 +81,57 @@ export const TVRadioManagement: React.FC = () => {
   const [ytForm, setYtForm] = useState(youtubeSettings);
   const [ytSaveSuccess, setYtSaveSuccess] = useState(false);
 
-  // Categories
+  // Helper to extract video ID and timestamp from YouTube URL
+  const parseYouTubeUrl = (url: string) => {
+    let videoId = url.trim();
+    let startTime: number | undefined = undefined;
+
+    try {
+      if (url.includes('youtu.be/')) {
+        const parts = url.split('youtu.be/')[1].split('?');
+        videoId = parts[0];
+        if (parts[1]) {
+          const params = new URLSearchParams(parts[1]);
+          const t = params.get('t');
+          if (t) startTime = parseInt(t.replace('s', ''), 10);
+        }
+      } else if (url.includes('youtube.com/')) {
+        if (url.includes('/embed/')) {
+          videoId = url.split('/embed/')[1].split('?')[0];
+        } else if (url.includes('v=')) {
+          const params = new URLSearchParams(url.split('?')[1]);
+          const v = params.get('v');
+          if (v) videoId = v;
+          const t = params.get('t');
+          if (t) startTime = parseInt(t.replace('s', ''), 10);
+        }
+      }
+    } catch {
+      // fallback to input
+    }
+    return { videoId, startTime };
+  };
+
+  // Categories as strictly mandated
   const categories: MediaCategory[] = [
+    'Live Broadcasts',
+    'Sermons',
+    'Bible Teaching',
+    'Conferences',
+    'Graduation',
+    'Interviews',
+    'Ministry Training',
+    'BIBU Chapel Services',
+    'Theology Classes',
+    'Christian Leadership',
+    'University News',
+    'Special Events',
     'Theology & Doctrine',
     'Ministry & Leadership',
     'Sermons & Teachings',
     'Biblical Studies',
     'Prophetic & Prayer',
-    'Global Missions',
-    'Campus & Convocation',
-    'Youth & Family',
-    'Documentaries',
-    'Academic Lectures'
+    'Global Missions'
   ];
 
   // Video Save Handler
@@ -97,25 +139,47 @@ export const TVRadioManagement: React.FC = () => {
     e.preventDefault();
     if (!videoForm.title || !videoForm.youtubeVideoId) return;
 
+    const finalThumbnail =
+      videoForm.thumbnailUrl ||
+      `https://img.youtube.com/vi/${videoForm.youtubeVideoId}/hqdefault.jpg`;
+
+    const finalUrl =
+      videoForm.youtubeUrl ||
+      (videoForm.startTimeSeconds
+        ? `https://www.youtube.com/watch?v=${videoForm.youtubeVideoId}&t=${videoForm.startTimeSeconds}s`
+        : `https://www.youtube.com/watch?v=${videoForm.youtubeVideoId}`);
+
     if (editingVideoId) {
-      updateMediaVideo(editingVideoId, videoForm);
+      updateMediaVideo(editingVideoId, {
+        ...videoForm,
+        thumbnailUrl: finalThumbnail,
+        thumbnail: finalThumbnail,
+        youtubeUrl: finalUrl
+      });
     } else {
       const newVideo: MediaVideo = {
         id: `vid-${Date.now()}`,
         title: videoForm.title || '',
         description: videoForm.description || '',
         youtubeVideoId: videoForm.youtubeVideoId || '',
-        thumbnailUrl: videoForm.thumbnailUrl || 'https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800',
+        youtubeUrl: finalUrl,
+        startTimeSeconds: videoForm.startTimeSeconds,
+        thumbnailUrl: finalThumbnail,
+        thumbnail: finalThumbnail,
         duration: videoForm.duration || '45:00',
-        publishedDate: new Date().toISOString().split('T')[0],
-        viewsCount: 150,
-        category: videoForm.category || 'Theology & Doctrine',
+        publishedDate: videoForm.publishedDate || new Date().toISOString().split('T')[0],
+        publishedAt: videoForm.publishedDate || new Date().toISOString().split('T')[0],
+        viewsCount: 120,
+        category: videoForm.category || 'Bible Teaching',
         speakerName: videoForm.speakerName || 'BIBU Faculty',
+        presenter: videoForm.speakerName || 'BIBU Faculty',
         speakerTitle: videoForm.speakerTitle,
+        presenterTitle: videoForm.speakerTitle,
         scriptureReference: videoForm.scriptureReference,
         isFeatured: videoForm.isFeatured || false,
+        featured: videoForm.isFeatured || false,
         isLive: videoForm.isLive || false,
-        tags: videoForm.tags || ['theology']
+        tags: videoForm.tags || ['BIBU TV']
       };
       addMediaVideo(newVideo);
     }
@@ -565,8 +629,31 @@ export const TVRadioManagement: React.FC = () => {
             <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
               <h4 className="font-bold text-[#002366] uppercase text-[11px] tracking-wider flex items-center gap-2">
                 <Video className="w-4 h-4 text-[#C5A059]" />
-                <span>2. Featured Headline Video</span>
+                <span>2. Featured Headline Video (BIBU TV Top Player)</span>
               </h4>
+
+              {/* URL with smart parser */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  Featured YouTube URL:
+                </label>
+                <input
+                  type="url"
+                  placeholder="e.g. https://www.youtube.com/watch?v=dMxf_k7q1M4&t=1642s"
+                  value={ytForm.featuredVideoUrl || ''}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    const { videoId, startTime } = parseYouTubeUrl(url);
+                    setYtForm({
+                      ...ytForm,
+                      featuredVideoUrl: url,
+                      featuredVideoId: videoId || ytForm.featuredVideoId,
+                      featuredVideoStartTime: startTime !== undefined ? startTime : ytForm.featuredVideoStartTime
+                    });
+                  }}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                />
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -575,14 +662,37 @@ export const TVRadioManagement: React.FC = () => {
                   </label>
                   <input
                     type="text"
-                    value={ytForm.featuredVideoId || 'fJ9rUzIMcZQ'}
+                    value={ytForm.featuredVideoId || 'dMxf_k7q1M4'}
                     onChange={(e) => setYtForm({ ...ytForm, featuredVideoId: e.target.value })}
-                    placeholder="e.g. fJ9rUzIMcZQ"
+                    placeholder="e.g. dMxf_k7q1M4"
                     className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
                   />
                 </div>
 
-                <div className="sm:col-span-2">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Start Timestamp (seconds):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="e.g. 1642 (for 27:22)"
+                      value={ytForm.featuredVideoStartTime !== undefined ? ytForm.featuredVideoStartTime : ''}
+                      onChange={(e) => setYtForm({
+                        ...ytForm,
+                        featuredVideoStartTime: e.target.value ? parseInt(e.target.value, 10) : undefined
+                      })}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                    />
+                    {ytForm.featuredVideoStartTime ? (
+                      <span className="text-[11px] font-mono text-[#002366] font-bold bg-blue-100 px-2 py-1.5 rounded-lg whitespace-nowrap">
+                        {Math.floor(ytForm.featuredVideoStartTime / 60)}:{(ytForm.featuredVideoStartTime % 60).toString().padStart(2, '0')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">
                     Featured Video Title:
                   </label>
@@ -840,6 +950,38 @@ export const TVRadioManagement: React.FC = () => {
             </div>
 
             <form onSubmit={handleSaveVideo} className="space-y-4 text-xs">
+              {/* YouTube URL input with auto-detection */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  YouTube Video URL:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    placeholder="e.g., https://www.youtube.com/watch?v=dMxf_k7q1M4&t=1642s"
+                    value={videoForm.youtubeUrl || ''}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      const { videoId, startTime } = parseYouTubeUrl(url);
+                      setVideoForm({
+                        ...videoForm,
+                        youtubeUrl: url,
+                        youtubeVideoId: videoId || videoForm.youtubeVideoId,
+                        startTimeSeconds: startTime !== undefined ? startTime : videoForm.startTimeSeconds,
+                        thumbnailUrl: videoId
+                          ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                          : videoForm.thumbnailUrl
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Paste any YouTube URL (watch, share, embed) to auto-extract the Video ID, start timestamp, and thumbnail.
+                </p>
+              </div>
+
+              {/* Video Title */}
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">
                   Video Title: *
@@ -847,12 +989,14 @@ export const TVRadioManagement: React.FC = () => {
                 <input
                   type="text"
                   required
-                  value={videoForm.title}
+                  placeholder="e.g., BIBU TV – Breakthrough International Bible University"
+                  value={videoForm.title || ''}
                   onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                 />
               </div>
 
+              {/* YouTube Video ID & Start Time */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">
@@ -861,21 +1005,18 @@ export const TVRadioManagement: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="e.g., dQw4w9WgXcQ"
-                    value={videoForm.youtubeVideoId}
+                    placeholder="e.g., dMxf_k7q1M4"
+                    value={videoForm.youtubeVideoId || ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      // Support both full URL and plain ID
-                      let cleanId = val;
-                      if (val.includes('v=')) {
-                        cleanId = val.split('v=')[1].split('&')[0];
-                      } else if (val.includes('youtu.be/')) {
-                        cleanId = val.split('youtu.be/')[1].split('?')[0];
-                      }
+                      const val = e.target.value.trim();
+                      const { videoId, startTime } = parseYouTubeUrl(val);
                       setVideoForm({
                         ...videoForm,
-                        youtubeVideoId: cleanId,
-                        thumbnailUrl: `https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&q=80&w=800`
+                        youtubeVideoId: videoId,
+                        startTimeSeconds: startTime !== undefined ? startTime : videoForm.startTimeSeconds,
+                        thumbnailUrl: videoId
+                          ? `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`
+                          : videoForm.thumbnailUrl
                       });
                     }}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
@@ -884,10 +1025,36 @@ export const TVRadioManagement: React.FC = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">
-                    Theological Category:
+                    Start Timestamp (Seconds):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder="e.g., 1642 (for 27:22)"
+                      value={videoForm.startTimeSeconds !== undefined ? videoForm.startTimeSeconds : ''}
+                      onChange={(e) => {
+                        const val = e.target.value ? parseInt(e.target.value, 10) : undefined;
+                        setVideoForm({ ...videoForm, startTimeSeconds: val });
+                      }}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                    />
+                    {videoForm.startTimeSeconds ? (
+                      <span className="text-[11px] font-mono text-[#002366] font-bold bg-blue-50 px-2 py-1.5 rounded-lg border border-blue-200 whitespace-nowrap">
+                        {Math.floor(videoForm.startTimeSeconds / 60)}:{(videoForm.startTimeSeconds % 60).toString().padStart(2, '0')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+
+              {/* Category & Publication Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Category: *
                   </label>
                   <select
-                    value={videoForm.category}
+                    value={videoForm.category || 'Bible Teaching'}
                     onChange={(e) => setVideoForm({ ...videoForm, category: e.target.value as MediaCategory })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                   >
@@ -896,16 +1063,58 @@ export const TVRadioManagement: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Publication Date:
+                  </label>
+                  <input
+                    type="date"
+                    value={videoForm.publishedDate || ''}
+                    onChange={(e) => setVideoForm({ ...videoForm, publishedDate: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
               </div>
 
+              {/* Thumbnail Image URL & Preview */}
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  Thumbnail Image URL:
+                </label>
+                <div className="flex gap-3 items-center">
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={videoForm.thumbnailUrl || ''}
+                    onChange={(e) => setVideoForm({ ...videoForm, thumbnailUrl: e.target.value })}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono text-xs focus:outline-none focus:border-[#002366]"
+                  />
+                  {videoForm.thumbnailUrl && (
+                    <div className="w-16 h-10 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-black">
+                      <img
+                        src={videoForm.thumbnailUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Speaker / Faculty & Scripture Focus */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">
-                    Speaker / Faculty Name:
+                    Speaker / Presenter:
                   </label>
                   <input
                     type="text"
-                    value={videoForm.speakerName}
+                    placeholder="e.g., Dr. Matthew Vance"
+                    value={videoForm.speakerName || ''}
                     onChange={(e) => setVideoForm({ ...videoForm, speakerName: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                   />
@@ -913,49 +1122,52 @@ export const TVRadioManagement: React.FC = () => {
 
                 <div>
                   <label className="block font-bold text-slate-700 uppercase mb-1">
-                    Scripture Focus:
+                    Duration:
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g., Ephesians 4:11-16"
-                    value={videoForm.scriptureReference}
-                    onChange={(e) => setVideoForm({ ...videoForm, scriptureReference: e.target.value })}
+                    placeholder="e.g., 48:20 or 1:15:00"
+                    value={videoForm.duration || ''}
+                    onChange={(e) => setVideoForm({ ...videoForm, duration: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                   />
                 </div>
               </div>
 
+              {/* Description */}
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">
-                  Description / Exegesis Overview:
+                  Description / Synopsis:
                 </label>
                 <textarea
                   rows={3}
-                  value={videoForm.description}
+                  placeholder="Watch sermons, teachings, ministry programs, conferences, interviews..."
+                  value={videoForm.description || ''}
                   onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                 />
               </div>
 
-              <div className="flex items-center gap-6 pt-2">
-                <label className="flex items-center gap-2 font-bold text-slate-700 cursor-pointer">
+              {/* Checkboxes: Featured Video Status & Live Broadcast */}
+              <div className="flex flex-wrap items-center gap-6 pt-2 bg-slate-50 p-3 rounded-xl border border-slate-200">
+                <label className="flex items-center gap-2 font-bold text-[#002366] cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={videoForm.isFeatured}
+                    checked={videoForm.isFeatured || false}
                     onChange={(e) => setVideoForm({ ...videoForm, isFeatured: e.target.checked })}
-                    className="rounded accent-[#002366]"
+                    className="rounded accent-[#002366] w-4 h-4"
                   />
-                  <span>Feature on Media Homepage</span>
+                  <span>Featured Video Status (Pin to Top Player)</span>
                 </label>
 
                 <label className="flex items-center gap-2 font-bold text-rose-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={videoForm.isLive}
+                    checked={videoForm.isLive || false}
                     onChange={(e) => setVideoForm({ ...videoForm, isLive: e.target.checked })}
-                    className="rounded accent-rose-600"
+                    className="rounded accent-rose-600 w-4 h-4"
                   />
-                  <span>Set as Active Live Broadcast</span>
+                  <span>Live Broadcast Status</span>
                 </label>
               </div>
 
@@ -969,9 +1181,10 @@ export const TVRadioManagement: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-[#002366] hover:bg-[#001A4D] text-white font-bold rounded-xl shadow"
+                  className="px-5 py-2 bg-[#002366] hover:bg-[#001A4D] text-white font-bold rounded-xl shadow flex items-center gap-2"
                 >
-                  {editingVideoId ? 'Save Changes' : 'Publish Broadcast'}
+                  <Save className="w-3.5 h-3.5" />
+                  <span>{editingVideoId ? 'Save Changes' : 'Publish Broadcast'}</span>
                 </button>
               </div>
             </form>

@@ -102,6 +102,7 @@ import {
 import {
   INITIAL_MEDIA_CHANNELS,
   INITIAL_YOUTUBE_SETTINGS,
+  FEATURED_BIBU_TV_VIDEO,
   INITIAL_RADIO_SETTINGS,
   INITIAL_RADIO_SCHEDULE,
   INITIAL_TV_PROGRAMS,
@@ -713,7 +714,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [mediaVideos, setMediaVideos] = useState<MediaVideo[]>(() => {
     const saved = localStorage.getItem('bibu_media_videos');
-    return saved ? JSON.parse(saved) : INITIAL_MEDIA_VIDEOS;
+    if (!saved) return INITIAL_MEDIA_VIDEOS;
+    try {
+      const parsed: MediaVideo[] = JSON.parse(saved);
+      const hasFeatured = parsed.some(v => v.youtubeVideoId === 'dMxf_k7q1M4');
+      if (!hasFeatured) {
+        return [FEATURED_BIBU_TV_VIDEO, ...parsed];
+      }
+      return parsed;
+    } catch {
+      return INITIAL_MEDIA_VIDEOS;
+    }
   });
 
   const [mediaPlaylists, setMediaPlaylists] = useState<MediaPlaylist[]>(() => {
@@ -738,7 +749,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [youtubeSettings, setYoutubeSettings] = useState<YouTubeSettings>(() => {
     const saved = localStorage.getItem('bibu_youtube_settings');
-    return saved ? JSON.parse(saved) : INITIAL_YOUTUBE_SETTINGS;
+    if (!saved) return INITIAL_YOUTUBE_SETTINGS;
+    try {
+      const parsed: YouTubeSettings = JSON.parse(saved);
+      return {
+        ...INITIAL_YOUTUBE_SETTINGS,
+        ...parsed,
+        featuredVideoId: (!parsed.featuredVideoId || parsed.featuredVideoId === 'fJ9rUzIMcZQ') ? 'dMxf_k7q1M4' : parsed.featuredVideoId,
+        featuredVideoStartTime: parsed.featuredVideoStartTime || 1642,
+        featuredVideoUrl: parsed.featuredVideoUrl || 'https://www.youtube.com/watch?v=dMxf_k7q1M4&t=1642s',
+        featuredVideoTitle: parsed.featuredVideoTitle || 'BIBU TV – Breakthrough International Bible University',
+        featuredVideoDescription: parsed.featuredVideoDescription || 'Watch sermons, teachings, ministry programs, conferences, interviews and other Christian educational content from Breakthrough International Bible University.'
+      };
+    } catch {
+      return INITIAL_YOUTUBE_SETTINGS;
+    }
   });
 
   const [mediaPresenters, setMediaPresenters] = useState<MediaPresenter[]>(() => {

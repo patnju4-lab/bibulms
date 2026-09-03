@@ -510,18 +510,18 @@ export const Navbar: React.FC = () => {
             Library
           </button>
 
-          {/* BREAKTHROUGH TV (Top-Level Mandated Nav) */}
+          {/* BIBU TV (Prominent Top-Level Mandated Nav) */}
           <button
-            id="nav-breakthrough-tv-desktop"
-            onClick={() => navigate('breakthrough-tv')}
-            className={`transition-all py-1 px-2.5 rounded-lg flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px] ${
-              currentView === 'breakthrough-tv'
-                ? 'bg-rose-600 text-white shadow-md'
-                : 'text-rose-300 hover:text-white hover:bg-rose-600/25 border border-rose-500/40'
+            id="nav-bibu-tv-desktop"
+            onClick={() => navigate('bibu-tv')}
+            className={`transition-all py-1 px-3 rounded-lg flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px] ${
+              currentView === 'bibu-tv' || currentView === 'breakthrough-tv'
+                ? 'bg-rose-600 text-white shadow-md ring-2 ring-rose-400/50'
+                : 'text-rose-200 hover:text-white hover:bg-rose-600/30 border border-rose-500/50 bg-rose-950/40'
             }`}
           >
             <Tv className="w-3.5 h-3.5 text-rose-400" />
-            <span>Breakthrough TV</span>
+            <span>BIBU TV</span>
             <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
           </button>
 

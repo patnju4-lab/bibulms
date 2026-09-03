@@ -89,13 +89,22 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
 
         {/* Video Player Frame Container (Responsive 16:9 Embed) */}
         <div className="relative w-full aspect-video bg-black flex items-center justify-center">
-          <iframe
-            src={`https://www.youtube.com/embed/${video.youtubeVideoId}?autoplay=1&rel=0&modestbranding=1`}
-            title={video.title}
-            className="w-full h-full border-0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          />
+          {(() => {
+            const startParam = video.startTimeSeconds
+              ? `&start=${video.startTimeSeconds}`
+              : video.youtubeVideoId === 'dMxf_k7q1M4'
+              ? '&start=1642'
+              : '';
+            return (
+              <iframe
+                src={`https://www.youtube.com/embed/${video.youtubeVideoId}?autoplay=1&rel=0&modestbranding=1${startParam}`}
+                title={video.title}
+                className="w-full h-full border-0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+              />
+            );
+          })()}
         </div>
 
         {/* Body Content with Tabs */}
@@ -162,6 +171,21 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
                 <Share2 className="w-4 h-4" />
                 <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
               </button>
+
+              <a
+                href={
+                  video.youtubeUrl ||
+                  (video.startTimeSeconds || video.youtubeVideoId === 'dMxf_k7q1M4'
+                    ? `https://www.youtube.com/watch?v=${video.youtubeVideoId}&t=${video.startTimeSeconds || 1642}s`
+                    : `https://www.youtube.com/watch?v=${video.youtubeVideoId}`)
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-600 hover:bg-rose-700 text-white transition-all shadow-md"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>Watch on YouTube</span>
+              </a>
             </div>
           </div>
 

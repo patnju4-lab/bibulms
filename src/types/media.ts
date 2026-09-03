@@ -1,12 +1,16 @@
 export type MediaCategory =
+  | 'Live Broadcasts'
+  | 'Sermons'
+  | 'Bible Teaching'
+  | 'Conferences'
+  | 'Graduation'
+  | 'Interviews'
+  | 'Ministry Training'
   | 'BIBU Chapel Services'
   | 'Sermons & Bible Teaching'
   | 'Theology Classes'
   | 'Christian Leadership'
-  | 'Ministry Training'
   | 'Graduation Ceremonies'
-  | 'Conferences'
-  | 'Interviews'
   | 'Testimonies'
   | 'University News'
   | 'Special Events'
@@ -24,7 +28,6 @@ export type MediaCategory =
   | 'Worship'
   | 'Prayer'
   | 'Prophetic & Prayer'
-  | 'Graduation'
   | 'Campus & Convocation'
   | 'Student Life'
   | 'Youth & Family'
@@ -71,6 +74,7 @@ export interface MediaVideo {
   programTitle?: string;
   duration: string; // e.g. "45:20"
   durationSeconds?: number;
+  startTimeSeconds?: number; // Starting playback timestamp e.g. 1642 (27:22)
   publishedAt?: string;
   publishedDate?: string;
   featured?: boolean;
@@ -174,6 +178,8 @@ export interface YouTubeSettings {
   customHandle?: string;
   apiKey?: string;
   featuredVideoId?: string;
+  featuredVideoUrl?: string;
+  featuredVideoStartTime?: number; // Starting playback timestamp e.g. 1642 (27:22)
   featuredVideoTitle?: string;
   featuredVideoDescription?: string;
   liveStreamVideoId?: string;

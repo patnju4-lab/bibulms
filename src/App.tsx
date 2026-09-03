@@ -229,7 +229,8 @@ const MainContent: React.FC = () => {
           </ProtectedPortalWrapper>
         );
 
-      // Breakthrough TV Dedicated Page
+      // BIBU TV / Breakthrough TV Dedicated Page
+      case 'bibu-tv':
       case 'breakthrough-tv':
         return <BreakthroughTVPage />;
 
@@ -237,8 +238,6 @@ const MainContent: React.FC = () => {
       case 'media-center':
       case 'media':
         return <MediaHub />;
-      case 'bibu-tv':
-        return <BibuTVPage />;
       case 'bibu-radio':
         return <BibuRadioPage />;
       case 'live-tv':

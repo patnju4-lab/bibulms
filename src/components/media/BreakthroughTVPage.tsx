@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { VideoPlayerModal } from './VideoPlayerModal';
+import { RelatedSermonsPlaylist } from './RelatedSermonsPlaylist';
 import { MediaVideo } from '../../types/media';
 import {
   Tv,
@@ -27,7 +28,10 @@ import {
   Layers,
   ChevronRight,
   Filter,
-  Check
+  Check,
+  ListVideo,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 
 export const BreakthroughTVPage: React.FC = () => {
@@ -43,19 +47,22 @@ export const BreakthroughTVPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedVideoModal, setSelectedVideoModal] = useState<MediaVideo | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [playlistViewMode, setPlaylistViewMode] = useState<'sidebar' | 'grid'>('sidebar');
+  const [isPlaylistVisible, setIsPlaylistVisible] = useState(true);
 
-  // Official 11 categories defined by BIBU
+  // Official categories defined by BIBU
   const programCategories = [
     'All',
+    'Live Broadcasts',
+    'Sermons',
+    'Bible Teaching',
+    'Conferences',
+    'Graduation',
+    'Interviews',
+    'Ministry Training',
     'BIBU Chapel Services',
-    'Sermons & Bible Teaching',
     'Theology Classes',
     'Christian Leadership',
-    'Ministry Training',
-    'Graduation Ceremonies',
-    'Conferences',
-    'Interviews',
-    'Testimonies',
     'University News',
     'Special Events'
   ];
@@ -63,17 +70,26 @@ export const BreakthroughTVPage: React.FC = () => {
   const channelUrl = youtubeSettings.channelUrl || 'https://www.youtube.com/@Bibuniversity';
   const channelHandle = youtubeSettings.customHandle || '@Bibuniversity';
 
-  // Find featured video from settings or default to first published featured video
+  // Find featured video from settings or default to dMxf_k7q1M4 or first published featured video
   const featuredVideo: MediaVideo = useMemo(() => {
     if (youtubeSettings.featuredVideoId) {
       const match = mediaVideos.find(v => v.youtubeVideoId === youtubeSettings.featuredVideoId);
       if (match) return match;
     }
-    return mediaVideos.find(v => v.featured) || mediaVideos[0];
+    const dMxf = mediaVideos.find(v => v.youtubeVideoId === 'dMxf_k7q1M4');
+    if (dMxf) return dMxf;
+    return mediaVideos.find(v => v.featured || v.isFeatured) || mediaVideos[0];
   }, [youtubeSettings.featuredVideoId, mediaVideos]);
 
   // Active playing video on top theater player
   const [activeTheaterVideo, setActiveTheaterVideo] = useState<MediaVideo>(featuredVideo);
+
+  // Sync activeTheaterVideo if featuredVideo changes and current is default
+  useEffect(() => {
+    if (featuredVideo) {
+      setActiveTheaterVideo(featuredVideo);
+    }
+  }, [featuredVideo]);
 
   // Filtered video gallery
   const filteredVideos = useMemo(() => {
@@ -89,13 +105,17 @@ export const BreakthroughTVPage: React.FC = () => {
       const matchesCategory =
         selectedCategory === 'All' ||
         video.category === selectedCategory ||
+        (selectedCategory === 'Live Broadcasts' && (video.category === 'Live Broadcasts' || video.isLive)) ||
+        (selectedCategory === 'Sermons' && (video.category === 'Sermons' || video.category === 'Sermons & Bible Teaching' || video.category === 'Sermons & Teachings')) ||
+        (selectedCategory === 'Bible Teaching' && (video.category === 'Bible Teaching' || video.category === 'Sermons & Bible Teaching' || video.category === 'Bible Studies' || video.category === 'Biblical Studies')) ||
+        (selectedCategory === 'Conferences' && (video.category === 'Conferences' || video.category === 'Special Events')) ||
+        (selectedCategory === 'Graduation' && (video.category === 'Graduation' || video.category === 'Graduation Ceremonies' || video.category === 'Campus & Convocation')) ||
+        (selectedCategory === 'Interviews' && video.category === 'Interviews') ||
+        (selectedCategory === 'Ministry Training' && (video.category === 'Ministry Training' || video.category === 'Christian Ministry' || video.category === 'Ministry & Leadership')) ||
         (selectedCategory === 'Theology Classes' && (video.category === 'Theology' || video.category === 'Theology & Doctrine' || video.category === 'Academic Lectures')) ||
-        (selectedCategory === 'Sermons & Bible Teaching' && (video.category === 'Bible Studies' || video.category === 'Biblical Studies' || video.category === 'Sermons & Teachings')) ||
         (selectedCategory === 'Christian Leadership' && (video.category === 'Leadership' || video.category === 'Ministry & Leadership')) ||
-        (selectedCategory === 'Ministry Training' && (video.category === 'Christian Ministry' || video.category === 'Missions')) ||
-        (selectedCategory === 'Graduation Ceremonies' && (video.category === 'Graduation' || video.category === 'Campus & Convocation')) ||
-        (selectedCategory === 'University News' && (video.category === 'News' || video.category === 'News & Announcements')) ||
-        (selectedCategory === 'BIBU Chapel Services' && (video.category === 'Worship' || video.category === 'Prayer' || video.category === 'Prophetic & Prayer'));
+        (selectedCategory === 'University News' && (video.category === 'News' || video.category === 'University News' || video.category === 'News & Announcements')) ||
+        (selectedCategory === 'BIBU Chapel Services' && (video.category === 'Worship' || video.category === 'Prayer' || video.category === 'Prophetic & Prayer' || video.category === 'BIBU Chapel Services'));
 
       return matchesSearch && matchesCategory;
     });
@@ -206,16 +226,19 @@ export const BreakthroughTVPage: React.FC = () => {
             <div className="space-y-3 max-w-3xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-600/20 border border-rose-500/40 text-rose-400 text-xs font-black uppercase tracking-widest">
                 <Tv className="w-4 h-4 text-rose-500" />
-                <span>Official Television Network</span>
+                <span>BIBU TV • Official Television Network</span>
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
               </div>
 
               {/* Title & Subtitle as strictly mandated */}
               <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-white tracking-tight leading-tight">
-                BREAKTHROUGH TV
+                BIBU TV
+                <span className="block text-xl sm:text-2xl lg:text-3xl text-[#C5A059] font-serif font-normal mt-1">
+                  Breakthrough International Bible University
+                </span>
               </h1>
 
-              <div className="text-sm sm:text-lg font-display font-semibold text-[#C5A059] tracking-wide flex items-center gap-2 flex-wrap">
+              <div className="text-sm sm:text-base font-display font-semibold text-[#C5A059] tracking-wide flex items-center gap-2 flex-wrap">
                 <span>Faith</span>
                 <span className="text-slate-500">•</span>
                 <span>Education</span>
@@ -226,7 +249,7 @@ export const BreakthroughTVPage: React.FC = () => {
               </div>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
-                Broadcasting accredited theological masterclasses, university chapel sermons, keynote convocations, and ministerial training directly from the Breakthrough International Bible University campus and global faculties.
+                Watch sermons, teachings, ministry programs, conferences, interviews and other Christian educational content from Breakthrough International Bible University.
               </p>
 
               {/* Channel badge */}
@@ -280,130 +303,378 @@ export const BreakthroughTVPage: React.FC = () => {
         {/* ========================================================= */}
         {/* SECTION 1: LIVE / FEATURED VIDEO (PROMINENT AT TOP)       */}
         {/* ========================================================= */}
-        <section id="featured-theater-player" className="space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
-              <h2 className="text-lg sm:text-xl font-display font-bold text-white flex items-center gap-2">
-                <span>Featured Broadcast</span>
-                <span className="text-xs font-normal text-slate-400 font-sans">| Official University Masterclass</span>
-              </h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleShare}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
-                title="Share video link"
-              >
-                {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-[#C5A059]" />}
-                <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
-              </button>
-              <a
-                href={activeTheaterVideo.youtubeUrl || `https://www.youtube.com/watch?v=${activeTheaterVideo.youtubeVideoId}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
-              >
-                <ExternalLink className="w-3.5 h-3.5 text-rose-400" />
-                <span className="hidden sm:inline">Open on YouTube</span>
-              </a>
-            </div>
-          </div>
+        {(() => {
+          const startSec = activeTheaterVideo.startTimeSeconds ?? (activeTheaterVideo.youtubeVideoId === 'dMxf_k7q1M4' ? 1642 : undefined);
+          const theaterStartParam = startSec ? `&start=${startSec}` : '';
+          const directYoutubeUrl = activeTheaterVideo.youtubeUrl || (startSec
+            ? `https://www.youtube.com/watch?v=${activeTheaterVideo.youtubeVideoId}&t=${startSec}s`
+            : `https://www.youtube.com/watch?v=${activeTheaterVideo.youtubeVideoId}`);
 
-          {/* Cinematic 16:9 Responsive YouTube Player */}
-          <div className="bg-[#0B1530] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
-            <div className="relative w-full aspect-video bg-black">
-              <iframe
-                id="breakthrough-tv-featured-iframe"
-                src={`https://www.youtube.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1`}
-                title={activeTheaterVideo.title}
-                className="w-full h-full border-0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-              />
-            </div>
-
-            {/* Video Meta Info Footer */}
-            <div className="p-6 sm:p-8 space-y-4 bg-gradient-to-t from-[#091124] to-[#0B1530]">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="bg-[#C5A059] text-[#002366] text-[10px] font-black uppercase px-2.5 py-0.5 rounded tracking-wider">
-                      {activeTheaterVideo.category}
-                    </span>
-                    {activeTheaterVideo.isLive && (
-                      <span className="bg-rose-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded animate-pulse">
-                        LIVE BROADCAST
-                      </span>
-                    )}
-                    {activeTheaterVideo.associatedCourseCode && (
-                      <span className="bg-slate-800 text-slate-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-slate-700">
-                        {activeTheaterVideo.associatedCourseCode}
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className="text-xl sm:text-2xl font-bold font-display text-white">
-                    {activeTheaterVideo.title}
-                  </h3>
-
-                  {activeTheaterVideo.subtitle && (
-                    <p className="text-xs sm:text-sm text-[#C5A059] font-medium">
-                      {activeTheaterVideo.subtitle}
-                    </p>
-                  )}
+          return (
+            <section id="featured-theater-player" className="space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-3 h-3 rounded-full bg-rose-600 animate-ping" />
+                  <h2 className="text-lg sm:text-xl font-display font-bold text-white flex items-center gap-2">
+                    <span>Featured Broadcast</span>
+                    <span className="text-xs font-normal text-slate-400 font-sans hidden sm:inline">| BIBU TV Official Broadcast</span>
+                  </h2>
                 </div>
 
-                {/* Speaker & Stats */}
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                  <div className="flex items-center gap-2 text-slate-200">
-                    <div className="w-8 h-8 rounded-full bg-[#002366] text-[#C5A059] flex items-center justify-center font-bold text-xs border border-[#C5A059]/40 overflow-hidden shrink-0">
-                      {activeTheaterVideo.presenterPhoto ? (
-                        <img src={activeTheaterVideo.presenterPhoto} alt={activeTheaterVideo.presenter || ''} className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-bold text-white text-xs">{activeTheaterVideo.presenter || activeTheaterVideo.speakerName || 'BIBU Faculty'}</div>
-                      <div className="text-[10px] text-slate-400">{activeTheaterVideo.presenterTitle || activeTheaterVideo.speakerTitle || 'Theological Lecturer'}</div>
-                    </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {/* Playlist View Switcher: Sidebar vs Grid */}
+                  <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-lg p-0.5 shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPlaylistVisible(true);
+                        setPlaylistViewMode('sidebar');
+                      }}
+                      className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                        isPlaylistVisible && playlistViewMode === 'sidebar'
+                          ? 'bg-[#C5A059] text-[#002366] shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                      title="Show Related Sermons Playlist as a Sidebar"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Playlist Sidebar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsPlaylistVisible(true);
+                        setPlaylistViewMode('grid');
+                      }}
+                      className={`px-2.5 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center gap-1.5 ${
+                        isPlaylistVisible && playlistViewMode === 'grid'
+                          ? 'bg-[#C5A059] text-[#002366] shadow'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                      title="Show Related Sermons Playlist as an Expanded Grid"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Playlist Grid</span>
+                    </button>
                   </div>
 
-                  <div className="border-l border-slate-800 pl-4 space-y-1">
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
-                      <span>{activeTheaterVideo.duration}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-slate-400">
-                      <Eye className="w-3.5 h-3.5 text-blue-400" />
-                      <span>{activeTheaterVideo.viewsCount.toLocaleString()} views</span>
-                    </div>
-                  </div>
+                  <button
+                    onClick={handleShare}
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                    title="Share video link"
+                  >
+                    {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5 text-[#C5A059]" />}
+                    <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
+                  </button>
+                  <a
+                    href={directYoutubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5 text-rose-400" />
+                    <span className="hidden sm:inline">Open on YouTube</span>
+                  </a>
                 </div>
               </div>
 
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                {activeTheaterVideo.description}
-              </p>
+              {/* Main Theater Layout: Sidebar or Grid for Related Sermons Playlist */}
+              {isPlaylistVisible && playlistViewMode === 'sidebar' ? (
+                /* ================= SIDEBAR MODE ================= */
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  {/* Left (8 cols): Cinematic 16:9 Responsive YouTube Player */}
+                  <div className="lg:col-span-8 space-y-4">
+                    <div className="bg-[#0B1530] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+                      <div className="relative w-full aspect-video bg-black">
+                        <iframe
+                          id="breakthrough-tv-featured-iframe"
+                          src={`https://www.youtube.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1${theaterStartParam}`}
+                          title={activeTheaterVideo.title}
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      </div>
 
-              {/* Bible References if available */}
-              {activeTheaterVideo.bibleReferences && activeTheaterVideo.bibleReferences.length > 0 && (
-                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2 text-xs">
-                  <span className="text-[#C5A059] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Scripture References:</span>
-                  </span>
-                  {activeTheaterVideo.bibleReferences.map((ref, idx) => (
-                    <span key={idx} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-700/60">
-                      {ref}
-                    </span>
-                  ))}
+                      {/* Video Meta Info Footer */}
+                      <div className="p-6 sm:p-7 space-y-5 bg-gradient-to-t from-[#091124] to-[#0B1530]">
+                        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="bg-[#C5A059] text-[#002366] text-[10px] font-black uppercase px-2.5 py-0.5 rounded tracking-wider">
+                                {activeTheaterVideo.category}
+                              </span>
+                              {startSec && (
+                                <span className="bg-amber-500/20 text-[#C5A059] border border-[#C5A059]/40 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  <span>Starts at {Math.floor(startSec / 60)}:{(startSec % 60).toString().padStart(2, '0')}</span>
+                                </span>
+                              )}
+                              {activeTheaterVideo.isLive && (
+                                <span className="bg-rose-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded animate-pulse">
+                                  LIVE BROADCAST
+                                </span>
+                              )}
+                              {activeTheaterVideo.associatedCourseCode && (
+                                <span className="bg-slate-800 text-slate-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-slate-700">
+                                  {activeTheaterVideo.associatedCourseCode}
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-xl sm:text-2xl font-bold font-display text-white">
+                              {activeTheaterVideo.title}
+                            </h3>
+
+                            {activeTheaterVideo.subtitle && (
+                              <p className="text-xs sm:text-sm text-[#C5A059] font-medium">
+                                {activeTheaterVideo.subtitle}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Speaker & Stats */}
+                          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                            <div className="flex items-center gap-2 text-slate-200">
+                              <div className="w-8 h-8 rounded-full bg-[#002366] text-[#C5A059] flex items-center justify-center font-bold text-xs border border-[#C5A059]/40 overflow-hidden shrink-0">
+                                {activeTheaterVideo.presenterPhoto ? (
+                                  <img src={activeTheaterVideo.presenterPhoto} alt={activeTheaterVideo.presenter || ''} className="w-full h-full object-cover" />
+                                ) : (
+                                  <User className="w-4 h-4" />
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-bold text-white text-xs">{activeTheaterVideo.presenter || activeTheaterVideo.speakerName || 'BIBU Faculty'}</div>
+                                <div className="text-[10px] text-slate-400">{activeTheaterVideo.presenterTitle || activeTheaterVideo.speakerTitle || 'Theological Lecturer'}</div>
+                              </div>
+                            </div>
+
+                            <div className="border-l border-slate-800 pl-4 space-y-1">
+                              <div className="flex items-center gap-1.5 text-slate-400">
+                                <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
+                                <span>{activeTheaterVideo.duration}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 text-slate-400">
+                                <Eye className="w-3.5 h-3.5 text-blue-400" />
+                                <span>{activeTheaterVideo.viewsCount.toLocaleString()} views</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                          {activeTheaterVideo.description}
+                        </p>
+
+                        {/* Bible References if available */}
+                        {activeTheaterVideo.bibleReferences && activeTheaterVideo.bibleReferences.length > 0 && (
+                          <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2 text-xs">
+                            <span className="text-[#C5A059] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1">
+                              <BookOpen className="w-3.5 h-3.5" />
+                              <span>Scripture References:</span>
+                            </span>
+                            {activeTheaterVideo.bibleReferences.map((ref, idx) => (
+                              <span key={idx} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-700/60">
+                                {ref}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Button: Watch on YouTube below video */}
+                        <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <a
+                              id="watch-on-youtube-featured-btn"
+                              href={directYoutubeUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2.5 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all hover:scale-105 group"
+                            >
+                              <Youtube className="w-5 h-5 fill-current group-hover:rotate-12 transition-transform" />
+                              <span>Watch on YouTube</span>
+                              <ExternalLink className="w-3.5 h-3.5 text-rose-200" />
+                            </a>
+
+                            {startSec && (
+                              <span className="text-xs text-slate-400 hidden md:inline">
+                                Starts playback at <strong>{Math.floor(startSec / 60)}:{(startSec % 60).toString().padStart(2, '0')}</strong> ({startSec}s)
+                              </span>
+                            )}
+                          </div>
+
+                          <a
+                            href={`${channelUrl}?sub_confirmation=1`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all"
+                          >
+                            <Bell className="w-3.5 h-3.5 text-[#C5A059]" />
+                            <span>Subscribe to {channelHandle}</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right (4 cols): Playlist of Other Related Sermon Videos Sidebar */}
+                  <div className="lg:col-span-4 lg:sticky lg:top-6">
+                    <RelatedSermonsPlaylist
+                      activeVideoId={activeTheaterVideo.youtubeVideoId || activeTheaterVideo.id}
+                      onSelectVideo={handleSelectVideo}
+                      viewMode="sidebar"
+                      onToggleViewMode={(mode) => setPlaylistViewMode(mode)}
+                    />
+                  </div>
+                </div>
+              ) : (
+                /* ================= GRID MODE ================= */
+                <div className="space-y-6">
+                  {/* Full Width Cinematic 16:9 Responsive YouTube Player */}
+                  <div className="bg-[#0B1530] rounded-2xl border border-slate-800 overflow-hidden shadow-2xl">
+                    <div className="relative w-full aspect-video bg-black">
+                      <iframe
+                        id="breakthrough-tv-featured-iframe"
+                        src={`https://www.youtube.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1${theaterStartParam}`}
+                        title={activeTheaterVideo.title}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    </div>
+
+                    {/* Video Meta Info Footer */}
+                    <div className="p-6 sm:p-8 space-y-5 bg-gradient-to-t from-[#091124] to-[#0B1530]">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="bg-[#C5A059] text-[#002366] text-[10px] font-black uppercase px-2.5 py-0.5 rounded tracking-wider">
+                              {activeTheaterVideo.category}
+                            </span>
+                            {startSec && (
+                              <span className="bg-amber-500/20 text-[#C5A059] border border-[#C5A059]/40 text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded flex items-center gap-1">
+                                <Clock className="w-3 h-3" />
+                                <span>Starts at {Math.floor(startSec / 60)}:{(startSec % 60).toString().padStart(2, '0')}</span>
+                              </span>
+                            )}
+                            {activeTheaterVideo.isLive && (
+                              <span className="bg-rose-600 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded animate-pulse">
+                                LIVE BROADCAST
+                              </span>
+                            )}
+                            {activeTheaterVideo.associatedCourseCode && (
+                              <span className="bg-slate-800 text-slate-300 text-[10px] font-mono font-bold px-2 py-0.5 rounded border border-slate-700">
+                                {activeTheaterVideo.associatedCourseCode}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="text-xl sm:text-2xl font-bold font-display text-white">
+                            {activeTheaterVideo.title}
+                          </h3>
+
+                          {activeTheaterVideo.subtitle && (
+                            <p className="text-xs sm:text-sm text-[#C5A059] font-medium">
+                              {activeTheaterVideo.subtitle}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Speaker & Stats */}
+                        <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400 shrink-0 bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                          <div className="flex items-center gap-2 text-slate-200">
+                            <div className="w-8 h-8 rounded-full bg-[#002366] text-[#C5A059] flex items-center justify-center font-bold text-xs border border-[#C5A059]/40 overflow-hidden shrink-0">
+                              {activeTheaterVideo.presenterPhoto ? (
+                                <img src={activeTheaterVideo.presenterPhoto} alt={activeTheaterVideo.presenter || ''} className="w-full h-full object-cover" />
+                              ) : (
+                                <User className="w-4 h-4" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-bold text-white text-xs">{activeTheaterVideo.presenter || activeTheaterVideo.speakerName || 'BIBU Faculty'}</div>
+                              <div className="text-[10px] text-slate-400">{activeTheaterVideo.presenterTitle || activeTheaterVideo.speakerTitle || 'Theological Lecturer'}</div>
+                            </div>
+                          </div>
+
+                          <div className="border-l border-slate-800 pl-4 space-y-1">
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Clock className="w-3.5 h-3.5 text-[#C5A059]" />
+                              <span>{activeTheaterVideo.duration}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-slate-400">
+                              <Eye className="w-3.5 h-3.5 text-blue-400" />
+                              <span>{activeTheaterVideo.viewsCount.toLocaleString()} views</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                        {activeTheaterVideo.description}
+                      </p>
+
+                      {/* Bible References if available */}
+                      {activeTheaterVideo.bibleReferences && activeTheaterVideo.bibleReferences.length > 0 && (
+                        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center gap-2 text-xs">
+                          <span className="text-[#C5A059] font-bold text-[11px] uppercase tracking-wider flex items-center gap-1">
+                            <BookOpen className="w-3.5 h-3.5" />
+                            <span>Scripture References:</span>
+                          </span>
+                          {activeTheaterVideo.bibleReferences.map((ref, idx) => (
+                            <span key={idx} className="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-mono text-[11px] border border-slate-700/60">
+                              {ref}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Button: Watch on YouTube below video */}
+                      <div className="pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <a
+                            id="watch-on-youtube-featured-btn"
+                            href={directYoutubeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2.5 px-6 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all hover:scale-105 group"
+                          >
+                            <Youtube className="w-5 h-5 fill-current group-hover:rotate-12 transition-transform" />
+                            <span>Watch on YouTube</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-rose-200" />
+                          </a>
+
+                          {startSec && (
+                            <span className="text-xs text-slate-400 hidden md:inline">
+                              Starts playback at <strong>{Math.floor(startSec / 60)}:{(startSec % 60).toString().padStart(2, '0')}</strong> ({startSec}s)
+                            </span>
+                          )}
+                        </div>
+
+                        <a
+                          href={`${channelUrl}?sub_confirmation=1`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all"
+                        >
+                          <Bell className="w-3.5 h-3.5 text-[#C5A059]" />
+                          <span>Subscribe to {channelHandle}</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Grid View of Related Sermons Playlist */}
+                  <RelatedSermonsPlaylist
+                    activeVideoId={activeTheaterVideo.youtubeVideoId || activeTheaterVideo.id}
+                    onSelectVideo={handleSelectVideo}
+                    viewMode="grid"
+                    onToggleViewMode={(mode) => setPlaylistViewMode(mode)}
+                  />
                 </div>
               )}
-            </div>
-          </div>
-        </section>
+            </section>
+          );
+        })()}
 
         {/* ========================================================= */}
         {/* SECTION 4: YOUTUBE LIVE (WITH ACTIVE OR OFFLINE STATE)     */}
