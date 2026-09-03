@@ -27,11 +27,24 @@ import {
   Video,
   Mic,
   Play,
-  Youtube
+  Youtube,
+  ExternalLink,
+  Clock,
+  Eye
 } from 'lucide-react';
 
 export const PublicHome: React.FC = () => {
-  const { setCurrentView, schools, programs, announcements, setSelectedSchoolId, setSelectedProgramId, universityInfo } = useApp();
+  const {
+    setCurrentView,
+    schools,
+    programs,
+    announcements,
+    setSelectedSchoolId,
+    setSelectedProgramId,
+    universityInfo,
+    mediaVideos,
+    youtubeSettings
+  } = useApp();
 
   const handleSchoolClick = (schoolId: string) => {
     setSelectedSchoolId(schoolId);
@@ -411,6 +424,114 @@ export const PublicHome: React.FC = () => {
               <h4 className="text-base font-bold text-white group-hover:text-rose-400 transition-colors">YouTube Channel</h4>
               <p className="text-xs text-slate-300">Subscribe to our official channel for archived playlists, course modules, and podcasts.</p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.6 Dedicated BREAKTHROUGH TV Homepage Showcase */}
+      <section id="homepage-breakthrough-tv" className="max-w-7xl mx-auto px-4 sm:px-6 space-y-6">
+        <div className="bg-[#070D1E] rounded-3xl p-6 sm:p-10 border-2 border-slate-800 shadow-2xl text-slate-100 space-y-8">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-slate-800/80 pb-6">
+            <div className="space-y-2 max-w-2xl">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-600/20 border border-rose-500/40 text-rose-400 text-xs font-black uppercase tracking-widest">
+                <Tv className="w-3.5 h-3.5 text-rose-500" />
+                <span>OFFICIAL YOUTUBE BROADCASTING</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+              </div>
+              <h2 className="text-2xl sm:text-4xl font-display font-black text-white leading-tight">
+                BREAKTHROUGH TV
+              </h2>
+              <div className="text-xs sm:text-sm font-semibold text-[#C5A059] tracking-wider uppercase flex items-center gap-2 flex-wrap">
+                <span>Faith</span>
+                <span className="text-slate-600">•</span>
+                <span>Education</span>
+                <span className="text-slate-600">•</span>
+                <span>Leadership</span>
+                <span className="text-slate-600">•</span>
+                <span>Transformation</span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-300">
+                Official YouTube channel <strong className="text-white font-mono">{youtubeSettings.customHandle || '@Bibuniversity'}</strong> broadcasting theological masterclasses, academic convocations, live chapel services, and pastoral leadership training.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <button
+                id="homepage-view-all-breakthrough-tv-btn"
+                onClick={() => {
+                  setCurrentView('breakthrough-tv');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-6 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-lg transition-all hover:scale-105 flex items-center gap-2"
+              >
+                <Tv className="w-4 h-4 text-white" />
+                <span>VIEW ALL BREAKTHROUGH TV</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+
+              <a
+                href={youtubeSettings.channelUrl || 'https://www.youtube.com/@Bibuniversity'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-5 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold uppercase tracking-wider text-xs rounded-xl border border-white/20 transition-all flex items-center gap-2"
+              >
+                <Youtube className="w-4 h-4 text-rose-400 fill-current" />
+                <span>WATCH ON YOUTUBE</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* 6 Featured / Latest Videos Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mediaVideos.slice(0, 6).map((video) => (
+              <div
+                key={video.id}
+                onClick={() => {
+                  setCurrentView('breakthrough-tv');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="bg-[#0B1530] rounded-2xl border border-slate-800 hover:border-[#C5A059] overflow-hidden shadow-lg hover:shadow-2xl cursor-pointer transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
+              >
+                <div className="relative aspect-video bg-black overflow-hidden">
+                  <img
+                    src={video.thumbnail || video.thumbnailUrl || 'https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80&w=600'}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xl transform group-hover:scale-110 transition-transform">
+                      <Play className="w-5 h-5 fill-current translate-x-0.5" />
+                    </div>
+                  </div>
+                  <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
+                    {video.duration}
+                  </span>
+                  <span className="absolute top-2 left-2 bg-[#002366]/90 text-[#C5A059] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded border border-[#C5A059]/40">
+                    {video.category}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                  <div className="space-y-1">
+                    <h4 className="text-sm font-bold text-white group-hover:text-[#C5A059] transition-colors line-clamp-2 leading-snug">
+                      {video.title}
+                    </h4>
+                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
+                      {video.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+                    <span className="font-semibold text-slate-300 truncate max-w-[140px]">
+                      {video.presenter || video.speakerName || 'BIBU Faculty'}
+                    </span>
+                    <span className="font-mono">{video.viewsCount.toLocaleString()} views</span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

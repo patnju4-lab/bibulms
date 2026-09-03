@@ -1,4 +1,15 @@
 export type MediaCategory =
+  | 'BIBU Chapel Services'
+  | 'Sermons & Bible Teaching'
+  | 'Theology Classes'
+  | 'Christian Leadership'
+  | 'Ministry Training'
+  | 'Graduation Ceremonies'
+  | 'Conferences'
+  | 'Interviews'
+  | 'Testimonies'
+  | 'University News'
+  | 'Special Events'
   | 'Theology'
   | 'Theology & Doctrine'
   | 'Bible Studies'
@@ -13,10 +24,8 @@ export type MediaCategory =
   | 'Worship'
   | 'Prayer'
   | 'Prophetic & Prayer'
-  | 'Interviews'
   | 'Graduation'
   | 'Campus & Convocation'
-  | 'Conferences'
   | 'Student Life'
   | 'Youth & Family'
   | 'Faculty'
@@ -25,7 +34,8 @@ export type MediaCategory =
   | 'Announcements'
   | 'Podcasts'
   | 'Documentaries'
-  | 'Academic Lectures';
+  | 'Academic Lectures'
+  | (string & {});
 
 export interface MediaChannel {
   id: string;
@@ -164,6 +174,8 @@ export interface YouTubeSettings {
   customHandle?: string;
   apiKey?: string;
   featuredVideoId?: string;
+  featuredVideoTitle?: string;
+  featuredVideoDescription?: string;
   liveStreamVideoId?: string;
   isLiveBroadcasting?: boolean;
   liveProgramTitle?: string;
@@ -171,6 +183,12 @@ export interface YouTubeSettings {
   livePresenter?: string;
   livePresenterPhoto?: string;
   liveViewersCount?: number;
+  tvAnnouncement?: string;
+  tvCategories?: string[];
+  subscribersCount?: number;
+  totalViewsCount?: number;
+  totalVideosCount?: number;
+  description?: string;
   tvPlaylistId?: string;
   radioPlaylistId?: string;
   sermonsPlaylistId?: string;

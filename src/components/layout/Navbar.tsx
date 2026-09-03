@@ -346,7 +346,7 @@ export const Navbar: React.FC = () => {
               }`}
             >
               <Tv className="w-3.5 h-3.5" />
-              <span>📺 TV & Radio</span>
+              <span>Media Hub</span>
               <ChevronDown className="w-3.5 h-3.5" />
             </button>
 
@@ -369,13 +369,27 @@ export const Navbar: React.FC = () => {
 
                 <div className="py-1">
                   <button
+                    onClick={() => navigate('breakthrough-tv')}
+                    className="w-full text-left px-3.5 py-2 text-xs font-bold text-rose-700 hover:bg-rose-50 flex items-center justify-between bg-rose-50/50 border-b border-rose-100"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Tv className="w-4 h-4 text-rose-600" />
+                      <div>
+                        <div className="font-black text-rose-800">Breakthrough TV</div>
+                        <div className="text-[10px] font-normal text-slate-500">Official @Bibuniversity YouTube network</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] bg-rose-600 text-white font-black px-1.5 py-0.5 rounded">OFFICIAL</span>
+                  </button>
+
+                  <button
                     onClick={() => navigate('bibu-tv')}
                     className="w-full text-left px-3.5 py-2 text-xs font-bold text-[#002366] hover:bg-[#F0F4FF] flex items-center justify-between"
                   >
                     <div className="flex items-center gap-2.5">
                       <Video className="w-4 h-4 text-[#C5A059]" />
                       <div>
-                        <div>1. BIBU TV</div>
+                        <div>1. BIBU TV Schedule</div>
                         <div className="text-[10px] font-normal text-slate-500">Video lectures & masterclasses</div>
                       </div>
                     </div>
@@ -493,7 +507,35 @@ export const Navbar: React.FC = () => {
               currentView === 'library' ? 'text-[#C5A059] border-b-2 border-[#C5A059]' : 'hover:text-[#C5A059]'
             }`}
           >
-            Online Library
+            Library
+          </button>
+
+          {/* BREAKTHROUGH TV (Top-Level Mandated Nav) */}
+          <button
+            id="nav-breakthrough-tv-desktop"
+            onClick={() => navigate('breakthrough-tv')}
+            className={`transition-all py-1 px-2.5 rounded-lg flex items-center gap-1.5 font-black uppercase tracking-wider text-[11px] ${
+              currentView === 'breakthrough-tv'
+                ? 'bg-rose-600 text-white shadow-md'
+                : 'text-rose-300 hover:text-white hover:bg-rose-600/25 border border-rose-500/40'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5 text-rose-400" />
+            <span>Breakthrough TV</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+          </button>
+
+          {/* Radio Link */}
+          <button
+            onClick={() => navigate('bibu-radio')}
+            className={`transition-colors py-1 flex items-center gap-1 ${
+              currentView === 'bibu-radio' || currentView === 'live-radio'
+                ? 'text-[#C5A059] border-b-2 border-[#C5A059]'
+                : 'hover:text-[#C5A059]'
+            }`}
+          >
+            <Radio className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Radio</span>
           </button>
 
           <button
@@ -734,6 +776,20 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-2 text-xs font-bold uppercase tracking-wider text-slate-200">
+            {/* Breakthrough TV Mobile Highlight */}
+            <button
+              onClick={() => navigate('breakthrough-tv')}
+              className="col-span-2 text-left p-2.5 rounded-xl bg-gradient-to-r from-rose-950/80 to-[#002366] border border-rose-500/50 text-white font-black flex items-center justify-between shadow-md"
+            >
+              <div className="flex items-center gap-2">
+                <Tv className="w-4 h-4 text-rose-400" />
+                <span className="text-xs uppercase tracking-wider">BREAKTHROUGH TV (YOUTUBE)</span>
+              </div>
+              <span className="text-[9px] bg-rose-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider animate-pulse">
+                OFFICIAL
+              </span>
+            </button>
+
             <button
               onClick={() => navigate('home')}
               className="text-left p-2 rounded-lg bg-white/5 hover:bg-white/10"

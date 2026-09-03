@@ -151,6 +151,7 @@ export type CurrentView =
   | 'centre-directory'
   | 'centre-reports'
   // BIBU TV & Radio Media Center Subsections
+  | 'breakthrough-tv'
   | 'media-center'
   | 'bibu-tv'
   | 'bibu-radio'
@@ -457,7 +458,37 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Navigation & User
-  const [currentView, setCurrentView] = useState<CurrentView>('home');
+  const [currentView, setCurrentView] = useState<CurrentView>(() => {
+    if (typeof window !== 'undefined') {
+      const path = window.location.pathname;
+      if (path === '/breakthrough-tv' || window.location.hash === '#breakthrough-tv') {
+        return 'breakthrough-tv';
+      }
+    }
+    return 'home';
+  });
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (currentView === 'breakthrough-tv') {
+        if (window.location.pathname !== '/breakthrough-tv') {
+          window.history.pushState(null, '', '/breakthrough-tv');
+        }
+      } else if (window.location.pathname === '/breakthrough-tv') {
+        window.history.pushState(null, '', '/');
+      }
+    }
+  }, [currentView]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      if (window.location.pathname === '/breakthrough-tv') {
+        setCurrentView('breakthrough-tv');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
   const [allUsers, setAllUsers] = useState<User[]>(() => {
     const saved = localStorage.getItem('bibu_users');
     return saved ? JSON.parse(saved) : INITIAL_USERS;

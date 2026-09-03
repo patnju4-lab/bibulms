@@ -474,88 +474,284 @@ export const TVRadioManagement: React.FC = () => {
         <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 max-w-3xl space-y-6">
           <div className="border-b border-slate-100 pb-3">
             <h3 className="text-base font-bold text-[#002366] font-display">
-              YouTube Channel & Secure API Key Integration
+              Breakthrough TV & YouTube Broadcasting Controls
             </h3>
             <p className="text-xs text-slate-500">
-              Configure official YouTube Channel credentials, sync playlists, and secure API handles.
+              Configure official @Bibuniversity YouTube channel, featured video, live broadcast stream, banner announcements, and category filters.
             </p>
           </div>
 
           {ytSaveSuccess && (
             <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span>YouTube settings saved successfully!</span>
+              <span>Breakthrough TV & YouTube settings saved successfully!</span>
             </div>
           )}
 
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-3 text-xs text-amber-900">
             <AlertCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
             <div>
-              <strong>API Key Security Note:</strong>
+              <strong>Official Channel Connection:</strong>
               <p className="text-amber-800 mt-0.5">
-                The YouTube API key is stored securely and proxied for YouTube Data API v3 video imports and metadata syncs without public exposure.
+                Breakthrough TV is connected to the official YouTube channel <strong>@Bibuniversity</strong> (<code>https://www.youtube.com/@Bibuniversity</code>). All videos stream through official YouTube embeds without re-hosting.
               </p>
             </div>
           </div>
 
-          <form onSubmit={handleSaveYouTubeSettings} className="space-y-4 text-xs">
-            <div>
-              <label className="block font-bold text-slate-700 uppercase mb-1">
-                Official YouTube Channel ID:
-              </label>
-              <input
-                type="text"
-                value={ytForm.channelId}
-                onChange={(e) => setYtForm({ ...ytForm, channelId: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
-              />
+          <form onSubmit={handleSaveYouTubeSettings} className="space-y-6 text-xs">
+            {/* 1. Channel Identity */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <h4 className="font-bold text-[#002366] uppercase text-[11px] tracking-wider flex items-center gap-2">
+                <Youtube className="w-4 h-4 text-rose-600" />
+                <span>1. Official YouTube Channel Identity</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    YouTube Channel URL:
+                  </label>
+                  <input
+                    type="url"
+                    value={ytForm.channelUrl || 'https://www.youtube.com/@Bibuniversity'}
+                    onChange={(e) => setYtForm({ ...ytForm, channelUrl: e.target.value })}
+                    placeholder="https://www.youtube.com/@Bibuniversity"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Official Handle (@):
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.customHandle || '@Bibuniversity'}
+                    onChange={(e) => setYtForm({ ...ytForm, customHandle: e.target.value })}
+                    placeholder="@Bibuniversity"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Channel Display Title:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.channelTitle || 'BIBU Breakthrough TV'}
+                    onChange={(e) => setYtForm({ ...ytForm, channelTitle: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Channel ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.channelId || 'UCBibuniversityGlobal'}
+                    onChange={(e) => setYtForm({ ...ytForm, channelId: e.target.value })}
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* 2. Featured Video Setup */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <h4 className="font-bold text-[#002366] uppercase text-[11px] tracking-wider flex items-center gap-2">
+                <Video className="w-4 h-4 text-[#C5A059]" />
+                <span>2. Featured Headline Video</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Featured YouTube Video ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.featuredVideoId || 'fJ9rUzIMcZQ'}
+                    onChange={(e) => setYtForm({ ...ytForm, featuredVideoId: e.target.value })}
+                    placeholder="e.g. fJ9rUzIMcZQ"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Featured Video Title:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.featuredVideoTitle || ''}
+                    onChange={(e) => setYtForm({ ...ytForm, featuredVideoTitle: e.target.value })}
+                    placeholder="Title displayed above featured player"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">
-                  Channel Display Title:
+                  Featured Video Synopsis / Description:
+                </label>
+                <textarea
+                  rows={2}
+                  value={ytForm.featuredVideoDescription || ''}
+                  onChange={(e) => setYtForm({ ...ytForm, featuredVideoDescription: e.target.value })}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                />
+              </div>
+            </div>
+
+            {/* 3. Live Broadcast Configuration */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-[#002366] uppercase text-[11px] tracking-wider flex items-center gap-2">
+                  <Tv className="w-4 h-4 text-rose-600" />
+                  <span>3. Live Stream / Live Broadcast Setup</span>
+                </h4>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={ytForm.isLiveBroadcasting || false}
+                    onChange={(e) => setYtForm({ ...ytForm, isLiveBroadcasting: e.target.checked })}
+                    className="w-4 h-4 text-rose-600 rounded"
+                  />
+                  <span className="font-bold text-rose-700 uppercase text-[10px]">
+                    {ytForm.isLiveBroadcasting ? '● STREAM IS CURRENTLY LIVE' : '○ Stream is Offline'}
+                  </span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Live Stream Video ID:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.liveStreamVideoId || 'jfKfPfyJRdk'}
+                    onChange={(e) => setYtForm({ ...ytForm, liveStreamVideoId: e.target.value })}
+                    placeholder="e.g. jfKfPfyJRdk"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Live Program Title:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.liveProgramTitle || ''}
+                    onChange={(e) => setYtForm({ ...ytForm, liveProgramTitle: e.target.value })}
+                    placeholder="e.g. 2026 World Apostolic Convocation"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 uppercase mb-1">
+                    Live Program Presenter / Speaker:
+                  </label>
+                  <input
+                    type="text"
+                    value={ytForm.livePresenter || ''}
+                    onChange={(e) => setYtForm({ ...ytForm, livePresenter: e.target.value })}
+                    placeholder="e.g. Chancellor Dr. Bishop"
+                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  Live Program Description / Schedule Note:
                 </label>
                 <input
                   type="text"
-                  value={ytForm.channelTitle}
-                  onChange={(e) => setYtForm({ ...ytForm, channelTitle: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  value={ytForm.liveProgramDescription || ''}
+                  onChange={(e) => setYtForm({ ...ytForm, liveProgramDescription: e.target.value })}
+                  placeholder="e.g. Live streaming worldwide from the Great Hall Auditorium."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                />
+              </div>
+            </div>
+
+            {/* 4. Announcement & Categories */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+              <h4 className="font-bold text-[#002366] uppercase text-[11px] tracking-wider flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-[#C5A059]" />
+                <span>4. Breakthrough TV Announcement & Categories</span>
+              </h4>
+
+              <div>
+                <label className="block font-bold text-slate-700 uppercase mb-1">
+                  Breakthrough TV Announcement Banner:
+                </label>
+                <input
+                  type="text"
+                  value={ytForm.tvAnnouncement || ''}
+                  onChange={(e) => setYtForm({ ...ytForm, tvAnnouncement: e.target.value })}
+                  placeholder="e.g. Special Broadcast: 2026 International Convocation streaming live this Friday."
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                 />
               </div>
 
               <div>
                 <label className="block font-bold text-slate-700 uppercase mb-1">
-                  Custom Handle (@):
+                  TV Gallery Categories (comma separated):
                 </label>
                 <input
                   type="text"
-                  value={ytForm.customHandle}
-                  onChange={(e) => setYtForm({ ...ytForm, customHandle: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
+                  value={(ytForm.tvCategories || []).join(', ')}
+                  onChange={(e) => setYtForm({
+                    ...ytForm,
+                    tvCategories: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                  })}
+                  placeholder="All, Convocations, Lectures, Chapel, Sermons, Missions"
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 focus:outline-none focus:border-[#002366]"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Current categories: {(ytForm.tvCategories || ['All', 'Convocations', 'Theological Lectures', 'Chapel & Worship', 'Leadership & Ministry', 'Global Missions']).map((c, i) => (
+                    <span key={i} className="inline-block bg-white border border-slate-300 px-2 py-0.5 rounded mr-1.5 mt-1 font-semibold text-slate-700">
+                      {c}
+                    </span>
+                  ))}
+                </p>
               </div>
             </div>
 
-            <div>
+            {/* 5. Secure API Key */}
+            <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
               <label className="block font-bold text-slate-700 uppercase mb-1">
-                Secure YouTube Data API v3 Key:
+                Optional YouTube Data API v3 Key:
               </label>
               <input
                 type="password"
                 placeholder="AIzaSy..."
                 value={ytForm.apiKey || ''}
                 onChange={(e) => setYtForm({ ...ytForm, apiKey: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-slate-900 font-mono focus:outline-none focus:border-[#002366]"
               />
+              <p className="text-[10px] text-slate-500">
+                Stored in encrypted format for optional dynamic playlist synchronization.
+              </p>
             </div>
 
             <button
+              id="admin-save-breakthrough-tv-settings-btn"
               type="submit"
-              className="py-2.5 px-5 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-all flex items-center gap-2"
+              className="py-3 px-6 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow transition-all flex items-center gap-2 hover:scale-105"
             >
               <Youtube className="w-4 h-4 fill-current" />
-              <span>Save YouTube Channel Settings</span>
+              <span>Save Breakthrough TV Settings</span>
             </button>
           </form>
         </div>

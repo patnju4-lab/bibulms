@@ -40,6 +40,7 @@ import { TranscriptView } from './components/student/TranscriptView';
 import { FinancePortal } from './components/student/FinancePortal';
 
 // TV & Radio Media Center Components
+import { BreakthroughTVPage } from './components/media/BreakthroughTVPage';
 import { MediaHub } from './components/media/MediaHub';
 import { BibuTVPage } from './components/media/BibuTVPage';
 import { BibuRadioPage } from './components/media/BibuRadioPage';
@@ -227,6 +228,10 @@ const MainContent: React.FC = () => {
             <GlobalFellowshipsPortal />
           </ProtectedPortalWrapper>
         );
+
+      // Breakthrough TV Dedicated Page
+      case 'breakthrough-tv':
+        return <BreakthroughTVPage />;
 
       // TV & Radio Media Center Subsections
       case 'media-center':
