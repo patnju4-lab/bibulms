@@ -104,7 +104,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
               : '';
             return (
               <iframe
-                src={`https://www.youtube.com/embed/${video.youtubeVideoId}?autoplay=1&rel=0&modestbranding=1${startParam}`}
+                src={`https://www.youtube-nocookie.com/embed/${video.youtubeVideoId}?autoplay=1&rel=0&modestbranding=1${startParam}`}
                 title={video.title}
                 className="w-full h-full border-0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"

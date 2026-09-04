@@ -230,6 +230,7 @@ const MainContent: React.FC = () => {
         );
 
       // BIBU TV / Breakthrough TV Dedicated Page
+      case 'tv':
       case 'bibu-tv':
       case 'breakthrough-tv':
         return <BreakthroughTVPage />;

@@ -438,6 +438,7 @@ interface AppContextType {
   addMediaVideo: (video: Omit<MediaVideo, 'id' | 'viewsCount' | 'likesCount'>) => MediaVideo;
   updateMediaVideo: (id: string, updates: Partial<MediaVideo>) => void;
   deleteMediaVideo: (id: string) => void;
+  reorderMediaVideos: (sourceId: string, direction: 'up' | 'down') => void;
   addTVProgram: (program: Omit<TVProgram, 'id'>) => TVProgram;
   updateTVProgram: (id: string, updates: Partial<TVProgram>) => void;
   deleteTVProgram: (id: string) => void;
@@ -717,9 +718,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!saved) return INITIAL_MEDIA_VIDEOS;
     try {
       const parsed: MediaVideo[] = JSON.parse(saved);
-      const hasFeatured = parsed.some(v => v.youtubeVideoId === 'dMxf_k7q1M4');
-      if (!hasFeatured) {
-        return [FEATURED_BIBU_TV_VIDEO, ...parsed];
+      // Ensure the official default videos are always present in the library
+      const existingIds = new Set(parsed.map(v => v.youtubeVideoId));
+      const missingInitial = INITIAL_MEDIA_VIDEOS.filter(v => !existingIds.has(v.youtubeVideoId));
+      if (missingInitial.length > 0) {
+        return [...missingInitial, ...parsed];
       }
       return parsed;
     } catch {
@@ -955,6 +958,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     localStorage.setItem('bibu_library', JSON.stringify(libraryResources));
   }, [libraryResources]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_media_videos', JSON.stringify(mediaVideos));
+  }, [mediaVideos]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_youtube_settings', JSON.stringify(youtubeSettings));
+  }, [youtubeSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_tv_programs', JSON.stringify(tvPrograms));
+  }, [tvPrograms]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_radio_programs', JSON.stringify(radioPrograms));
+  }, [radioPrograms]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_radio_settings', JSON.stringify(radioSettings));
+  }, [radioSettings]);
 
   // Auth Handlers
   const openAuthModal = (tab: 'login' | 'register' = 'register', targetPortal?: CurrentView, message?: string) => {
@@ -3110,6 +3133,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMediaVideos(prev => prev.filter(v => v.id !== id));
   };
 
+  const reorderMediaVideos = (sourceId: string, direction: 'up' | 'down') => {
+    setMediaVideos(prev => {
+      const idx = prev.findIndex(v => v.id === sourceId);
+      if (idx === -1) return prev;
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+      const clone = [...prev];
+      const temp = clone[idx];
+      clone[idx] = clone[targetIdx];
+      clone[targetIdx] = temp;
+      return clone;
+    });
+  };
+
   const addTVProgram = (programData: Omit<TVProgram, 'id'>): TVProgram => {
     const newProg: TVProgram = {
       ...programData,
@@ -3472,6 +3509,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addMediaVideo,
         updateMediaVideo,
         deleteMediaVideo,
+        reorderMediaVideos,
         addTVProgram,
         updateTVProgram,
         deleteTVProgram,

@@ -283,6 +283,18 @@ export const StudentDashboard: React.FC = () => {
             <CreditCard className="w-4 h-4 text-[#C5A059]" />
             <span>Tuition & Fees</span>
           </button>
+
+          {/* BIBU TV Quick Access Button */}
+          <button
+            id="student-dashboard-watch-tv-btn"
+            onClick={() => setCurrentView('bibu-tv')}
+            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-700 via-rose-600 to-[#002366] hover:from-rose-600 hover:to-[#001A4D] text-white font-bold uppercase tracking-wider text-xs border border-rose-400/50 transition-all flex items-center gap-2 shadow-md hover:scale-105"
+            title="Watch BIBU TV Online Video Channel"
+          >
+            <Tv className="w-4 h-4 text-rose-200" />
+            <span>Watch BIBU TV</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-400 animate-ping" />
+          </button>
         </div>
       </div>
 
@@ -882,6 +894,45 @@ export const StudentDashboard: React.FC = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Official BIBU TV Online Widget Card */}
+            <div className="bg-gradient-to-br from-[#001744] to-[#002366] text-white rounded-xl p-5 shadow-md border-t-4 border-rose-500 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-rose-600 text-white flex items-center gap-1">
+                  <Tv className="w-3 h-3" />
+                  <span>BIBU TV Online</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping" />
+                </span>
+                <span className="text-xs text-[#C5A059] font-bold font-mono">24/7 Channel</span>
+              </div>
+
+              <div>
+                <h4 className="text-sm font-display font-bold text-white">
+                  University Video Channel & Expository Broadcasts
+                </h4>
+                <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+                  Stream anointed sermons, faculty theology masterclasses, and global commencement broadcasts on the official BIBU TV player.
+                </p>
+              </div>
+
+              <div className="pt-1 flex items-center gap-2">
+                <button
+                  id="student-dashboard-open-tv-card-btn"
+                  onClick={() => setCurrentView('bibu-tv')}
+                  className="flex-1 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black uppercase tracking-wider text-xs shadow-md transition-all hover:scale-102 flex items-center justify-center gap-1.5"
+                >
+                  <Play className="w-3.5 h-3.5 fill-current" />
+                  <span>Watch BIBU TV</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('media')}
+                  className="px-3 py-2 rounded-lg bg-[#001A4D] hover:bg-[#001438] text-[#C5A059] border border-[#C5A059]/40 font-bold text-xs transition-colors"
+                  title="Media Library Tab"
+                >
+                  Library
+                </button>
               </div>
             </div>
           </div>

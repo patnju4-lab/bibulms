@@ -36,11 +36,13 @@ import {
   LayoutGrid,
   List,
   Film,
-  ArrowRight
+  ArrowRight,
+  Settings
 } from 'lucide-react';
 
 export const BreakthroughTVPage: React.FC = () => {
   const {
+    currentUser,
     youtubeSettings,
     mediaVideos,
     tvPrograms,
@@ -61,18 +63,19 @@ export const BreakthroughTVPage: React.FC = () => {
   // Official categories defined by BIBU
   const programCategories = [
     'All',
-    'Live Broadcasts',
-    'Sermons',
+    'Featured Video',
+    'Latest Videos',
     'Bible Teaching',
+    'Sermons',
+    'Christian Leadership',
+    'Theology Lectures',
+    'BIBU Events',
+    'Ministry Programs',
+    'Live Broadcasts',
     'Conferences',
     'Graduation',
     'Interviews',
-    'Ministry Training',
-    'BIBU Chapel Services',
-    'Theology Classes',
-    'Christian Leadership',
-    'University News',
-    'Special Events'
+    'BIBU Chapel Services'
   ];
 
   const channelUrl = youtubeSettings.channelUrl || 'https://www.youtube.com/@Bibuniversity';
@@ -101,7 +104,13 @@ export const BreakthroughTVPage: React.FC = () => {
 
   // Filtered video gallery
   const filteredVideos = useMemo(() => {
-    return mediaVideos.filter((video) => {
+    let list = mediaVideos.filter((video) => {
+      // Respect visibility: if archived or explicitly hidden, only show to admins
+      const isPubliclyVisible = video.status !== 'archived' && video.isVisible !== false;
+      if (!isPubliclyVisible && currentUser?.role !== 'admin' && currentUser?.role !== 'superadmin') {
+        return false;
+      }
+
       const matchesSearch =
         !searchQuery ||
         video.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -112,21 +121,29 @@ export const BreakthroughTVPage: React.FC = () => {
 
       const matchesCategory =
         selectedCategory === 'All' ||
-        video.category === selectedCategory ||
-        (selectedCategory === 'Live Broadcasts' && (video.category === 'Live Broadcasts' || video.isLive)) ||
-        (selectedCategory === 'Sermons' && (video.category === 'Sermons' || video.category === 'Sermons & Bible Teaching' || video.category === 'Sermons & Teachings')) ||
+        (selectedCategory === 'Featured Video' && (video.featured || video.isFeatured)) ||
+        (selectedCategory === 'Latest Videos' && true) ||
         (selectedCategory === 'Bible Teaching' && (video.category === 'Bible Teaching' || video.category === 'Sermons & Bible Teaching' || video.category === 'Bible Studies' || video.category === 'Biblical Studies')) ||
+        (selectedCategory === 'Sermons' && (video.category === 'Sermons' || video.category === 'Sermons & Bible Teaching' || video.category === 'Sermons & Teachings')) ||
+        (selectedCategory === 'Christian Leadership' && (video.category === 'Christian Leadership' || video.category === 'Leadership' || video.category === 'Ministry & Leadership')) ||
+        (selectedCategory === 'Theology Lectures' && (video.category === 'Theology Lectures' || video.category === 'Theology Classes' || video.category === 'Theology' || video.category === 'Theology & Doctrine' || video.category === 'Academic Lectures')) ||
+        (selectedCategory === 'BIBU Events' && (video.category === 'BIBU Events' || video.category === 'Special Events' || video.category === 'Conferences' || video.category === 'Graduation' || video.category === 'Campus & Convocation')) ||
+        (selectedCategory === 'Ministry Programs' && (video.category === 'Ministry Programs' || video.category === 'Ministry Training' || video.category === 'Christian Ministry')) ||
+        (selectedCategory === 'Live Broadcasts' && (video.category === 'Live Broadcasts' || video.isLive)) ||
         (selectedCategory === 'Conferences' && (video.category === 'Conferences' || video.category === 'Special Events')) ||
         (selectedCategory === 'Graduation' && (video.category === 'Graduation' || video.category === 'Graduation Ceremonies' || video.category === 'Campus & Convocation')) ||
         (selectedCategory === 'Interviews' && video.category === 'Interviews') ||
-        (selectedCategory === 'Ministry Training' && (video.category === 'Ministry Training' || video.category === 'Christian Ministry' || video.category === 'Ministry & Leadership')) ||
-        (selectedCategory === 'Theology Classes' && (video.category === 'Theology' || video.category === 'Theology & Doctrine' || video.category === 'Academic Lectures')) ||
-        (selectedCategory === 'Christian Leadership' && (video.category === 'Leadership' || video.category === 'Ministry & Leadership')) ||
-        (selectedCategory === 'University News' && (video.category === 'News' || video.category === 'University News' || video.category === 'News & Announcements')) ||
-        (selectedCategory === 'BIBU Chapel Services' && (video.category === 'Worship' || video.category === 'Prayer' || video.category === 'Prophetic & Prayer' || video.category === 'BIBU Chapel Services'));
+        (selectedCategory === 'BIBU Chapel Services' && (video.category === 'Worship' || video.category === 'Prayer' || video.category === 'Prophetic & Prayer' || video.category === 'BIBU Chapel Services')) ||
+        video.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
+
+    if (selectedCategory === 'Latest Videos') {
+      list = [...list].sort((a, b) => new Date(b.publishedAt || b.publishedDate || 0).getTime() - new Date(a.publishedAt || a.publishedDate || 0).getTime());
+    }
+
+    return list;
   }, [mediaVideos, searchQuery, selectedCategory]);
 
   const handleShare = () => {
@@ -243,35 +260,60 @@ export const BreakthroughTVPage: React.FC = () => {
                 <Flame className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
                 <span>Live Studio</span>
               </a>
+              {(currentUser?.role === 'admin' || currentUser?.role === 'superadmin') && (
+                <button
+                  onClick={() => setCurrentView('admin')}
+                  className="px-3 py-1.5 rounded-lg bg-amber-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-300 flex items-center gap-1.5 transition-colors font-bold"
+                  title="Open TV Admin Portal to Manage Videos"
+                >
+                  <Settings className="w-3.5 h-3.5 text-amber-400" />
+                  <span>TV Admin Portal</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Breakthrough TV Hero Display */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-2">
-            <div className="space-y-3 max-w-3xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-600/20 border border-rose-500/40 text-rose-400 text-xs font-black uppercase tracking-widest">
-                <Tv className="w-4 h-4 text-rose-500" />
-                <span>BIBU TV • Official Television Network</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
-              </div>
+          <div className="space-y-4 pt-2">
+            {/* Nav Breadcrumb: Home → TV */}
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+              <button
+                onClick={() => setCurrentView('portal')}
+                className="hover:text-[#C5A059] transition-colors flex items-center gap-1 text-slate-300"
+              >
+                <span>Home</span>
+              </button>
+              <span className="text-[#C5A059]">→</span>
+              <span className="text-[#C5A059] font-black uppercase tracking-wider">TV</span>
+              <span className="text-slate-600">•</span>
+              <span className="text-slate-400 text-[11px]">BIBU TV Online Video Channel</span>
+            </nav>
 
-              {/* Title & Subtitle as strictly mandated */}
-              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-white tracking-tight leading-tight">
-                BIBU TV
-                <span className="block text-xl sm:text-2xl lg:text-3xl text-[#C5A059] font-serif font-normal mt-1">
-                  Breakthrough International Bible University
-                </span>
-              </h1>
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+              <div className="space-y-3 max-w-3xl">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-600/20 border border-rose-500/40 text-rose-400 text-xs font-black uppercase tracking-widest">
+                  <Tv className="w-4 h-4 text-rose-500" />
+                  <span>BIBU TV • Official Television Network</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                </div>
 
-              <div className="text-sm sm:text-base font-display font-semibold text-[#C5A059] tracking-wide flex items-center gap-2 flex-wrap">
-                <span>Faith</span>
-                <span className="text-slate-500">•</span>
-                <span>Education</span>
-                <span className="text-slate-500">•</span>
-                <span>Leadership</span>
-                <span className="text-slate-500">•</span>
-                <span>Transformation</span>
-              </div>
+                {/* Title & Subtitle as strictly mandated */}
+                <h1 className="text-3xl sm:text-5xl lg:text-6xl font-display font-black text-white tracking-tight leading-tight">
+                  BIBU TV
+                  <span className="block text-xl sm:text-2xl lg:text-3xl text-[#C5A059] font-serif font-normal mt-1">
+                    Breakthrough International Bible University – Phoenix, Arizona USA
+                  </span>
+                </h1>
+
+                <div className="text-sm sm:text-base font-display font-semibold text-[#C5A059] tracking-wide flex items-center gap-2 flex-wrap">
+                  <span>Faith</span>
+                  <span className="text-slate-500">•</span>
+                  <span>Education</span>
+                  <span className="text-slate-500">•</span>
+                  <span>Leadership</span>
+                  <span className="text-slate-500">•</span>
+                  <span>Transformation</span>
+                </div>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed max-w-2xl">
                 Watch sermons, teachings, ministry programs, conferences, interviews and other Christian educational content from Breakthrough International Bible University.
@@ -321,7 +363,8 @@ export const BreakthroughTVPage: React.FC = () => {
             </div>
           </div>
         </div>
-      </header>
+      </div>
+    </header>
 
       {/* Main Content Body */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
@@ -413,7 +456,7 @@ export const BreakthroughTVPage: React.FC = () => {
                       <div className="relative w-full aspect-video bg-black">
                         <iframe
                           id="breakthrough-tv-featured-iframe"
-                          src={`https://www.youtube.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1${theaterStartParam}`}
+                          src={`https://www.youtube-nocookie.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1&controls=1&fs=1${theaterStartParam}`}
                           title={activeTheaterVideo.title}
                           className="w-full h-full border-0"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -561,7 +604,7 @@ export const BreakthroughTVPage: React.FC = () => {
                     <div className="relative w-full aspect-video bg-black">
                       <iframe
                         id="breakthrough-tv-featured-iframe"
-                        src={`https://www.youtube.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1${theaterStartParam}`}
+                        src={`https://www.youtube-nocookie.com/embed/${activeTheaterVideo.youtubeVideoId}?rel=0&modestbranding=1&controls=1&fs=1${theaterStartParam}`}
                         title={activeTheaterVideo.title}
                         className="w-full h-full border-0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -963,7 +1006,7 @@ export const BreakthroughTVPage: React.FC = () => {
               <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-inner border border-slate-800">
                 <iframe
                   id="breakthrough-tv-live-iframe"
-                  src={`https://www.youtube.com/embed/${youtubeSettings.liveStreamVideoId || 'jfKfPfyJRdk'}?autoplay=1&rel=0`}
+                  src={`https://www.youtube-nocookie.com/embed/${youtubeSettings.liveStreamVideoId || 'jfKfPfyJRdk'}?autoplay=1&rel=0&controls=1&fs=1`}
                   title="BIBU YouTube Live Stream"
                   className="w-full h-full border-0"
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1231,7 +1274,7 @@ export const BreakthroughTVPage: React.FC = () => {
                     {/* Thumbnail with overlay & badge */}
                     <div className="relative aspect-video bg-black overflow-hidden">
                       <img
-                        src={video.thumbnail || video.thumbnailUrl || `https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80&w=600`}
+                        src={video.youtubeVideoId ? `https://img.youtube.com/vi/${video.youtubeVideoId}/hqdefault.jpg` : (video.thumbnail || video.thumbnailUrl || `https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80&w=600`)}
                         alt={video.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         referrerPolicy="no-referrer"
@@ -1265,7 +1308,7 @@ export const BreakthroughTVPage: React.FC = () => {
                     </div>
 
                     {/* Card Content */}
-                    <div className="p-4 space-y-2 flex-1 flex flex-col justify-between">
+                    <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
                       <div className="space-y-1.5">
                         <h4 className="text-sm font-bold text-white group-hover:text-[#C5A059] transition-colors line-clamp-2 leading-snug">
                           {video.title}
@@ -1275,7 +1318,7 @@ export const BreakthroughTVPage: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-800/80 space-y-2">
+                      <div className="pt-3 border-t border-slate-800/80 space-y-3">
                         <div className="flex items-center justify-between text-[11px] text-slate-400">
                           <span className="font-semibold text-slate-300 truncate max-w-[150px]">
                             {video.presenter || video.speakerName || 'BIBU Faculty'}
@@ -1283,28 +1326,42 @@ export const BreakthroughTVPage: React.FC = () => {
                           <span className="font-mono">{video.viewsCount.toLocaleString()} views</span>
                         </div>
 
-                        <div className="flex items-center justify-between text-[10px] pt-1">
-                          <div className="flex items-center gap-2">
+                        {/* Card Action Buttons: Watch Now, Watch on YouTube, Share */}
+                        <div className="flex items-center justify-between gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleSelectVideo(video);
+                            }}
+                            className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm transition-all hover:scale-105"
+                          >
+                            <Play className="w-3.5 h-3.5 fill-current" />
+                            <span>Watch Now</span>
+                          </button>
+
+                          <div className="flex items-center gap-1.5">
+                            <a
+                              href={video.youtubeUrl || `https://www.youtube.com/watch?v=${video.youtubeVideoId}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 transition-colors flex items-center gap-1 text-[10px] font-bold"
+                              title="Watch on YouTube"
+                            >
+                              <Youtube className="w-3.5 h-3.5 text-rose-500 fill-current" />
+                              <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
+                            </a>
+
                             <button
                               type="button"
                               onClick={(e) => handleOpenShareModal(video, e)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-[#C5A059] hover:text-white border border-slate-700/80 hover:border-[#C5A059]/60 font-bold flex items-center gap-1.5 transition-all shadow-sm group/btn"
-                              title="Share sermon video"
+                              className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-[#C5A059] hover:text-white border border-slate-700/80 transition-colors"
+                              title="Share video"
                             >
-                              <Share2 className="w-3 h-3 text-rose-500 group-hover/btn:scale-110 transition-transform" />
-                              <span>Share</span>
-                            </button>
-                            <button
-                              onClick={(e) => handleOpenModal(video, e)}
-                              className="text-slate-400 hover:text-white font-medium flex items-center gap-1 transition-colors"
-                            >
-                              <span>Open Details</span>
-                              <ExternalLink className="w-2.5 h-2.5" />
+                              <Share2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
-                          <span className="text-slate-500 font-mono">
-                            {new Date(video.publishedAt || video.publishedDate || '2026-08-01').toLocaleDateString()}
-                          </span>
                         </div>
                       </div>
                     </div>

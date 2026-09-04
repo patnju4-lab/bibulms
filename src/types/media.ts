@@ -2,6 +2,10 @@ export type MediaCategory =
   | 'Live Broadcasts'
   | 'Sermons'
   | 'Bible Teaching'
+  | 'Theology Lectures'
+  | 'Christian Leadership'
+  | 'BIBU Events'
+  | 'Ministry Programs'
   | 'Conferences'
   | 'Graduation'
   | 'Interviews'
@@ -90,6 +94,8 @@ export interface MediaVideo {
   scriptureReference?: string;
   tags: string[];
   status?: 'published' | 'draft' | 'archived';
+  isVisible?: boolean;
+  orderIndex?: number;
 }
 
 export interface MediaPlaylist {

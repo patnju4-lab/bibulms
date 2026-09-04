@@ -20,7 +20,10 @@ import {
   Shield,
   Layers,
   AlertCircle,
-  Eye
+  Eye,
+  EyeOff,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 
 export const TVAdminPortal: React.FC = () => {
@@ -29,6 +32,7 @@ export const TVAdminPortal: React.FC = () => {
     addMediaVideo,
     updateMediaVideo,
     deleteMediaVideo,
+    reorderMediaVideos,
     youtubeSettings,
     updateYouTubeSettings,
     tvPrograms,
@@ -67,18 +71,21 @@ export const TVAdminPortal: React.FC = () => {
   const [ytSuccess, setYtSuccess] = useState(false);
 
   const categories: MediaCategory[] = [
-    'Sermons',
     'Bible Teaching',
+    'Sermons',
+    'Christian Leadership',
+    'Theology Lectures',
+    'BIBU Events',
+    'Ministry Programs',
+    'Live Broadcasts',
     'Conferences',
     'Graduation',
     'Interviews',
     'Ministry Training',
     'BIBU Chapel Services',
     'Theology Classes',
-    'Christian Leadership',
     'University News',
-    'Special Events',
-    'Live Broadcasts'
+    'Special Events'
   ];
 
   // Helper to parse YouTube URL
@@ -216,6 +223,21 @@ export const TVAdminPortal: React.FC = () => {
     setTimeout(() => setSuccessMessage(null), 3000);
   };
 
+  const handleToggleVisibility = (vid: MediaVideo) => {
+    const isCurrentlyHidden = vid.status === 'archived' || vid.isVisible === false;
+    const newStatus = isCurrentlyHidden ? 'published' : 'archived';
+    const newVisible = isCurrentlyHidden ? true : false;
+    updateMediaVideo(vid.id, { status: newStatus, isVisible: newVisible });
+    setSuccessMessage(`Video "${vid.title}" is now ${newVisible ? 'Visible' : 'Hidden'} on BIBU TV.`);
+    setTimeout(() => setSuccessMessage(null), 3000);
+  };
+
+  const handleMoveOrder = (vidId: string, direction: 'up' | 'down') => {
+    reorderMediaVideos(vidId, direction);
+    setSuccessMessage('Video display order updated.');
+    setTimeout(() => setSuccessMessage(null), 2500);
+  };
+
   const handleSaveYouTubeSettings = (e: React.FormEvent) => {
     e.preventDefault();
     updateYouTubeSettings(ytForm);
@@ -348,17 +370,46 @@ export const TVAdminPortal: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-black uppercase text-slate-600 tracking-wider">
+                    <th className="py-3 px-3 w-16 text-center">Order</th>
                     <th className="py-3 px-4">Thumbnail / Video</th>
                     <th className="py-3 px-4">Title & Speaker</th>
                     <th className="py-3 px-4">Category</th>
                     <th className="py-3 px-4">Featured</th>
+                    <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">YouTube ID</th>
                     <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-xs">
-                  {filteredVideos.map(video => (
-                    <tr key={video.id} className="hover:bg-slate-50/80 transition-colors">
+                  {filteredVideos.map((video, idx) => {
+                    const isHidden = video.status === 'archived' || video.isVisible === false;
+                    return (
+                    <tr key={video.id} className={`hover:bg-slate-50/80 transition-colors ${isHidden ? 'opacity-60 bg-slate-50/50' : ''}`}>
+                      {/* Order Controls */}
+                      <td className="py-3 px-3 text-center">
+                        <div className="flex flex-col items-center justify-center gap-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMoveOrder(video.id, 'up')}
+                            className="p-1 text-slate-400 hover:text-[#002366] disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                            title="Move Up in Display Order"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </button>
+                          <span className="text-[10px] font-mono font-bold text-slate-500">{idx + 1}</span>
+                          <button
+                            type="button"
+                            disabled={idx === filteredVideos.length - 1}
+                            onClick={() => handleMoveOrder(video.id, 'down')}
+                            className="p-1 text-slate-400 hover:text-[#002366] disabled:opacity-20 disabled:hover:text-slate-400 rounded transition-colors"
+                            title="Move Down in Display Order"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+
                       <td className="py-3 px-4 w-36">
                         <div className="relative aspect-video rounded-lg overflow-hidden border border-slate-200 shadow-xs bg-slate-900 group">
                           <img
@@ -399,6 +450,20 @@ export const TVAdminPortal: React.FC = () => {
                         </button>
                       </td>
                       <td className="py-3 px-4">
+                        <button
+                          onClick={() => handleToggleVisibility(video)}
+                          className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 ${
+                            isHidden
+                              ? 'bg-slate-100 border-slate-300 text-slate-500'
+                              : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                          }`}
+                          title={isHidden ? 'Click to Show on BIBU TV' : 'Click to Hide from BIBU TV'}
+                        >
+                          {isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                          <span className="text-[10px] font-bold">{isHidden ? 'Hidden' : 'Visible'}</span>
+                        </button>
+                      </td>
+                      <td className="py-3 px-4">
                         <a
                           href={`https://www.youtube.com/watch?v=${video.youtubeVideoId}`}
                           target="_blank"
@@ -428,7 +493,8 @@ export const TVAdminPortal: React.FC = () => {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                   {filteredVideos.length === 0 && (
                     <tr>
                       <td colSpan={6} className="py-12 text-center text-slate-400 text-xs">
@@ -696,6 +762,25 @@ export const TVAdminPortal: React.FC = () => {
                   />
                 </div>
               </div>
+
+              {/* Live Preview If Video ID Present */}
+              {formData.youtubeVideoId && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Film className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Live Embedded Player Preview (Privacy-Enhanced)</span>
+                  </label>
+                  <div className="aspect-video bg-black rounded-lg overflow-hidden border border-slate-300">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${formData.youtubeVideoId}${formData.startTimeSeconds ? `?start=${formData.startTimeSeconds}&controls=1&fs=1` : '?controls=1&fs=1'}`}
+                      title="Admin Video Preview"
+                      className="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center gap-2 pt-2">
                 <input
