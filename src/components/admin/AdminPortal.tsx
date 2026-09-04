@@ -35,6 +35,7 @@ import { AlumniAdminManager } from './AlumniAdminManager';
 import { RplAdminManager } from './RplAdminManager';
 import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal';
 import { TVRadioManagement } from './TVRadioManagement';
+import { TVAdminPortal } from './TVAdminPortal';
 import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -296,7 +297,7 @@ export const AdminPortal: React.FC = () => {
       {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}
 
       {/* TAB: TV & Radio Media Management */}
-      {activeTab === 'tv-radio' && <TVRadioManagement />}
+      {activeTab === 'tv-radio' && <TVAdminPortal />}
 
       {/* TAB: RPL Manager */}
       {activeTab === 'rpl-manager' && <RplAdminManager />}
