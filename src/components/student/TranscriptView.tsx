@@ -14,9 +14,42 @@ import {
 } from 'lucide-react';
 
 export const TranscriptView: React.FC = () => {
-  const { currentUser, transcripts, setCurrentView, universityInfo } = useApp();
+  const { currentUser, setCurrentView, universityInfo, grades } = useApp();
 
-  const transcript = transcripts[0];
+  // Group grades by semester for this student
+  const studentGrades = grades.filter((g) => g.studentId === currentUser.id);
+
+  // Group by semester preserving chronological order
+  const semesterOrder = ['Spring 2026', 'Fall 2025', 'Spring 2025', 'Fall 2024'];
+  const groupedSemesters = semesterOrder.map((term) => {
+    const termCourses = studentGrades.filter((g) => g.semester === term);
+    const termCredits = termCourses.reduce((sum, c) => sum + c.creditHours, 0);
+    const termPoints = termCourses.reduce((sum, c) => sum + (c.creditHours * c.gradePoint), 0);
+    const termGpa = termCredits > 0 ? termPoints / termCredits : 0;
+
+    return {
+      term,
+      termGpa,
+      courses: termCourses.map((c) => ({
+        code: c.courseCode,
+        title: c.courseTitle,
+        credits: c.creditHours,
+        grade: c.letterGrade,
+        points: c.creditHours * c.gradePoint
+      }))
+    };
+  }).filter((sem) => sem.courses.length > 0);
+
+  const totalCourseCredits = studentGrades.reduce((acc, g) => acc + g.creditHours, 0);
+  const totalQualityPoints = studentGrades.reduce((acc, g) => acc + (g.creditHours * g.gradePoint), 0);
+  const calculatedGpa = totalCourseCredits > 0 ? totalQualityPoints / totalCourseCredits : (currentUser.gpa || 3.84);
+  const totalCreditsConferred = currentUser.creditsEarned || totalCourseCredits;
+
+  const transcript = {
+    semesters: groupedSemesters,
+    totalCreditsEarned: totalCreditsConferred,
+    cumulativeGpa: calculatedGpa
+  };
 
   const handlePrint = () => {
     window.print();

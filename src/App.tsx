@@ -23,6 +23,7 @@ import { SchoolsCatalog } from './components/public/SchoolsCatalog';
 import { ProgramsCatalog } from './components/public/ProgramsCatalog';
 import { AdmissionsPortal } from './components/public/AdmissionsPortal';
 import { RplPortal } from './components/public/RplPortal';
+import { RplSlideDeck } from './components/rpl/RplSlideDeck';
 import { CertificateVerification } from './components/public/CertificateVerification';
 import { DigitalLibrary } from './components/public/DigitalLibrary';
 import { ContactPage } from './components/public/ContactPage';
@@ -77,6 +78,12 @@ const MainContent: React.FC = () => {
         return <AdmissionsPortal />;
       case 'rpl':
         return <RplPortal />;
+      case 'rpl-slides':
+        return (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8">
+            <RplSlideDeck />
+          </div>
+        );
       case 'verify':
       case 'verification':
         return <CertificateVerification />;

@@ -8,6 +8,8 @@ import { Notifications } from './Notifications';
 import { CourseCatalogBrowser } from './CourseCatalogBrowser';
 import { RplStudentModule } from './RplStudentModule';
 import { StudentMediaSection } from './StudentMediaSection';
+import { AcademicHistorySection } from './AcademicHistorySection';
+import { GradeDistributionPieChart } from './GradeDistributionPieChart';
 import {
   GraduationCap,
   BookOpen,
@@ -33,7 +35,8 @@ import {
   BarChart3,
   Bookmark,
   Play,
-  Tv
+  Tv,
+  PieChart as PieChartIcon
 } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
@@ -54,13 +57,20 @@ export const StudentDashboard: React.FC = () => {
     setSelectedExamId,
     getStudentEnrolledCourses,
     isStudentEnrolledInCourse,
-    requestCourseEnrolment
+    requestCourseEnrolment,
+    grades
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history'>('overview');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
   const [progressFilter, setProgressFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
+  const [academicWidgetTab, setAcademicWidgetTab] = useState<'grades_chart' | 'degree_stats'>('grades_chart');
+
+  // Filter student grades across entire career
+  const studentGrades = useMemo(() => {
+    return grades.filter((g) => g.studentId === currentUser?.id);
+  }, [grades, currentUser?.id]);
 
   const enrolledCourses = getStudentEnrolledCourses(currentUser);
   const enrolledCourseIds = enrolledCourses.map((c) => c.id);
@@ -277,6 +287,18 @@ export const StudentDashboard: React.FC = () => {
           </button>
 
           <button
+            id="student-dashboard-quick-academic-history-btn"
+            onClick={() => {
+              setActiveTab('history');
+              window.scrollTo({ top: 400, behavior: 'smooth' });
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#001A4D] hover:bg-[#001438] text-white font-bold uppercase tracking-wider text-xs border border-white/20 transition-all flex items-center gap-2 hover:border-[#C5A059]"
+          >
+            <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+            <span>Academic History</span>
+          </button>
+
+          <button
             onClick={() => setCurrentView('finance')}
             className="px-5 py-2.5 rounded-xl bg-[#001A4D] hover:bg-[#001438] text-white font-bold uppercase tracking-wider text-xs border border-white/20 transition-all flex items-center gap-2 hover:border-[#C5A059]"
           >
@@ -342,6 +364,19 @@ export const StudentDashboard: React.FC = () => {
         </button>
 
         <button
+          id="student-dashboard-tab-history"
+          onClick={() => setActiveTab('history')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'history'
+              ? 'bg-[#002366] text-white shadow-sm'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+          <span>Academic History</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('rpl')}
           className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeTab === 'rpl'
@@ -391,6 +426,13 @@ export const StudentDashboard: React.FC = () => {
       {activeTab === 'courses' && (
         <div className="space-y-6 animate-in fade-in">
           <CourseCatalogBrowser onOpenClassroom={handleResumeCourse} />
+        </div>
+      )}
+
+      {/* Conditional View: Academic History Tab */}
+      {activeTab === 'history' && (
+        <div className="space-y-6 animate-in fade-in">
+          <AcademicHistorySection onOpenTranscript={() => setCurrentView('transcript')} />
         </div>
       )}
 
@@ -813,6 +855,90 @@ export const StudentDashboard: React.FC = () => {
                 className="w-full py-2 rounded-lg bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider transition-all"
               >
                 Open Notification Center
+              </button>
+            </div>
+
+            {/* Academic History & Performance Quick Widget */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span className="text-xs font-black text-[#002366] uppercase tracking-widest flex items-center gap-1.5">
+                  <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                  <span>Academic History</span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
+                  GPA: {currentUser.gpa || '3.84'}
+                </span>
+              </div>
+
+              {/* View Toggle: Career Grade Distribution vs Degree Stats */}
+              <div className="flex items-center rounded-lg bg-slate-100 p-1 border border-slate-200">
+                <button
+                  id="overview-academic-widget-pie-btn"
+                  onClick={() => setAcademicWidgetTab('grades_chart')}
+                  className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                    academicWidgetTab === 'grades_chart'
+                      ? 'bg-[#002366] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <PieChartIcon className="w-3 h-3 text-[#C5A059]" />
+                  <span>Grade Distribution</span>
+                </button>
+                <button
+                  id="overview-academic-widget-stats-btn"
+                  onClick={() => setAcademicWidgetTab('degree_stats')}
+                  className={`flex-1 py-1.5 rounded-md text-[11px] font-bold transition-all ${
+                    academicWidgetTab === 'degree_stats'
+                      ? 'bg-[#002366] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>Degree Summary</span>
+                </button>
+              </div>
+
+              {/* Tab 1: Recharts Pie Chart Distribution */}
+              {academicWidgetTab === 'grades_chart' && (
+                <div className="animate-in fade-in pt-1">
+                  <GradeDistributionPieChart
+                    studentGrades={studentGrades}
+                    compact={true}
+                  />
+                </div>
+              )}
+
+              {/* Tab 2: Degree Stats */}
+              {academicWidgetTab === 'degree_stats' && (
+                <div className="space-y-2 text-xs animate-in fade-in pt-1">
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Completed Coursework:</span>
+                    <span className="font-bold text-slate-900 font-mono">16 Courses (48 Cr)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Conferred RPL Credits:</span>
+                    <span className="font-bold text-emerald-700 font-mono">30 Credits Conferred</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Total Credits Toward B.Th:</span>
+                    <span className="font-bold text-[#002366] font-mono">78 / 120 (65%)</span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-600">
+                    <span>Academic Honors Standing:</span>
+                    <span className="font-bold text-amber-700">Dean's Honor List</span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                id="student-dashboard-overview-view-history-btn"
+                onClick={() => {
+                  setActiveTab('history');
+                  window.scrollTo({ top: 400, behavior: 'smooth' });
+                }}
+                className="w-full py-2.5 rounded-lg bg-slate-100 hover:bg-[#002366] hover:text-white text-[#002366] text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 mt-2"
+              >
+                <span>View Full Course Grades & Visual Analytics</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>
 

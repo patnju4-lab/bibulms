@@ -298,6 +298,22 @@ export interface GradeRecord {
   totalScore: number;
   letterGrade: 'A' | 'A-' | 'B+' | 'B' | 'B-' | 'C+' | 'C' | 'D' | 'F';
   gradePoint: number;
+  instructorName?: string;
+  schoolName?: string;
+  status?: 'Completed' | 'Conferred' | 'In Progress';
+  academicStanding?: string;
+  qualityPoints?: number;
+}
+
+export interface SemesterSummary {
+  term: string;
+  year: number;
+  courses: GradeRecord[];
+  creditsAttempted: number;
+  creditsEarned: number;
+  totalQualityPoints: number;
+  termGpa: number;
+  academicStanding: string;
 }
 
 export interface Application {

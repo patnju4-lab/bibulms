@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Award, CheckCircle2, Clock, FileText, Plus, ShieldCheck, Sparkles, User, ArrowRight, BookOpen } from 'lucide-react';
 import { RPLApplicationRecord, RPLMinistryPosition, RPLEvidenceItem, RPLCompetencyItem } from '../../types/rpl';
+import { RplSlideDeck } from '../rpl/RplSlideDeck';
 
 export const RplStudentModule: React.FC = () => {
   const { currentUser, rplRecords, submitDetailedRPLApplication, submitRPLAppeal, programs } = useApp();
 
-  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript' | 'slides'>('overview');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // New Application Form State
@@ -160,26 +161,39 @@ export const RplStudentModule: React.FC = () => {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-3 overflow-x-auto">
         <button
           onClick={() => setActiveView('overview')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'overview' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeView === 'overview' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
         >
           My RPL Dashboard
         </button>
         <button
           onClick={() => setActiveView('portfolio')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'portfolio' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeView === 'portfolio' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
         >
           Portfolio & Evidence Builder
         </button>
         <button
+          onClick={() => setActiveView('slides')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeView === 'slides' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+        >
+          <Award className="w-3.5 h-3.5 text-[#C5A059]" />
+          <span>Proposed Slide Deck (15 Slides)</span>
+        </button>
+        <button
           onClick={() => setActiveView('apply')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeView === 'apply' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeView === 'apply' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
         >
           New Application
         </button>
       </div>
+
+      {activeView === 'slides' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplSlideDeck />
+        </div>
+      )}
 
       {activeView === 'overview' && (
         <div className="space-y-6">

@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Award, CheckCircle2, FileText, Search, Sparkles, ArrowRight, ShieldCheck, BookOpen, UserCheck, HelpCircle } from 'lucide-react';
+import { Award, CheckCircle2, FileText, Search, Sparkles, ArrowRight, ShieldCheck, BookOpen, UserCheck, HelpCircle, Layers } from 'lucide-react';
 import { RPLApplication } from '../../types';
+import { RplSlideDeck } from '../rpl/RplSlideDeck';
 
 export const RplPortal: React.FC = () => {
   const { rplApplications, submitRPLApplication, programs, verifyRPLCode } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'eligibility' | 'mapping' | 'faq' | 'verify'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'slides' | 'eligibility' | 'mapping' | 'faq' | 'verify'>('overview');
 
   // Lookup state
   const [verifyInput, setVerifyInput] = useState('');
@@ -104,8 +105,15 @@ export const RplPortal: React.FC = () => {
 
         <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
           <button
+            onClick={() => setActiveTab('slides')}
+            className="px-6 py-3 rounded-xl bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black text-xs uppercase tracking-wider shadow-md transition-all flex items-center gap-2"
+          >
+            <Award className="w-4 h-4" />
+            <span>Proposed Slide Deck (15 Slides)</span>
+          </button>
+          <button
             onClick={() => setActiveTab('eligibility')}
-            className="px-6 py-3 rounded-xl bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black text-xs uppercase tracking-wider shadow-md transition-all"
+            className="px-6 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs uppercase tracking-wider backdrop-blur-xs border border-white/20 transition-all"
           >
             Check Eligibility Now
           </button>
@@ -122,6 +130,7 @@ export const RplPortal: React.FC = () => {
       <div className="flex items-center justify-center gap-2 overflow-x-auto pb-2 border-b border-slate-200">
         {[
           { id: 'overview', label: 'Overview & Process' },
+          { id: 'slides', label: 'Proposed Slide Deck (15 Slides)' },
           { id: 'eligibility', label: 'Eligibility Quiz' },
           { id: 'mapping', label: 'Experience Mapping' },
           { id: 'faq', label: 'Frequently Asked Questions' },
@@ -141,9 +150,39 @@ export const RplPortal: React.FC = () => {
         ))}
       </div>
 
+      {/* TAB: PROPOSED SLIDE DECK (15 SLIDES) */}
+      {activeTab === 'slides' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplSlideDeck />
+        </div>
+      )}
+
       {/* TAB 1: OVERVIEW */}
       {activeTab === 'overview' && (
         <div className="space-y-10 animate-in fade-in">
+          {/* Slide Deck Featured Callout Banner */}
+          <div className="bg-gradient-to-r from-[#001744] via-[#002366] to-[#0A3078] rounded-2xl p-6 sm:p-8 text-white border-2 border-[#C5A059] shadow-md flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C5A059]/20 text-[#C5A059] text-[10px] font-black uppercase tracking-wider">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Candidate Scoping Resource</span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-display font-black text-white">
+                RPL Proposed Slide Deck — 15 Official Slides
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-200 max-w-2xl leading-relaxed">
+                Review the comprehensive presentation covering the Purpose of RPL Counselling, the 5 Quality Standards of Evidence (A.R.S.C.V.), Pastoral &amp; Sermon Artifacts, Reflective Writing, Competencies, and the Master Evidence Register.
+              </p>
+            </div>
+            <button
+              onClick={() => setActiveTab('slides')}
+              className="px-6 py-3.5 rounded-xl bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] font-black text-xs uppercase tracking-wider shadow-lg transition-all flex items-center gap-2 shrink-0"
+            >
+              <span>Launch Presentation</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="p-6 bg-white rounded-xl border border-slate-200 shadow-xs space-y-3">
               <div className="w-10 h-10 rounded-lg bg-[#002366] text-[#C5A059] flex items-center justify-center font-bold">01</div>

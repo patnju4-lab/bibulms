@@ -121,6 +121,7 @@ export type CurrentView =
   | 'program-detail'
   | 'admissions'
   | 'rpl'
+  | 'rpl-slides'
   | 'library'
   | 'verification'
   | 'contact'
@@ -589,7 +590,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [grades, setGrades] = useState<GradeRecord[]>(() => {
     const saved = localStorage.getItem('bibu_grades');
-    return saved ? JSON.parse(saved) : INITIAL_GRADES;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length >= INITIAL_GRADES.length) {
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_grades', e);
+      }
+    }
+    return INITIAL_GRADES;
   });
 
   const [certificates, setCertificates] = useState<Certificate[]>(() => {

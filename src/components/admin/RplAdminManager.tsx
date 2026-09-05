@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Award, CheckCircle2, Clock, FileText, Search, UserCheck, ShieldCheck, AlertCircle, DollarSign, BookOpen, Printer, ArrowUpRight, Check, X } from 'lucide-react';
 import { RPLApplicationRecord, RPLCompetencyItem, RPLStatus, RPLAssessmentMethod } from '../../types/rpl';
+import { RplSlideDeck } from '../rpl/RplSlideDeck';
 
 export const RplAdminManager: React.FC = () => {
   const { rplRecords, rplProgramRules, assessRPLCompetency, scheduleRPLInterview, finalizeRPLAssessment, syncRPLToTranscript } = useApp();
@@ -9,7 +10,7 @@ export const RplAdminManager: React.FC = () => {
   const [selectedAppId, setSelectedAppId] = useState<string>(rplRecords[0]?.id || '');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'applications' | 'rules' | 'verification' | 'analytics'>('applications');
+  const [activeSubTab, setActiveSubTab] = useState<'applications' | 'rules' | 'verification' | 'analytics' | 'slides'>('applications');
 
   // Assessment Modal / Drawer state
   const [assessmentNotes, setAssessmentNotes] = useState('');
@@ -68,6 +69,13 @@ export const RplAdminManager: React.FC = () => {
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === 'analytics' ? 'bg-[#002366] text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
           >
             Analytics & Reports
+          </button>
+          <button
+            onClick={() => setActiveSubTab('slides')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeSubTab === 'slides' ? 'bg-[#002366] text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            <Award className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>15-Slide Counselling Deck</span>
           </button>
         </div>
       </div>
@@ -358,6 +366,12 @@ export const RplAdminManager: React.FC = () => {
               <div className="text-3xl font-black font-display text-[#C5A059]">6.4 Days</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {activeSubTab === 'slides' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplSlideDeck />
         </div>
       )}
     </div>
