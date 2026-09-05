@@ -924,3 +924,4 @@ export interface AlumniChapter {
 export * from './alumni';
 export * from './rpl';
 export * from './media';
+export * from './graduation';

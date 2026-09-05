@@ -36,6 +36,7 @@ import { RplAdminManager } from './RplAdminManager';
 import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal';
 import { TVRadioManagement } from './TVRadioManagement';
 import { TVAdminPortal } from './TVAdminPortal';
+import { GraduationManagementPortal } from '../graduation/GraduationManagementPortal';
 import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -54,10 +55,11 @@ export const AdminPortal: React.FC = () => {
     alumniList,
     examinationCentres,
     kenyaCounties,
-    mediaVideos
+    mediaVideos,
+    graduationCandidates
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('exam-centres');
+  const [activeTab, setActiveTab] = useState<'graduation' | 'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('graduation');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -148,6 +150,18 @@ export const AdminPortal: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-1">
+        <button
+          onClick={() => setActiveTab('graduation')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'graduation'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/70 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+          <span>🎓 Graduation & Convocation Portal ({graduationCandidates.length})</span>
+        </button>
+
         <button
           onClick={() => setActiveTab('exam-centres')}
           className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
@@ -292,6 +306,9 @@ export const AdminPortal: React.FC = () => {
           <span>Live Site CMS</span>
         </button>
       </div>
+
+      {/* TAB: Graduation Management & Digital Convocation Portal */}
+      {activeTab === 'graduation' && <GraduationManagementPortal />}
 
       {/* TAB: Global Exam Centres & 47 Counties System */}
       {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}

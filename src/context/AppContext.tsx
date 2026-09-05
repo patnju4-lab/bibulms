@@ -112,6 +112,24 @@ import {
   INITIAL_STUDENT_MEDIA_PROGRESS,
   INITIAL_MEDIA_ANALYTICS
 } from '../data/mediaData';
+import {
+  GraduationCeremony,
+  GraduationCandidate,
+  GraduationBooklet,
+  AcademicAwardWinner,
+  GraduationCertificateRecord,
+  GraduationAuditLog,
+  DepartmentClearanceRecord,
+  DepartmentClearanceStatus
+} from '../types/graduation';
+import {
+  INITIAL_GRADUATION_CEREMONIES,
+  INITIAL_GRADUATION_CANDIDATES,
+  INITIAL_GRADUATION_BOOKLET,
+  INITIAL_ACADEMIC_AWARDS,
+  INITIAL_GRADUATION_CERTIFICATES,
+  INITIAL_AUDIT_LOGS as INITIAL_GRADUATION_AUDIT_LOGS
+} from '../data/graduationMockData';
 
 export type CurrentView = 
   | 'home'
@@ -165,7 +183,15 @@ export type CurrentView =
   | 'media-podcasts'
   | 'media-archives'
   | 'youtube-channel'
-  | 'faculty-media';
+  | 'faculty-media'
+  // Graduation Management, Booklet & Alumni Subsections
+  | 'graduation'
+  | 'graduates'
+  | 'graduation-booklet'
+  | 'alumni-directory'
+  | 'alumni-events'
+  | 'alumni-news'
+  | 'graduation-reports';
 
 export interface RegisterUserData {
   name: string;
@@ -455,6 +481,46 @@ interface AppContextType {
   toggleStudentFavoriteVideo: (videoId: string) => void;
   updateStudentVideoProgress: (videoId: string, watchedSeconds: number, totalSeconds: number) => void;
   recordVideoView: (videoId: string) => void;
+
+  // Graduation Management, Candidates, Booklets, Certificates & Awards
+  graduationCeremonies: GraduationCeremony[];
+  addGraduationCeremony: (ceremony: Omit<GraduationCeremony, 'id' | 'createdAt' | 'updatedAt'>) => GraduationCeremony;
+  updateGraduationCeremony: (id: string, updates: Partial<GraduationCeremony>) => void;
+  deleteGraduationCeremony: (id: string) => void;
+
+  graduationCandidates: GraduationCandidate[];
+  addGraduationCandidate: (candidate: Omit<GraduationCandidate, 'id' | 'createdAt' | 'updatedAt'>) => GraduationCandidate;
+  updateGraduationCandidate: (id: string, updates: Partial<GraduationCandidate>) => void;
+  deleteGraduationCandidate: (id: string) => void;
+  updateDepartmentClearance: (candidateId: string, department: keyof GraduationCandidate['clearances'], record: Partial<DepartmentClearanceRecord>) => void;
+  conferCandidateToGraduate: (candidateId: string) => { candidate: GraduationCandidate; certificate: GraduationCertificateRecord; alumni?: Alumni };
+
+  graduationBooklets: GraduationBooklet[];
+  activeGraduationBooklet: GraduationBooklet | null;
+  setActiveGraduationBooklet: (booklet: GraduationBooklet | null) => void;
+  generateGraduationBooklet: (ceremonyId: string, overrides?: Partial<GraduationBooklet>) => GraduationBooklet;
+  updateGraduationBooklet: (bookletId: string, updates: Partial<GraduationBooklet>) => void;
+
+  academicAwards: AcademicAwardWinner[];
+  addAcademicAward: (award: Omit<AcademicAwardWinner, 'id'>) => AcademicAwardWinner;
+  updateAcademicAward: (id: string, updates: Partial<AcademicAwardWinner>) => void;
+  deleteAcademicAward: (id: string) => void;
+
+  graduationCertificates: GraduationCertificateRecord[];
+  issueGraduationCertificateRecord: (candidateId: string) => GraduationCertificateRecord;
+  updateGraduationCertificateRecord: (id: string, updates: Partial<GraduationCertificateRecord>) => void;
+
+  graduationAuditLogs: GraduationAuditLog[];
+  logGraduationAudit: (entry: Omit<GraduationAuditLog, 'id' | 'timestamp'>) => void;
+
+  bulkImportCandidates: (candidates: Partial<GraduationCandidate>[]) => { successCount: number; errors: string[] };
+  verifyGraduationCredential: (query: { certificateNumber?: string; studentId?: string; candidateId?: string }) => {
+    found: boolean;
+    candidate?: GraduationCandidate;
+    certificate?: GraduationCertificateRecord;
+    alumni?: Alumni;
+    message: string;
+  };
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -800,6 +866,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [radioVolume, setRadioVolume] = useState<number>(85);
   const [isRadioMuted, setIsRadioMuted] = useState<boolean>(false);
   const [selectedMediaCategory, setSelectedMediaCategory] = useState<MediaCategory | 'All'>('All');
+
+  // Graduation Module States
+  const [graduationCeremonies, setGraduationCeremonies] = useState<GraduationCeremony[]>(() => {
+    const saved = localStorage.getItem('bibu_graduation_ceremonies');
+    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CEREMONIES;
+  });
+
+  const [graduationCandidates, setGraduationCandidates] = useState<GraduationCandidate[]>(() => {
+    const saved = localStorage.getItem('bibu_graduation_candidates');
+    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CANDIDATES;
+  });
+
+  const [graduationBooklets, setGraduationBooklets] = useState<GraduationBooklet[]>(() => {
+    const saved = localStorage.getItem('bibu_graduation_booklets');
+    return saved ? JSON.parse(saved) : [INITIAL_GRADUATION_BOOKLET];
+  });
+
+  const [activeGraduationBooklet, setActiveGraduationBooklet] = useState<GraduationBooklet | null>(() => {
+    return graduationBooklets[0] || INITIAL_GRADUATION_BOOKLET;
+  });
+
+  const [academicAwards, setAcademicAwards] = useState<AcademicAwardWinner[]>(() => {
+    const saved = localStorage.getItem('bibu_academic_awards');
+    return saved ? JSON.parse(saved) : INITIAL_ACADEMIC_AWARDS;
+  });
+
+  const [graduationCertificates, setGraduationCertificates] = useState<GraduationCertificateRecord[]>(() => {
+    const saved = localStorage.getItem('bibu_graduation_certificates');
+    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CERTIFICATES;
+  });
+
+  const [graduationAuditLogs, setGraduationAuditLogs] = useState<GraduationAuditLog[]>(() => {
+    const saved = localStorage.getItem('bibu_graduation_audit_logs');
+    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_AUDIT_LOGS;
+  });
+
+  // Graduation Local Storage Sync
+  useEffect(() => {
+    localStorage.setItem('bibu_graduation_ceremonies', JSON.stringify(graduationCeremonies));
+  }, [graduationCeremonies]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_graduation_candidates', JSON.stringify(graduationCandidates));
+  }, [graduationCandidates]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_graduation_booklets', JSON.stringify(graduationBooklets));
+  }, [graduationBooklets]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_academic_awards', JSON.stringify(academicAwards));
+  }, [academicAwards]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_graduation_certificates', JSON.stringify(graduationCertificates));
+  }, [graduationCertificates]);
+
+  useEffect(() => {
+    localStorage.setItem('bibu_graduation_audit_logs', JSON.stringify(graduationAuditLogs));
+  }, [graduationAuditLogs]);
 
   // Media Local Storage Sync
   useEffect(() => {
@@ -3295,6 +3421,432 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMediaVideos(prev => prev.map(v => v.id === videoId ? { ...v, viewsCount: v.viewsCount + 1 } : v));
   };
 
+  // ==========================================
+  // GRADUATION, ALUMNI & BOOKLET MANAGEMENT
+  // ==========================================
+  const addGraduationCeremony = (ceremonyData: Omit<GraduationCeremony, 'id' | 'createdAt' | 'updatedAt'>): GraduationCeremony => {
+    const newCeremony: GraduationCeremony = {
+      ...ceremonyData,
+      id: `ceremony-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setGraduationCeremonies(prev => [newCeremony, ...prev]);
+    logGraduationAudit({
+      ceremonyId: newCeremony.id,
+      action: 'Create Ceremony',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Created ceremony: ${newCeremony.graduationNumber} (${newCeremony.graduationYear}) at ${newCeremony.venue}`
+    });
+    return newCeremony;
+  };
+
+  const updateGraduationCeremony = (id: string, updates: Partial<GraduationCeremony>) => {
+    setGraduationCeremonies(prev =>
+      prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
+    );
+    logGraduationAudit({
+      ceremonyId: id,
+      action: 'Update Ceremony',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Updated ceremony #${id}`
+    });
+  };
+
+  const deleteGraduationCeremony = (id: string) => {
+    setGraduationCeremonies(prev => prev.filter(c => c.id !== id));
+    logGraduationAudit({
+      ceremonyId: id,
+      action: 'Delete Ceremony',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Deleted ceremony #${id}`
+    });
+  };
+
+  const addGraduationCandidate = (candidateData: Omit<GraduationCandidate, 'id' | 'createdAt' | 'updatedAt'>): GraduationCandidate => {
+    const nextBookletNum = `BK-${String(graduationCandidates.length + 1).padStart(3, '0')}`;
+    const newCandidate: GraduationCandidate = {
+      ...candidateData,
+      id: `cand-${Date.now()}`,
+      bookletNumber: candidateData.bookletNumber || nextBookletNum,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setGraduationCandidates(prev => [newCandidate, ...prev]);
+    logGraduationAudit({
+      candidateId: newCandidate.id,
+      action: 'Register Candidate',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Registered candidate: ${newCandidate.fullName} (${newCandidate.studentId}) for ${newCandidate.programName}`
+    });
+    return newCandidate;
+  };
+
+  const updateGraduationCandidate = (id: string, updates: Partial<GraduationCandidate>) => {
+    setGraduationCandidates(prev =>
+      prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
+    );
+  };
+
+  const deleteGraduationCandidate = (id: string) => {
+    setGraduationCandidates(prev => prev.filter(c => c.id !== id));
+    logGraduationAudit({
+      candidateId: id,
+      action: 'Remove Candidate',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Removed candidate #${id}`
+    });
+  };
+
+  const updateDepartmentClearance = (
+    candidateId: string,
+    department: keyof GraduationCandidate['clearances'],
+    record: Partial<DepartmentClearanceRecord>
+  ) => {
+    setGraduationCandidates(prev =>
+      prev.map(cand => {
+        if (cand.id !== candidateId) return cand;
+
+        const currentDept = cand.clearances[department];
+        const updatedDept: DepartmentClearanceRecord = {
+          ...currentDept,
+          ...record,
+          status: record.status || currentDept.status,
+          clearedBy: record.clearedBy || currentUser.name,
+          clearedDate: record.clearedDate || new Date().toISOString().split('T')[0],
+          notes: record.notes !== undefined ? record.notes : currentDept.notes,
+        };
+
+        const newClearances = {
+          ...cand.clearances,
+          [department]: updatedDept
+        };
+
+        const deptKeys = Object.keys(newClearances) as (keyof GraduationCandidate['clearances'])[];
+        const completedCount = deptKeys.filter(k => newClearances[k].status === 'Completed' || newClearances[k].status === 'Not Required').length;
+        const newProgress = Math.round((completedCount / deptKeys.length) * 100);
+        const newStatus = newProgress === 100 ? 'Clearance Approved' : cand.status === 'Conferred Graduate' ? 'Conferred Graduate' : 'Eligible Candidate';
+
+        return {
+          ...cand,
+          clearances: newClearances,
+          clearanceProgress: newProgress,
+          status: newStatus,
+          updatedAt: new Date().toISOString()
+        };
+      })
+    );
+
+    logGraduationAudit({
+      candidateId,
+      action: 'Update Clearance',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Updated ${String(department)} clearance to ${record.status || 'Updated'}`
+    });
+  };
+
+  const conferCandidateToGraduate = (candidateId: string) => {
+    const candidate = graduationCandidates.find(c => c.id === candidateId);
+    const gradYear = candidate?.graduationYear || new Date().getFullYear();
+    const certNum = `BIBU-CERT-${gradYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const vrfCode = `VRF-${Math.floor(1000 + Math.random() * 9000)}-${candidate?.awardLevel.toUpperCase().slice(0, 3) || 'DEG'}-AZ`;
+
+    // 1. Update candidate
+    const updatedCandidate: GraduationCandidate = {
+      ...(candidate || ({} as GraduationCandidate)),
+      status: 'Conferred Graduate',
+      certificateNumber: certNum,
+      updatedAt: new Date().toISOString()
+    };
+
+    setGraduationCandidates(prev =>
+      prev.map(c => (c.id === candidateId ? updatedCandidate : c))
+    );
+
+    // 2. Issue Certificate Record
+    const newCertificate: GraduationCertificateRecord = {
+      id: `cert-${Date.now()}`,
+      certificateNumber: certNum,
+      candidateId,
+      studentId: candidate?.studentId || 'BIBU-STU-001',
+      studentName: candidate?.fullName || 'Graduate',
+      degreeTitle: candidate?.programName || 'Degree of Theology',
+      schoolName: candidate?.schoolName || 'School of Theology',
+      awardLevel: candidate?.awardLevel || 'Bachelor',
+      honors: candidate?.academicHonors,
+      conferralDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      ceremonyId: candidate?.ceremonyId || 'ceremony-2026-15',
+      chancellorName: universityInfo.chancellor,
+      viceChancellorName: universityInfo.viceChancellor,
+      registrarName: universityInfo.registrar,
+      verificationCode: vrfCode,
+      status: 'Conferred & Valid',
+      qrCodeUrl: `https://bibu.university/verify?code=${vrfCode}`
+    };
+
+    setGraduationCertificates(prev => [newCertificate, ...prev]);
+
+    // 3. Automatically add/migrate to permanent Global Alumni Database
+    let alumniRecord: Alumni | undefined;
+    if (candidate) {
+      alumniRecord = graduateStudentToAlumni(candidate.studentId, {
+        graduation_year: candidate.graduationYear,
+        full_name: candidate.fullName,
+        first_name: candidate.firstName,
+        last_name: candidate.lastName,
+        country: candidate.country,
+        city: candidate.city,
+        program_name: candidate.programName,
+        qualification_level: candidate.awardLevel,
+        study_mode: candidate.studyMode,
+        ministry: candidate.currentMinistry,
+        biography: candidate.biography,
+        certificate_number: certNum
+      });
+    }
+
+    logGraduationAudit({
+      candidateId,
+      ceremonyId: candidate?.ceremonyId,
+      action: 'Confer Degree',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Formally conferred degree ${candidate?.programName} to ${candidate?.fullName}. Issued Certificate ${certNum} and registered to Alumni Association.`
+    });
+
+    return { candidate: updatedCandidate, certificate: newCertificate, alumni: alumniRecord };
+  };
+
+  const generateGraduationBooklet = (ceremonyId: string, overrides?: Partial<GraduationBooklet>): GraduationBooklet => {
+    const ceremony = graduationCeremonies.find(c => c.id === ceremonyId) || graduationCeremonies[0];
+    const ceremonyCands = graduationCandidates.filter(c => c.ceremonyId === ceremonyId);
+
+    const newBooklet: GraduationBooklet = {
+      ...INITIAL_GRADUATION_BOOKLET,
+      id: `booklet-${Date.now()}`,
+      ceremonyId,
+      title: `Official Commemorative Convocation Booklet – ${ceremony?.graduationNumber || 'Annual Congregation'}`,
+      academicYear: `${ceremony?.graduationYear || 2026 - 1}/${ceremony?.graduationYear || 2026}`,
+      theme: ceremony?.theme || INITIAL_GRADUATION_BOOKLET.theme,
+      generatedAt: new Date().toISOString(),
+      generatedBy: currentUser.name,
+      status: 'Published',
+      awards: academicAwards,
+      ...overrides
+    };
+
+    setGraduationBooklets(prev => [newBooklet, ...prev.filter(b => b.ceremonyId !== ceremonyId)]);
+    setActiveGraduationBooklet(newBooklet);
+
+    logGraduationAudit({
+      ceremonyId,
+      action: 'Generate Booklet',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Generated digital convocation booklet for ${ceremony?.graduationNumber} with ${ceremonyCands.length} registered candidates.`
+    });
+
+    return newBooklet;
+  };
+
+  const updateGraduationBooklet = (bookletId: string, updates: Partial<GraduationBooklet>) => {
+    setGraduationBooklets(prev =>
+      prev.map(b => (b.id === bookletId ? { ...b, ...updates } : b))
+    );
+    if (activeGraduationBooklet?.id === bookletId) {
+      setActiveGraduationBooklet(prev => (prev ? { ...prev, ...updates } : null));
+    }
+  };
+
+  const addAcademicAward = (awardData: Omit<AcademicAwardWinner, 'id'>): AcademicAwardWinner => {
+    const newAward: AcademicAwardWinner = {
+      ...awardData,
+      id: `award-${Date.now()}`
+    };
+    setAcademicAwards(prev => [newAward, ...prev]);
+    logGraduationAudit({
+      action: 'Add Award',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Registered academic award: "${newAward.awardTitle}" to ${newAward.studentName}`
+    });
+    return newAward;
+  };
+
+  const updateAcademicAward = (id: string, updates: Partial<AcademicAwardWinner>) => {
+    setAcademicAwards(prev =>
+      prev.map(a => (a.id === id ? { ...a, ...updates } : a))
+    );
+  };
+
+  const deleteAcademicAward = (id: string) => {
+    setAcademicAwards(prev => prev.filter(a => a.id !== id));
+  };
+
+  const issueGraduationCertificateRecord = (candidateId: string): GraduationCertificateRecord => {
+    const candidate = graduationCandidates.find(c => c.id === candidateId);
+    const gradYear = candidate?.graduationYear || new Date().getFullYear();
+    const certNum = `BIBU-CERT-${gradYear}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const vrfCode = `VRF-${Math.floor(1000 + Math.random() * 9000)}-AZ`;
+
+    const cert: GraduationCertificateRecord = {
+      id: `cert-${Date.now()}`,
+      certificateNumber: certNum,
+      candidateId,
+      studentId: candidate?.studentId || 'BIBU-STU',
+      studentName: candidate?.fullName || 'Graduate',
+      degreeTitle: candidate?.programName || 'Theology Degree',
+      schoolName: candidate?.schoolName || 'School of Theology',
+      awardLevel: candidate?.awardLevel || 'Bachelor',
+      honors: candidate?.academicHonors,
+      conferralDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+      ceremonyId: candidate?.ceremonyId || 'ceremony-2026-15',
+      chancellorName: universityInfo.chancellor,
+      viceChancellorName: universityInfo.viceChancellor,
+      registrarName: universityInfo.registrar,
+      verificationCode: vrfCode,
+      status: 'Conferred & Valid',
+      qrCodeUrl: `https://bibu.university/verify?code=${vrfCode}`
+    };
+
+    setGraduationCertificates(prev => [cert, ...prev]);
+    updateGraduationCandidate(candidateId, { certificateNumber: certNum });
+    return cert;
+  };
+
+  const updateGraduationCertificateRecord = (id: string, updates: Partial<GraduationCertificateRecord>) => {
+    setGraduationCertificates(prev =>
+      prev.map(c => (c.id === id ? { ...c, ...updates } : c))
+    );
+  };
+
+  const logGraduationAudit = (entry: Omit<GraduationAuditLog, 'id' | 'timestamp'>) => {
+    const newEntry: GraduationAuditLog = {
+      ...entry,
+      id: `audit-grad-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19)
+    };
+    setGraduationAuditLogs(prev => [newEntry, ...prev]);
+  };
+
+  const bulkImportCandidates = (candidatesToImport: Partial<GraduationCandidate>[]): { successCount: number; errors: string[] } => {
+    let successCount = 0;
+    const errors: string[] = [];
+    const newItems: GraduationCandidate[] = [];
+
+    candidatesToImport.forEach((item, index) => {
+      if (!item.fullName || !item.studentId || !item.programName) {
+        errors.push(`Row #${index + 1}: Missing required fields (fullName, studentId, or programName)`);
+        return;
+      }
+
+      const nextNum = `BK-${String(graduationCandidates.length + successCount + 1).padStart(3, '0')}`;
+      const candidateRecord: GraduationCandidate = {
+        id: `cand-${Date.now()}-${index}`,
+        studentId: item.studentId,
+        admissionNumber: item.admissionNumber || `ADM-2022-${Math.floor(1000 + Math.random() * 9000)}`,
+        fullName: item.fullName,
+        firstName: item.firstName || item.fullName.split(' ')[0],
+        lastName: item.lastName || item.fullName.split(' ').slice(1).join(' '),
+        gender: item.gender || 'Male',
+        country: item.country || 'Kenya',
+        city: item.city || 'Nairobi',
+        nationality: item.nationality || 'Kenyan',
+        programId: item.programId || 'prog-bth',
+        programName: item.programName,
+        schoolId: item.schoolId || 'sch-theology',
+        schoolName: item.schoolName || 'School of Theology & Biblical Studies',
+        awardLevel: item.awardLevel || 'Bachelor',
+        studyMode: item.studyMode || 'Online Distance Learning',
+        finalGpa: item.finalGpa || 3.75,
+        academicHonors: item.academicHonors || 'Cum Laude',
+        graduationYear: item.graduationYear || 2026,
+        ceremonyId: item.ceremonyId || graduationCeremonies[0]?.id || 'ceremony-2026-15',
+        ceremonyNumber: item.ceremonyNumber || '15th Annual Congregation',
+        status: item.status || 'Eligible Candidate',
+        clearanceProgress: item.clearanceProgress || 71,
+        clearances: item.clearances || {
+          academic: { status: 'Completed', clearedBy: 'Academic Dean', clearedDate: '2026-09-01' },
+          examination: { status: 'Completed', clearedBy: 'Chief Examiner', clearedDate: '2026-09-02' },
+          finance: { status: 'Completed', clearedBy: 'University Bursar', clearedDate: '2026-09-03' },
+          library: { status: 'Completed', clearedBy: 'Head Librarian', clearedDate: '2026-09-04' },
+          studentAffairs: { status: 'Completed', clearedBy: 'Dean of Students', clearedDate: '2026-09-04' },
+          registrar: { status: 'Pending' },
+          graduationOffice: { status: 'Pending' }
+        },
+        graduationFeeStatus: item.graduationFeeStatus || 'Paid',
+        graduationFeeAmount: item.graduationFeeAmount || 350,
+        graduationFeePaid: item.graduationFeePaid || 350,
+        bookletNumber: item.bookletNumber || nextNum,
+        profilePhoto: item.profilePhoto || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=300',
+        currentMinistry: item.currentMinistry || 'Pastoral Ministry & Theological Education',
+        biography: item.biography || 'Faithful servant dedicated to kingdom ministry.',
+        futureAspirations: item.futureAspirations || 'Advancing the Gospel and theological education globally.',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      newItems.push(candidateRecord);
+      successCount++;
+    });
+
+    if (newItems.length > 0) {
+      setGraduationCandidates(prev => [...newItems, ...prev]);
+    }
+
+    logGraduationAudit({
+      action: 'Bulk Import Candidates',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Bulk imported ${successCount} candidates with ${errors.length} errors.`
+    });
+
+    return { successCount, errors };
+  };
+
+  const verifyGraduationCredential = (query: { certificateNumber?: string; studentId?: string; candidateId?: string }) => {
+    const certQuery = query.certificateNumber?.trim().toUpperCase();
+    const stuQuery = query.studentId?.trim().toUpperCase();
+    const candQuery = query.candidateId?.trim();
+
+    const cert = graduationCertificates.find(c => {
+      if (certQuery && (c.certificateNumber.toUpperCase() === certQuery || c.verificationCode.toUpperCase() === certQuery)) return true;
+      if (stuQuery && c.studentId.toUpperCase() === stuQuery) return true;
+      if (candQuery && c.candidateId === candQuery) return true;
+      return false;
+    });
+
+    const candidate = graduationCandidates.find(c => {
+      if (candQuery && c.id === candQuery) return true;
+      if (stuQuery && c.studentId.toUpperCase() === stuQuery) return true;
+      if (certQuery && c.certificateNumber?.toUpperCase() === certQuery) return true;
+      return false;
+    });
+
+    const alumni = alumniList.find(a => {
+      if (stuQuery && a.student_id?.toUpperCase() === stuQuery) return true;
+      if (certQuery && a.certificate_number?.toUpperCase() === certQuery) return true;
+      return false;
+    });
+
+    const found = !!(cert || candidate || alumni);
+    return {
+      found,
+      candidate,
+      certificate: cert,
+      alumni,
+      message: found
+        ? 'VERIFIED – This academic award record has been verified by Breakthrough International Bible University.'
+        : 'Credential record not found in official University Registrar database.'
+    };
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -3317,6 +3869,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         loginUser,
         logoutUser,
         requireAuth,
+
+        // Graduation System Exports
+        graduationCeremonies,
+        addGraduationCeremony,
+        updateGraduationCeremony,
+        deleteGraduationCeremony,
+        graduationCandidates,
+        addGraduationCandidate,
+        updateGraduationCandidate,
+        deleteGraduationCandidate,
+        updateDepartmentClearance,
+        conferCandidateToGraduate,
+        graduationBooklets,
+        activeGraduationBooklet,
+        setActiveGraduationBooklet,
+        generateGraduationBooklet,
+        updateGraduationBooklet,
+        academicAwards,
+        addAcademicAward,
+        updateAcademicAward,
+        deleteAcademicAward,
+        graduationCertificates,
+        issueGraduationCertificateRecord,
+        updateGraduationCertificateRecord,
+        graduationAuditLogs,
+        logGraduationAudit,
+        bulkImportCandidates,
+        verifyGraduationCredential,
 
         selectedSchoolId,
         setSelectedSchoolId,

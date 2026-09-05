@@ -10,6 +10,7 @@ import { RplStudentModule } from './RplStudentModule';
 import { StudentMediaSection } from './StudentMediaSection';
 import { AcademicHistorySection } from './AcademicHistorySection';
 import { GradeDistributionPieChart } from './GradeDistributionPieChart';
+import { StudentGraduationSection } from './StudentGraduationSection';
 import {
   GraduationCap,
   BookOpen,
