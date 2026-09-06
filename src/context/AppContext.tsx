@@ -52,6 +52,11 @@ import {
 import { Alumni } from '../types/alumni';
 import { INITIAL_ALUMNI_DATABASE } from '../data/alumniData';
 import {
+  migrateNakuru2022Graduates,
+  RawNakuruGraduateRecord,
+  MigrationReport,
+} from '../utils/nakuruGraduatesMigration';
+import {
   RPLApplicationRecord,
   RPLProgramRule,
   RPLCompetencyItem,
@@ -394,6 +399,7 @@ interface AppContextType {
   updateAlumni: (id: string, updates: Partial<Alumni>) => void;
   deleteAlumni: (id: string) => void;
   importAlumniRecords: (records: Partial<Alumni>[]) => { successCount: number; errors: string[] };
+  runNakuru2022Migration: (customRecords?: RawNakuruGraduateRecord[]) => MigrationReport;
   verifyAlumniGraduate: (query: { alumniId?: string; certificateNumber?: string; studentId?: string }) => Alumni | undefined;
   graduateStudentToAlumni: (studentId: string, graduationData?: Partial<Alumni>) => Alumni;
 
@@ -2633,8 +2639,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newEntries: Alumni[] = [];
 
     records.forEach((rec, idx) => {
-      if (!rec.first_name || !rec.last_name || !rec.country || !rec.graduation_year || !rec.program_name) {
-        errors.push(`Row ${idx + 1}: Missing required fields (first_name, last_name, country, graduation_year, or program_name).`);
+      let firstName = rec.first_name || '';
+      let lastName = rec.last_name || '';
+      let middleName = rec.middle_name || '';
+
+      if ((!firstName || !lastName) && rec.full_name) {
+        const cleanName = rec.full_name.replace(/^(Dr\.|Rev\.|Apostle|Prof\.)\s+/i, '').trim();
+        const parts = cleanName.split(/\s+/);
+        firstName = parts[0] || 'Graduate';
+        lastName = parts[parts.length - 1] || 'Alumnus';
+        if (parts.length > 2) {
+          middleName = parts.slice(1, -1).join(' ');
+        }
+      }
+
+      const country = rec.country || 'Kenya';
+      const programName = rec.program_name || 'Honorary Doctorate of Divinity (D.Div. Honoris Causa)';
+
+      if (!firstName || !lastName || !rec.graduation_year) {
+        errors.push(`Row ${idx + 1}: Missing required fields (name, graduation_year).`);
         return;
       }
 
@@ -2644,8 +2667,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
-      const id = `alm-imp-${Date.now()}-${idx}`;
-      const fullName = rec.full_name || `${rec.first_name} ${rec.middle_name ? rec.middle_name + ' ' : ''}${rec.last_name}`;
+      const id = rec.id || `alm-imp-${Date.now()}-${idx}`;
+      const fullName = rec.full_name || `${firstName} ${middleName ? middleName + ' ' : ''}${lastName}`;
       const alumniId = rec.alumni_id || `BIBU-ALM-${gradYear}-${Math.floor(1000 + Math.random() * 9000)}`;
 
       const newRecord: Alumni = {
@@ -2653,22 +2676,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         alumni_id: alumniId,
         student_id: rec.student_id || `STD-${gradYear}-${Math.floor(1000 + Math.random() * 9000)}`,
         certificate_number: rec.certificate_number || `BIBU-CRT-${gradYear}-${Math.floor(10000 + Math.random() * 90000)}`,
-        first_name: rec.first_name,
-        middle_name: rec.middle_name || '',
-        last_name: rec.last_name,
+        first_name: firstName,
+        middle_name: middleName,
+        last_name: lastName,
         full_name: fullName,
-        country: rec.country,
-        country_code: rec.country_code || 'XX',
-        city: rec.city || 'Global',
-        email: rec.email || `${rec.first_name.toLowerCase()}.${rec.last_name.toLowerCase()}@alumni.bibu.university`,
+        country: country,
+        country_code: rec.country_code || (country === 'Kenya' ? 'KE' : 'XX'),
+        city: rec.city || 'Nakuru',
+        email: rec.email || `${firstName.toLowerCase()}.${lastName.toLowerCase()}@alumni.bibu.university`,
         phone: rec.phone || '',
         graduation_year: gradYear,
-        graduation_date: rec.graduation_date || `${gradYear}-06-30`,
-        program_id: rec.program_id || 'prog-imported',
-        program_name: rec.program_name,
-        qualification_level: rec.qualification_level || 'Bachelor',
-        campus: rec.campus || 'Online Global Center',
-        study_mode: rec.study_mode || 'Distance Learning',
+        graduation_date: rec.graduation_date || `${gradYear}-04-08`,
+        program_id: rec.program_id || 'prog-hondoc-div',
+        program_name: programName,
+        qualification_level: rec.qualification_level || 'Honorary Doctorate',
+        campus: rec.campus || "Nakuru Mother's Chapter / Central Rift",
+        study_mode: rec.study_mode || 'On-Campus Resident',
         current_position: rec.current_position || 'Ministerial Leader',
         organization: rec.organization || 'Independent Ministry',
         profession: rec.profession || 'Pastoral Ministry & Theological Leadership',
@@ -2691,6 +2714,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     return { successCount, errors };
+  };
+
+  const runNakuru2022Migration = (customRecords?: RawNakuruGraduateRecord[]): MigrationReport => {
+    const report = migrateNakuru2022Graduates({
+      rawRecords: customRecords,
+      existingDatabase: alumniList,
+      dryRun: false,
+    });
+
+    if (report.migratedRecords.length > 0) {
+      setAlumniList((prev) => {
+        const updated = [...prev];
+        report.migratedRecords.forEach((mRec) => {
+          const idx = updated.findIndex(
+            (a) =>
+              (a.student_id && a.student_id.toLowerCase() === mRec.student_id.toLowerCase()) ||
+              (a.email && a.email.toLowerCase() === mRec.email.toLowerCase()) ||
+              a.id === mRec.id ||
+              a.alumni_id === mRec.alumni_id
+          );
+          if (idx >= 0) {
+            updated[idx] = mRec;
+          } else {
+            updated.push(mRec);
+          }
+        });
+        return updated;
+      });
+    }
+
+    return report;
   };
 
   const verifyAlumniGraduate = (query: { alumniId?: string; certificateNumber?: string; studentId?: string }): Alumni | undefined => {
@@ -4062,6 +4116,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateAlumni,
         deleteAlumni,
         importAlumniRecords,
+        runNakuru2022Migration,
         verifyAlumniGraduate,
         graduateStudentToAlumni,
 

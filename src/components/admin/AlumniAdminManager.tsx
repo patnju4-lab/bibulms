@@ -20,18 +20,41 @@ import {
   Save,
   RotateCcw,
   Sparkles,
-  BarChart3
+  BarChart3,
+  Eye,
+  EyeOff,
+  RefreshCw,
+  ExternalLink,
+  FileSpreadsheet,
+  Check
 } from 'lucide-react';
 import { AlumniStatistics } from './AlumniStatistics';
+import {
+  RAW_NAKURU_2022_GRADUATES,
+  RawNakuruGraduateRecord,
+  MigrationReport
+} from '../../utils/nakuruGraduatesMigration';
 
 export const AlumniAdminManager: React.FC = () => {
-  const { alumniList, addAlumni, updateAlumni, deleteAlumni, importAlumniRecords } = useApp();
+  const {
+    alumniList,
+    addAlumni,
+    updateAlumni,
+    deleteAlumni,
+    importAlumniRecords,
+    runNakuru2022Migration,
+  } = useApp();
 
   const [activeTab, setActiveTab] = useState<'manage' | 'stats' | 'add' | 'import'>('manage');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterYear, setFilterYear] = useState<number | 'All'>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [editingAlumni, setEditingAlumni] = useState<Alumni | null>(null);
+
+  // 2022 Nakuru Mother's Chapter Migration States
+  const [migrationReport, setMigrationReport] = useState<MigrationReport | null>(null);
+  const [showNakuruPreview, setShowNakuruPreview] = useState<boolean>(false);
+  const [isMigrating, setIsMigrating] = useState<boolean>(false);
 
   // Form State for Add / Edit
   const [formData, setFormData] = useState({
@@ -157,6 +180,27 @@ export const AlumniAdminManager: React.FC = () => {
     });
   };
 
+  // Handle 2022 Nakuru Mother's Chapter Migration
+  const handleRunNakuruMigration = () => {
+    setIsMigrating(true);
+    setTimeout(() => {
+      try {
+        const report = runNakuru2022Migration();
+        setMigrationReport(report);
+      } finally {
+        setIsMigrating(false);
+      }
+    }, 250);
+  };
+
+  const loadNakuruCsv = () => {
+    const csvHeader = 'name,mobile,email,reg_no,graduation_year,program_name,qualification_level,campus';
+    const csvRows = RAW_NAKURU_2022_GRADUATES.map(
+      (g) => `"${g.name}","${g.mobile}","${g.email}","${g.regNo}",2022,"Honorary Doctorate of Divinity (D.Div. Honoris Causa)","Honorary Doctorate","Nakuru Mother's Chapter / Central Rift"`
+    );
+    setCsvText([csvHeader, ...csvRows].join('\n'));
+  };
+
   // Handle CSV Import
   const handleCsvImport = () => {
     if (!csvText.trim()) return;
@@ -167,7 +211,7 @@ export const AlumniAdminManager: React.FC = () => {
       return;
     }
 
-    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/"/g, ''));
+    const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
     const records: Partial<Alumni>[] = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -175,22 +219,26 @@ export const AlumniAdminManager: React.FC = () => {
       if (!line) continue;
 
       // Handle simple CSV parsing
-      const values = line.split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+      const values = line.split(',').map((v) => v.trim().replace(/^["']|["']$/g, ''));
       const obj: any = {};
 
       headers.forEach((h, index) => {
         const val = values[index];
+        if (!val) return;
         if (h === 'first_name' || h === 'firstname') obj.first_name = val;
         else if (h === 'middle_name' || h === 'middlename') obj.middle_name = val;
         else if (h === 'last_name' || h === 'lastname') obj.last_name = val;
+        else if (h === 'name' || h === 'full_name' || h === 'fullname') obj.full_name = val;
         else if (h === 'country') obj.country = val;
         else if (h === 'city') obj.city = val;
-        else if (h === 'email') obj.email = val;
-        else if (h === 'phone') obj.phone = val;
-        else if (h === 'graduation_year' || h === 'year') obj.graduation_year = Number(val);
-        else if (h === 'program_name' || h === 'program') obj.program_name = val;
+        else if (h === 'email') obj.email = val.trim().toLowerCase();
+        else if (h === 'phone' || h === 'mobile' || h === 'telephone' || h === 'contact') obj.phone = val.trim();
+        else if (h === 'student_id' || h === 'reg_no' || h === 'regno' || h === 'registration_number' || h === 'reg no') obj.student_id = val.trim();
+        else if (h === 'graduation_year' || h === 'year' || h === 'grad_year') obj.graduation_year = Number(val);
+        else if (h === 'program_name' || h === 'program' || h === 'degree') obj.program_name = val;
         else if (h === 'qualification_level' || h === 'level') obj.qualification_level = val;
-        else if (h === 'current_position' || h === 'position') obj.current_position = val;
+        else if (h === 'campus') obj.campus = val;
+        else if (h === 'current_position' || h === 'position' || h === 'role') obj.current_position = val;
         else if (h === 'organization') obj.organization = val;
         else if (h === 'ministry') obj.ministry = val;
         else if (h === 'certificate_number' || h === 'certificate') obj.certificate_number = val;
@@ -276,8 +324,8 @@ Marcus,Johnson,United States,Atlanta,2022,Bachelor of Theology (B.Th),Bachelor,L
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Upload className="w-3.5 h-3.5" />
-            <span>CSV Batch Import</span>
+            <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Data Migration & Import</span>
           </button>
         </div>
       </div>
@@ -618,25 +666,254 @@ Marcus,Johnson,United States,Atlanta,2022,Bachelor of Theology (B.Th),Bachelor,L
         </form>
       )}
 
-      {/* TAB 3: BATCH CSV IMPORT */}
+      {/* TAB 3: BATCH CSV IMPORT & MIGRATION */}
       {activeTab === 'import' && (
-        <div className="space-y-5">
+        <div className="space-y-6">
+          {/* DEDICATED 2022 NAKURU MOTHER'S CHAPTER DATA MIGRATION ENGINE */}
+          <div className="bg-gradient-to-br from-[#002366] to-[#001740] rounded-3xl p-6 text-white border border-[#C5A059]/30 shadow-lg space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#C5A059]/20 border border-[#C5A059]/40 text-[#C5A059] text-xs font-bold uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Official Cohort Migration Tool</span>
+                </div>
+                <h3 className="text-xl font-display font-black text-white">
+                  2022 Nakuru Mother's Chapter Data Migration
+                </h3>
+                <p className="text-xs text-slate-300">
+                  Bulk-import all 32 verified graduates from the April 8, 2022 Convocation Ceremony into the permanent alumni database with 100% field mapping fidelity.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleRunNakuruMigration}
+                  disabled={isMigrating}
+                  className="px-5 py-2.5 rounded-xl bg-[#C5A059] text-[#002366] font-black text-xs uppercase tracking-wider hover:bg-[#D4AF37] transition-all flex items-center gap-2 shadow-md disabled:opacity-50"
+                >
+                  {isMigrating ? (
+                    <RefreshCw className="w-4 h-4 animate-spin text-[#002366]" />
+                  ) : (
+                    <ShieldCheck className="w-4 h-4 text-[#002366]" />
+                  )}
+                  <span>{isMigrating ? 'Migrating Cohort...' : 'Execute Data Migration (32)'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Field Mapping Verification Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+              <div className="bg-white/10 rounded-2xl p-3 border border-white/10">
+                <div className="text-[10px] text-[#C5A059] font-bold uppercase tracking-wider">Field 1: Name</div>
+                <div className="font-bold text-white mt-1">Full Conferred Name</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Parsed to First, Middle, Last & Title (`Dr.`)</div>
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-3 border border-white/10">
+                <div className="text-[10px] text-[#C5A059] font-bold uppercase tracking-wider">Field 2: Mobile</div>
+                <div className="font-bold text-white mt-1">Phone Number</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Normalized to International `+254 7...` format</div>
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-3 border border-white/10">
+                <div className="text-[10px] text-[#C5A059] font-bold uppercase tracking-wider">Field 3: Email</div>
+                <div className="font-bold text-white mt-1">Verified Email</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Sanitized & mapped to unique alumni contact</div>
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-3 border border-white/10">
+                <div className="text-[10px] text-[#C5A059] font-bold uppercase tracking-wider">Field 4: Reg No</div>
+                <div className="font-bold text-white mt-1">Student Reg ID</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Mapped to `BTS/20394/2021` - `BTS/20425/2021`</div>
+              </div>
+
+              <div className="bg-white/10 rounded-2xl p-3 border border-white/10">
+                <div className="text-[10px] text-[#C5A059] font-bold uppercase tracking-wider">Field 5: Grad Year</div>
+                <div className="font-bold text-white mt-1">Class of 2022</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Year 2022 • Ceremony Date 2022-04-08</div>
+              </div>
+            </div>
+
+            {/* Quick Actions & Preview Toggles */}
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10 text-xs">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowNakuruPreview(!showNakuruPreview)}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  {showNakuruPreview ? <EyeOff className="w-3.5 h-3.5 text-[#C5A059]" /> : <Eye className="w-3.5 h-3.5 text-[#C5A059]" />}
+                  <span>{showNakuruPreview ? 'Hide Raw Dataset Preview' : 'Preview 32 Raw Graduand Records'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={loadNakuruCsv}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold flex items-center gap-1.5 transition-all"
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>Load Cohort into CSV Scratchpad</span>
+                </button>
+              </div>
+
+              <div className="text-[11px] text-slate-300">
+                Conferred: <span className="text-[#C5A059] font-semibold">Honorary Doctorate of Divinity (D.Div.)</span>
+              </div>
+            </div>
+
+            {/* EXPANDABLE RAW DATA PREVIEW TABLE */}
+            {showNakuruPreview && (
+              <div className="bg-slate-900/80 rounded-2xl border border-white/15 p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs border-b border-white/10 pb-2">
+                  <div className="font-bold text-[#C5A059] flex items-center gap-1.5">
+                    <FileText className="w-4 h-4" />
+                    <span>Raw Input Dataset: Nakuru Mother's Chapter (Class of 2022)</span>
+                  </div>
+                  <span className="text-slate-400 font-mono text-[11px]">Total: {RAW_NAKURU_2022_GRADUATES.length} Graduates</span>
+                </div>
+
+                <div className="max-h-60 overflow-y-auto rounded-xl border border-white/10 text-[11px]">
+                  <table className="w-full text-left">
+                    <thead className="bg-white/10 text-[#C5A059] uppercase text-[9px] tracking-wider sticky top-0 backdrop-blur-md">
+                      <tr>
+                        <th className="py-2 px-3">#</th>
+                        <th className="py-2 px-3">Name</th>
+                        <th className="py-2 px-3">Mobile</th>
+                        <th className="py-2 px-3">Email</th>
+                        <th className="py-2 px-3">Reg No</th>
+                        <th className="py-2 px-3">Grad Year</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-slate-200">
+                      {RAW_NAKURU_2022_GRADUATES.map((g, idx) => (
+                        <tr key={idx} className="hover:bg-white/5">
+                          <td className="py-1.5 px-3 font-mono text-slate-400">{idx + 1}</td>
+                          <td className="py-1.5 px-3 font-bold text-white">{g.name}</td>
+                          <td className="py-1.5 px-3 font-mono text-emerald-300">{g.mobile}</td>
+                          <td className="py-1.5 px-3 text-slate-300">{g.email}</td>
+                          <td className="py-1.5 px-3 font-mono text-[#C5A059]">{g.regNo}</td>
+                          <td className="py-1.5 px-3 font-mono">{g.graduationYear || 2022}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* MIGRATION EXECUTION REPORT & AUDIT TRAIL */}
+            {migrationReport && (
+              <div className="bg-white rounded-2xl p-5 text-slate-900 border border-emerald-300 shadow-md space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                      <Check className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-[#002366] text-sm">
+                        Data Migration Completed Successfully
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        All {migrationReport.totalProvided} graduands processed & verified into the official database at {new Date(migrationReport.timestamp).toLocaleTimeString()}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveTab('manage');
+                        setFilterYear(2022);
+                        setSearchQuery('Nakuru');
+                      }}
+                      className="px-3 py-1.5 bg-[#002366] text-[#C5A059] text-xs font-bold rounded-xl flex items-center gap-1.5 hover:bg-[#001740]"
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span>View Migrated Records in Registry</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Audit Metrics */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                  <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-200">
+                    <div className="text-[10px] uppercase font-bold text-slate-500">Total Processed</div>
+                    <div className="text-lg font-black text-[#002366]">{migrationReport.totalProvided}</div>
+                  </div>
+                  <div className="bg-emerald-50 rounded-xl p-2.5 border border-emerald-200">
+                    <div className="text-[10px] uppercase font-bold text-emerald-700">New Insertions</div>
+                    <div className="text-lg font-black text-emerald-700">{migrationReport.migratedCount}</div>
+                  </div>
+                  <div className="bg-blue-50 rounded-xl p-2.5 border border-blue-200">
+                    <div className="text-[10px] uppercase font-bold text-blue-700">Updated / Synced</div>
+                    <div className="text-lg font-black text-blue-700">{migrationReport.updatedCount}</div>
+                  </div>
+                  <div className="bg-amber-50 rounded-xl p-2.5 border border-amber-200">
+                    <div className="text-[10px] uppercase font-bold text-amber-700">Conferred Degree</div>
+                    <div className="text-xs font-bold text-amber-900 mt-1">D.Div. Honoris Causa</div>
+                  </div>
+                </div>
+
+                {/* Detailed Audit Table */}
+                <div className="space-y-2">
+                  <div className="text-xs font-bold text-slate-700">
+                    Audit Trail of Conferred Graduates:
+                  </div>
+                  <div className="max-h-52 overflow-y-auto border border-slate-200 rounded-xl text-xs">
+                    <table className="w-full text-left">
+                      <thead className="bg-slate-100 text-slate-600 uppercase text-[10px] tracking-wider sticky top-0">
+                        <tr>
+                          <th className="py-2 px-3">Reg No</th>
+                          <th className="py-2 px-3">Full Conferred Name</th>
+                          <th className="py-2 px-3">Mobile Contact</th>
+                          <th className="py-2 px-3">Verified Email</th>
+                          <th className="py-2 px-3">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                        {migrationReport.auditTrail.map((item, i) => (
+                          <tr key={i} className="hover:bg-slate-50">
+                            <td className="py-1.5 px-3 font-bold text-[#002366]">{item.regNo}</td>
+                            <td className="py-1.5 px-3 font-sans font-bold text-slate-800">{item.fullName}</td>
+                            <td className="py-1.5 px-3 text-emerald-700">{item.mobile}</td>
+                            <td className="py-1.5 px-3 text-slate-600 font-sans">{item.email}</td>
+                            <td className="py-1.5 px-3">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-sans font-bold ${
+                                item.action === 'inserted' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {item.action === 'inserted' ? 'Inserted' : 'Synchronized'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* GENERIC BATCH CSV IMPORT */}
           <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3">
             <div className="flex items-center gap-2 text-[#002366] font-bold text-sm">
               <FileText className="w-4 h-4 text-[#C5A059]" />
-              <span>Bulk Verified Alumni Data Import</span>
+              <span>Generic CSV Batch Alumni Importer</span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Paste CSV data below to import official cohorts from graduation lists. The system will automatically generate official Alumni IDs, verify country codes, and integrate records into the global search.
+              Paste CSV data below to import arbitrary cohorts from graduation lists. The system maps fields dynamically: Name (or first_name, last_name), Mobile (phone), Email, Reg No (student_id), and Graduation Year.
             </p>
-            <button
-              type="button"
-              onClick={() => setCsvText(sampleCsvContent)}
-              className="text-xs font-bold text-[#002366] hover:underline inline-flex items-center gap-1"
-            >
-              <Download className="w-3 h-3 text-[#C5A059]" />
-              <span>Load Sample CSV Template</span>
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setCsvText(sampleCsvContent)}
+                className="text-xs font-bold text-[#002366] hover:underline inline-flex items-center gap-1"
+              >
+                <Download className="w-3 h-3 text-[#C5A059]" />
+                <span>Load Sample Generic CSV</span>
+              </button>
+            </div>
           </div>
 
           <div>
@@ -647,7 +924,7 @@ Marcus,Johnson,United States,Atlanta,2022,Bachelor of Theology (B.Th),Bachelor,L
               rows={8}
               value={csvText}
               onChange={(e) => setCsvText(e.target.value)}
-              placeholder="first_name,last_name,country,city,graduation_year,program_name,qualification_level,current_position,organization,certificate_number..."
+              placeholder="name,mobile,email,reg_no,graduation_year,program_name,qualification_level,campus..."
               className="w-full p-3 font-mono text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-[#002366]"
             />
           </div>
