@@ -125,6 +125,42 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
     isDemo: false,
     createdAt: '2022-04-01T08:00:00Z',
     updatedAt: '2022-04-08T15:00:00Z'
+  },
+  {
+    id: 'ceremony-2020-convocation-dec4',
+    graduationNumber: 'Global Convocation & Conferment',
+    academicYear: '2019/2020',
+    graduationYear: 2020,
+    graduationDate: '2020-12-04',
+    graduationTime: '10:00 AM (EAT)',
+    venue: 'Breakthrough International Bible University Convocation Assembly',
+    city: 'Nairobi',
+    country: 'Kenya',
+    theme: 'Award of Honorary Degrees, Conferment of Degrees and Award of Diplomas and Certificates',
+    chiefGuest: 'Chancellor & Presiding University Senate Council',
+    chancellor: 'Chancellor & University Senate',
+    viceChancellor: 'Prof. Dr. Patrick Njuguna Gacheru',
+    registrar: 'Registrar of Academic Affairs',
+    graduationCoordinator: 'Regional Faculty & Campus Deans',
+    status: 'Completed',
+    logoUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=600',
+    bannerUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200',
+    description: 'Programme for the Award of Honorary Degrees, Conferment of Degrees and Award of Diplomas and Certificates of Breakthrough Bible University on Friday, 4th December, 2020, conferring 669 graduates across Kenya, Tanzania, Zimbabwe, Ethiopia, and Haiti.',
+    programmeSchedule: [
+      { id: 'p20-1', order: 1, time: '09:00 AM', activity: 'Academic Procession and Invocation', facilitator: 'Faculty Marshals' },
+      { id: 'p20-2', order: 2, time: '10:00 AM', activity: 'Conferment of Honorary Doctorate Degrees', facilitator: 'Chancellor & Senate' },
+      { id: 'p20-3', order: 3, time: '11:00 AM', activity: 'Conferment of PhD and Masters Degrees', facilitator: 'Vice Chancellor Prof. Dr. Patrick Njuguna Gacheru' },
+      { id: 'p20-4', order: 4, time: '12:00 PM', activity: 'Conferment of Bachelors, Diplomas & Certificates across Regional Campuses', facilitator: 'Regional Deans' },
+      { id: 'p20-5', order: 5, time: '01:30 PM', activity: 'Commissioning & Apostolic Benediction', facilitator: 'University Senate' }
+    ],
+    photos: [
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800'
+    ],
+    videos: [],
+    livestreamUrl: '',
+    isDemo: false,
+    createdAt: '2020-11-20T08:00:00Z',
+    updatedAt: '2020-12-04T16:00:00Z'
   }
 ];
 

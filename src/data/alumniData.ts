@@ -1,5 +1,6 @@
 import { Alumni, AlumniChapter, AlumniStory, AlumniEvent } from '../types/alumni';
 import { NAKURU_2022_HONORARY_GRADUATES } from './nakuru2022GraduatesData';
+import { CONVOCATION_2020_GRADUATES } from './convocation2020GraduatesData';
 
 export interface CountryInfo {
   name: string;
@@ -1307,6 +1308,7 @@ export const INITIAL_ALUMNI_DATABASE: Alumni[] = [
     updated_at: '2026-08-25T00:00:00Z',
   },
   ...NAKURU_2022_HONORARY_GRADUATES,
+  ...CONVOCATION_2020_GRADUATES,
 ];
 
 // Global Alumni Chapters

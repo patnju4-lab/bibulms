@@ -57,6 +57,11 @@ import {
   MigrationReport,
 } from '../utils/nakuruGraduatesMigration';
 import {
+  migrate2020Graduates,
+  Raw2020GraduateRecord,
+  Migration2020Report,
+} from '../utils/graduates2020Migration';
+import {
   RPLApplicationRecord,
   RPLProgramRule,
   RPLCompetencyItem,
@@ -400,6 +405,7 @@ interface AppContextType {
   deleteAlumni: (id: string) => void;
   importAlumniRecords: (records: Partial<Alumni>[]) => { successCount: number; errors: string[] };
   runNakuru2022Migration: (customRecords?: RawNakuruGraduateRecord[]) => MigrationReport;
+  run2020GraduatesMigration: (customRecords?: Raw2020GraduateRecord[]) => Migration2020Report;
   verifyAlumniGraduate: (query: { alumniId?: string; certificateNumber?: string; studentId?: string }) => Alumni | undefined;
   graduateStudentToAlumni: (studentId: string, graduationData?: Partial<Alumni>) => Alumni;
 
@@ -2747,6 +2753,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return report;
   };
 
+  const run2020GraduatesMigration = (customRecords?: Raw2020GraduateRecord[]): Migration2020Report => {
+    const report = migrate2020Graduates({
+      rawRecords: customRecords,
+      existingDatabase: alumniList,
+      dryRun: false,
+    });
+
+    if (report.migratedRecords.length > 0) {
+      setAlumniList((prev) => {
+        const updated = [...prev];
+        report.migratedRecords.forEach((mRec) => {
+          const idx = updated.findIndex(
+            (a) =>
+              (a.student_id && a.student_id.toLowerCase() === mRec.student_id.toLowerCase()) ||
+              (a.studentId && a.studentId.toLowerCase() === mRec.student_id.toLowerCase()) ||
+              (a.email && a.email.toLowerCase() === mRec.email.toLowerCase()) ||
+              a.id === mRec.id ||
+              a.alumni_id === mRec.alumni_id
+          );
+          if (idx >= 0) {
+            updated[idx] = mRec;
+          } else {
+            updated.push(mRec);
+          }
+        });
+        return updated;
+      });
+    }
+
+    return report;
+  };
+
   const verifyAlumniGraduate = (query: { alumniId?: string; certificateNumber?: string; studentId?: string }): Alumni | undefined => {
     const almId = query.alumniId?.trim().toUpperCase();
     const certNum = query.certificateNumber?.trim().toUpperCase();
@@ -4117,6 +4155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteAlumni,
         importAlumniRecords,
         runNakuru2022Migration,
+        run2020GraduatesMigration,
         verifyAlumniGraduate,
         graduateStudentToAlumni,
 

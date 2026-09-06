@@ -30,9 +30,105 @@ import {
   Sparkles,
   X,
   ChevronRight,
-  Info
+  Info,
+  BookMarked,
+  Check,
+  Tag
 } from 'lucide-react';
 import { UniversityLogo } from '../common/UniversityLogo';
+
+export interface ThemePreset {
+  theme: string;
+  scripture: string;
+  category: string;
+}
+
+export const GRADUATION_THEME_PRESETS: ThemePreset[] = [
+  {
+    theme: 'Commissioned as Ambassadors of Reconciliation and Global Transformation',
+    scripture: '2 Corinthians 5:20',
+    category: 'Apostolic & Commissioning'
+  },
+  {
+    theme: 'Equipped for Ministry, Leadership and Global Kingdom Impact',
+    scripture: '2 Timothy 3:16-17',
+    category: 'Ministerial Readiness'
+  },
+  {
+    theme: 'Arise, Shine, for Your Light Has Come and the Glory of the Lord Has Risen Upon You',
+    scripture: 'Isaiah 60:1',
+    category: 'Spiritual Awakening'
+  },
+  {
+    theme: 'Preach the Word; Be Prepared in Season and Out of Season with Great Patience',
+    scripture: '2 Timothy 4:2',
+    category: 'Biblical Preaching'
+  },
+  {
+    theme: 'Go into All the World and Proclaim the Gospel to Every Creature',
+    scripture: 'Mark 16:15',
+    category: 'Global Great Commission'
+  },
+  {
+    theme: 'Faithful Stewards of the Mysteries of God and Servants of Christ',
+    scripture: '1 Corinthians 4:1-2',
+    category: 'Kingdom Stewardship'
+  },
+  {
+    theme: 'Rooted in Truth, Flourishing in Grace, Leading with Holy Integrity',
+    scripture: 'Colossians 2:6-7',
+    category: 'Christian Character'
+  },
+  {
+    theme: 'Transforming Communities Through the Power of the Holy Spirit',
+    scripture: 'Acts 1:8',
+    category: 'Evangelism & Mission'
+  }
+];
+
+export const CEREMONY_STATUS_DEFINITIONS: {
+  status: GraduationCeremonyStatus;
+  badgeBg: string;
+  badgeText: string;
+  badgeBorder: string;
+  description: string;
+}[] = [
+  {
+    status: 'Planning',
+    badgeBg: 'bg-amber-50',
+    badgeText: 'text-amber-800',
+    badgeBorder: 'border-amber-300',
+    description: 'Internal Senate preparation and scheduling. Registration portal is closed.'
+  },
+  {
+    status: 'Registration Open',
+    badgeBg: 'bg-emerald-50',
+    badgeText: 'text-emerald-800',
+    badgeBorder: 'border-emerald-300',
+    description: 'Candidates actively verify clearances, pay convocation dues, and review booklet.'
+  },
+  {
+    status: 'Confirmed',
+    badgeBg: 'bg-blue-50',
+    badgeText: 'text-blue-800',
+    badgeBorder: 'border-blue-300',
+    description: 'Convocation roll locked by Senate. Order of proceedings finalized.'
+  },
+  {
+    status: 'Completed',
+    badgeBg: 'bg-purple-50',
+    badgeText: 'text-purple-800',
+    badgeBorder: 'border-purple-300',
+    description: 'Ceremony successfully held. Degrees conferred and certificates issued.'
+  },
+  {
+    status: 'Archived',
+    badgeBg: 'bg-slate-100',
+    badgeText: 'text-slate-700',
+    badgeBorder: 'border-slate-300',
+    description: 'Historical records preserved in university permanent registrar archives.'
+  }
+];
 
 interface CeremonyFormData {
   graduationNumber: string;
@@ -72,11 +168,22 @@ export const GraduationManagement: React.FC = () => {
   // Active view tab
   const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates'>('ceremonies');
 
-  // Search and Filter states
+  // Search and Filter states for Ceremonies
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('All');
   const [yearFilter, setYearFilter] = useState<string>('All');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+  const [showStatusProtocolGuide, setShowStatusProtocolGuide] = useState(false);
+
+  // Search and Filter states for Candidates Tab
+  const [candidateSearchQuery, setCandidateSearchQuery] = useState('');
+  const [candidateCeremonyFilter, setCandidateCeremonyFilter] = useState<string>('All');
+  const [candidateClearanceFilter, setCandidateClearanceFilter] = useState<string>('All');
+
+  // Search and Filter states for Certificates Tab
+  const [certSearchQuery, setCertSearchQuery] = useState('');
+  const [certCeremonyFilter, setCertCeremonyFilter] = useState<string>('All');
+  const [certAwardFilter, setCertAwardFilter] = useState<string>('All');
 
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -140,6 +247,18 @@ export const GraduationManagement: React.FC = () => {
     return years;
   }, [graduationCeremonies]);
 
+  // Status counts for filter chips
+  const statusCounts = useMemo(() => {
+    return {
+      all: graduationCeremonies.length,
+      planning: graduationCeremonies.filter((c) => c.status === 'Planning').length,
+      registrationOpen: graduationCeremonies.filter((c) => c.status === 'Registration Open').length,
+      confirmed: graduationCeremonies.filter((c) => c.status === 'Confirmed').length,
+      completed: graduationCeremonies.filter((c) => c.status === 'Completed').length,
+      archived: graduationCeremonies.filter((c) => c.status === 'Archived').length
+    };
+  }, [graduationCeremonies]);
+
   // Filtered Ceremonies
   const filteredCeremonies = useMemo(() => {
     return graduationCeremonies.filter((ceremony) => {
@@ -157,6 +276,69 @@ export const GraduationManagement: React.FC = () => {
       return matchesSearch && matchesStatus && matchesYear;
     });
   }, [graduationCeremonies, searchQuery, statusFilter, yearFilter]);
+
+  // Filtered Candidates
+  const filteredCandidates = useMemo(() => {
+    return graduationCandidates.filter((cand) => {
+      const matchesSearch =
+        candidateSearchQuery === '' ||
+        cand.fullName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
+        cand.studentId.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
+        cand.programName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
+        cand.schoolName.toLowerCase().includes(candidateSearchQuery.toLowerCase());
+
+      const matchesCeremony =
+        candidateCeremonyFilter === 'All' ||
+        cand.ceremonyId === candidateCeremonyFilter;
+
+      const matchesClearance =
+        candidateClearanceFilter === 'All' ||
+        (candidateClearanceFilter === '100' && cand.clearanceProgress === 100) ||
+        (candidateClearanceFilter === 'pending' && cand.clearanceProgress < 100) ||
+        (candidateClearanceFilter === 'conferred' && cand.status === 'Conferred Graduate');
+
+      return matchesSearch && matchesCeremony && matchesClearance;
+    });
+  }, [graduationCandidates, candidateSearchQuery, candidateCeremonyFilter, candidateClearanceFilter]);
+
+  // Filtered Certificates
+  const filteredCertificates = useMemo(() => {
+    return graduationCertificates.filter((cert) => {
+      const matchesSearch =
+        certSearchQuery === '' ||
+        cert.studentName.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+        cert.certificateNumber.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+        cert.degreeTitle.toLowerCase().includes(certSearchQuery.toLowerCase()) ||
+        cert.verificationCode.toLowerCase().includes(certSearchQuery.toLowerCase());
+
+      const matchesCeremony =
+        certCeremonyFilter === 'All' ||
+        cert.ceremonyId === certCeremonyFilter;
+
+      const matchesAward =
+        certAwardFilter === 'All' ||
+        cert.awardLevel.toLowerCase() === certAwardFilter.toLowerCase();
+
+      return matchesSearch && matchesCeremony && matchesAward;
+    });
+  }, [graduationCertificates, certSearchQuery, certCeremonyFilter, certAwardFilter]);
+
+  // Navigation helpers to inspect specific ceremony data
+  const handleViewCeremonyCandidates = (ceremonyId: string) => {
+    setCandidateCeremonyFilter(ceremonyId);
+    setActiveTab('candidates');
+  };
+
+  const handleViewCeremonyCertificates = (ceremonyId: string) => {
+    setCertCeremonyFilter(ceremonyId);
+    setActiveTab('certificates');
+  };
+
+  // Quick Status change directly from card or table
+  const handleQuickStatusChange = (id: string, newStatus: GraduationCeremonyStatus, ceremonyName?: string) => {
+    updateGraduationCeremony(id, { status: newStatus });
+    displayNotice(`Ceremony "${ceremonyName || 'Convocation'}" status transitioned to "${newStatus}".`);
+  };
 
   // Open modal for defining a new ceremony
   const handleOpenCreateModal = () => {
@@ -269,12 +451,6 @@ export const GraduationManagement: React.FC = () => {
     setIsModalOpen(false);
   };
 
-  // Quick Status change directly from card or table
-  const handleQuickStatusChange = (id: string, newStatus: GraduationCeremonyStatus) => {
-    updateGraduationCeremony(id, { status: newStatus });
-    displayNotice(`Ceremony status updated to "${newStatus}".`);
-  };
-
   // Delete ceremony
   const handleDeleteCeremony = (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete "${name}"? This action cannot be undone.`)) {
@@ -288,19 +464,34 @@ export const GraduationManagement: React.FC = () => {
       {/* Top Banner Header */}
       <div className="bg-gradient-to-r from-[#001A4D] via-[#002366] to-[#001438] rounded-2xl p-6 sm:p-8 text-white border-b-4 border-[#C5A059] shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="space-y-2 relative z-10">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C5A059]/20 border border-[#C5A059] text-[#C5A059] text-xs font-black uppercase tracking-wider">
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Academic Affairs • Convocation & Graduation Directorate</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#C5A059]/20 border border-[#C5A059] text-[#C5A059] text-xs font-black uppercase tracking-wider">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Academic Affairs • Convocation Directorate</span>
+            </div>
+            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 text-[11px] font-bold">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+              Authorized Administrator: {currentUser?.name || 'Administrator'} ({currentUser?.role?.toUpperCase() || 'ADMIN'})
+            </span>
           </div>
+
           <h2 className="text-2xl sm:text-3xl font-bold font-display text-white">
             Graduation Ceremony Management
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-            Define upcoming convocations, configure graduation years, themes, dignitaries, and monitor real-time candidate eligibility, degree conferral, and issued certificates.
+            Define convocations, configure theological themes & scriptures, oversee ceremony operational lifecycles, and monitor graduation candidates and issued certificates in real-time.
           </p>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10">
+          <button
+            onClick={() => setShowStatusProtocolGuide(!showStatusProtocolGuide)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <Info className="w-4 h-4 text-amber-300" />
+            <span>{showStatusProtocolGuide ? 'Hide Protocol Guide' : 'Ceremony Status Guide'}</span>
+          </button>
+
           <button
             onClick={handleOpenCreateModal}
             className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-[#C5A059] hover:from-amber-500 hover:to-[#B38F48] text-[#002366] text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
@@ -310,6 +501,39 @@ export const GraduationManagement: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Ceremony Status Protocol Guide (Collapsible) */}
+      {showStatusProtocolGuide && (
+        <div className="bg-white rounded-2xl border border-blue-200 p-5 shadow-sm space-y-3 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-2">
+              <BookMarked className="w-4 h-4 text-[#002366]" />
+              <h4 className="text-xs font-black uppercase tracking-wider text-[#002366]">
+                Convocation Governance & Ceremony Lifecycle Protocol
+              </h4>
+            </div>
+            <button
+              onClick={() => setShowStatusProtocolGuide(false)}
+              className="text-slate-400 hover:text-slate-600 text-xs cursor-pointer font-bold"
+            >
+              ✕ Close
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 pt-1">
+            {CEREMONY_STATUS_DEFINITIONS.map((def) => (
+              <div key={def.status} className={`p-3 rounded-xl border ${def.badgeBg} ${def.badgeBorder} space-y-1`}>
+                <span className={`inline-block px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${def.badgeText}`}>
+                  {def.status}
+                </span>
+                <p className="text-[11px] text-slate-600 leading-snug">
+                  {def.description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Floating Notice Toast */}
       {notice && (
@@ -324,57 +548,84 @@ export const GraduationManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Overall Statistics Dashboard */}
+      {/* Overall Key Statistics Dashboard */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-        {/* Total Candidates */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-[#002366]" />
-            <span>Total Candidates</span>
+        {/* Total Candidates (Requested KPI) */}
+        <button
+          onClick={() => setActiveTab('candidates')}
+          className="bg-white rounded-xl border-2 border-blue-200 hover:border-[#002366] p-4 shadow-xs space-y-1 text-left transition-all hover:shadow-md cursor-pointer group"
+        >
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-[#002366]" />
+              Total Candidates
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-[#002366] transition-transform group-hover:translate-x-0.5" />
           </div>
           <div className="text-2xl font-black font-display text-[#002366]">{stats.totalCandidates}</div>
-          <div className="text-[10px] text-slate-400">Enrolled Graduands</div>
-        </div>
+          <div className="text-[10px] text-blue-700 font-semibold">{stats.clearedGraduands} Senate Cleared • View Roster →</div>
+        </button>
 
-        {/* Certificates Issued */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
-          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-            <Award className="w-3.5 h-3.5 text-[#C5A059]" />
-            <span>Certificates Issued</span>
+        {/* Certificates Issued (Requested KPI) */}
+        <button
+          onClick={() => setActiveTab('certificates')}
+          className="bg-white rounded-xl border-2 border-amber-200 hover:border-[#C5A059] p-4 shadow-xs space-y-1 text-left transition-all hover:shadow-md cursor-pointer group"
+        >
+          <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <Award className="w-3.5 h-3.5 text-[#C5A059]" />
+              Issued Certificates
+            </span>
+            <ChevronRight className="w-3 h-3 text-slate-300 group-hover:text-[#C5A059] transition-transform group-hover:translate-x-0.5" />
           </div>
           <div className="text-2xl font-black font-display text-[#C5A059]">{stats.certificatesIssued}</div>
-          <div className="text-[10px] text-slate-400">Verified Credentials</div>
-        </div>
+          <div className="text-[10px] text-amber-700 font-semibold">Verified Credentials • View Registry →</div>
+        </button>
 
         {/* Defined Ceremonies */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
+        <button
+          onClick={() => setActiveTab('ceremonies')}
+          className="bg-white rounded-xl border border-slate-200 hover:border-blue-400 p-4 shadow-xs space-y-1 text-left transition-all cursor-pointer"
+        >
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <GraduationCap className="w-3.5 h-3.5 text-blue-600" />
             <span>Ceremonies</span>
           </div>
           <div className="text-2xl font-black font-display text-blue-900">{stats.totalCeremonies}</div>
-          <div className="text-[10px] text-slate-400">Congregations Defined</div>
-        </div>
+          <div className="text-[10px] text-slate-500">{statusCounts.confirmed} Confirmed • {statusCounts.registrationOpen} Open</div>
+        </button>
 
         {/* Cleared Graduands */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
+        <button
+          onClick={() => {
+            setCandidateClearanceFilter('100');
+            setActiveTab('candidates');
+          }}
+          className="bg-white rounded-xl border border-slate-200 hover:border-emerald-400 p-4 shadow-xs space-y-1 text-left transition-all cursor-pointer"
+        >
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
             <span>100% Cleared</span>
           </div>
           <div className="text-2xl font-black font-display text-emerald-600">{stats.clearedGraduands}</div>
-          <div className="text-[10px] text-slate-400">Senate Approved</div>
-        </div>
+          <div className="text-[10px] text-emerald-700 font-medium">Senate Approved Graduands</div>
+        </button>
 
         {/* Conferred Graduates */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
+        <button
+          onClick={() => {
+            setCandidateClearanceFilter('conferred');
+            setActiveTab('candidates');
+          }}
+          className="bg-white rounded-xl border border-slate-200 hover:border-indigo-400 p-4 shadow-xs space-y-1 text-left transition-all cursor-pointer"
+        >
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
             <FileCheck2 className="w-3.5 h-3.5 text-indigo-600" />
             <span>Conferred</span>
           </div>
           <div className="text-2xl font-black font-display text-indigo-900">{stats.conferredGraduates}</div>
-          <div className="text-[10px] text-slate-400">Alumni Association</div>
-        </div>
+          <div className="text-[10px] text-indigo-700 font-medium">Alumni Inductees</div>
+        </button>
 
         {/* Fees Collected */}
         <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs space-y-1">
@@ -382,7 +633,7 @@ export const GraduationManagement: React.FC = () => {
             <DollarSign className="w-3.5 h-3.5 text-amber-600" />
             <span>Fees Collected</span>
           </div>
-          <div className="text-2xl font-black font-display text-amber-700">${stats.feesCollected}</div>
+          <div className="text-2xl font-black font-display text-amber-700">${stats.feesCollected.toLocaleString()}</div>
           <div className="text-[10px] text-slate-400">Convocation Dues</div>
         </div>
       </div>
@@ -429,6 +680,41 @@ export const GraduationManagement: React.FC = () => {
       {/* TAB 1: CEREMONIES DIRECTORY */}
       {activeTab === 'ceremonies' && (
         <div className="space-y-6">
+          {/* Status Quick Filter Pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1">
+              <Filter className="w-3 h-3 text-[#002366]" />
+              Status:
+            </span>
+            {[
+              { id: 'All', label: 'All Statuses', count: statusCounts.all },
+              { id: 'Planning', label: 'Planning', count: statusCounts.planning },
+              { id: 'Registration Open', label: 'Registration Open', count: statusCounts.registrationOpen },
+              { id: 'Confirmed', label: 'Confirmed', count: statusCounts.confirmed },
+              { id: 'Completed', label: 'Completed', count: statusCounts.completed },
+              { id: 'Archived', label: 'Archived', count: statusCounts.archived }
+            ].map((pill) => (
+              <button
+                key={pill.id}
+                onClick={() => setStatusFilter(pill.id)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                  statusFilter === pill.id
+                    ? 'bg-[#002366] text-white shadow-xs'
+                    : 'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
+                }`}
+              >
+                <span>{pill.label}</span>
+                <span
+                  className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono font-bold ${
+                    statusFilter === pill.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-700'
+                  }`}
+                >
+                  {pill.count}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {/* Filter and Action Bar */}
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center flex-wrap gap-2 flex-1">
@@ -443,7 +729,7 @@ export const GraduationManagement: React.FC = () => {
                 />
               </div>
 
-              {/* Status Filter */}
+              {/* Status Filter Dropdown */}
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
@@ -584,22 +870,34 @@ export const GraduationManagement: React.FC = () => {
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">Date & Time</span>
                           <span className="font-semibold text-slate-800">{ceremony.graduationDate}</span>
                         </div>
-                        <div>
+                        <button
+                          onClick={() => handleViewCeremonyCandidates(ceremony.id)}
+                          className="text-left group cursor-pointer p-1 rounded-md hover:bg-blue-50 transition-colors"
+                          title="Click to view candidate roster for this ceremony"
+                        >
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">Candidates Enrolled</span>
-                          <span className="font-bold text-[#002366]">{candidateCount} graduands</span>
-                        </div>
-                        <div>
+                          <span className="font-bold text-[#002366] group-hover:underline flex items-center gap-1">
+                            {candidateCount} graduands →
+                          </span>
+                        </button>
+                        <button
+                          onClick={() => handleViewCeremonyCertificates(ceremony.id)}
+                          className="text-left group cursor-pointer p-1 rounded-md hover:bg-amber-50 transition-colors"
+                          title="Click to view issued certificates for this ceremony"
+                        >
                           <span className="text-slate-400 text-[10px] uppercase font-bold block">Certificates</span>
-                          <span className="font-bold text-[#C5A059]">{certificateCount} issued</span>
-                        </div>
+                          <span className="font-bold text-[#C5A059] group-hover:underline flex items-center gap-1">
+                            {certificateCount} issued →
+                          </span>
+                        </button>
                       </div>
 
                       {/* Quick Status Select */}
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-500">Quick Status:</span>
+                        <span className="text-[11px] font-semibold text-slate-500">Ceremony Status:</span>
                         <select
                           value={ceremony.status}
-                          onChange={(e) => handleQuickStatusChange(ceremony.id, e.target.value as GraduationCeremonyStatus)}
+                          onChange={(e) => handleQuickStatusChange(ceremony.id, e.target.value as GraduationCeremonyStatus, ceremony.graduationNumber)}
                           className="px-2 py-1 text-xs rounded border border-slate-300 bg-slate-50 font-bold text-slate-700 cursor-pointer"
                         >
                           <option value="Planning">Planning</option>
@@ -687,7 +985,7 @@ export const GraduationManagement: React.FC = () => {
                           <td className="py-3.5 px-4">
                             <select
                               value={ceremony.status}
-                              onChange={(e) => handleQuickStatusChange(ceremony.id, e.target.value as GraduationCeremonyStatus)}
+                              onChange={(e) => handleQuickStatusChange(ceremony.id, e.target.value as GraduationCeremonyStatus, ceremony.graduationNumber)}
                               className="px-2 py-1 text-[11px] rounded border border-slate-300 bg-white font-bold cursor-pointer"
                             >
                               <option value="Planning">Planning</option>
@@ -698,10 +996,20 @@ export const GraduationManagement: React.FC = () => {
                             </select>
                           </td>
                           <td className="py-3.5 px-4 font-bold text-[#002366]">
-                            {candidateCount}
+                            <button
+                              onClick={() => handleViewCeremonyCandidates(ceremony.id)}
+                              className="hover:underline cursor-pointer bg-blue-50 hover:bg-blue-100 text-[#002366] px-2 py-1 rounded"
+                            >
+                              {candidateCount} graduands →
+                            </button>
                           </td>
                           <td className="py-3.5 px-4 font-bold text-[#C5A059]">
-                            {certificateCount}
+                            <button
+                              onClick={() => handleViewCeremonyCertificates(ceremony.id)}
+                              className="hover:underline cursor-pointer bg-amber-50 hover:bg-amber-100 text-[#C5A059] px-2 py-1 rounded"
+                            >
+                              {certificateCount} issued →
+                            </button>
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1">
@@ -761,14 +1069,70 @@ export const GraduationManagement: React.FC = () => {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold font-display text-[#002366]">Graduation Candidates Summary</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold font-display text-[#002366]">Graduation Candidates Roster</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#002366]">
+                  {filteredCandidates.length} of {graduationCandidates.length} Shown
+                </span>
+              </div>
               <p className="text-xs text-slate-500">
-                Graduands submitted for degree conferral, clearance verification, and booklet registry.
+                Official candidate roster submitted for degree conferral, academic clearance verification, and commencement program.
               </p>
             </div>
-            <div className="text-xs font-bold text-slate-700 bg-slate-100 px-3 py-1.5 rounded-lg">
-              Total Candidates: <span className="text-[#002366]">{graduationCandidates.length}</span>
+
+            {/* Quick Action */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCandidateSearchQuery('');
+                  setCandidateCeremonyFilter('All');
+                  setCandidateClearanceFilter('All');
+                }}
+                className="text-xs font-bold text-slate-600 hover:text-[#002366] px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer"
+              >
+                Reset Filters
+              </button>
             </div>
+          </div>
+
+          {/* Candidates Filter Bar */}
+          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={candidateSearchQuery}
+                onChange={(e) => setCandidateSearchQuery(e.target.value)}
+                placeholder="Search candidates by name, student reg ID, program, or school..."
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#002366]"
+              />
+            </div>
+
+            {/* Ceremony Filter */}
+            <select
+              value={candidateCeremonyFilter}
+              onChange={(e) => setCandidateCeremonyFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+            >
+              <option value="All">All Ceremonies</option>
+              {graduationCeremonies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.graduationNumber} ({c.graduationYear})
+                </option>
+              ))}
+            </select>
+
+            {/* Clearance Filter */}
+            <select
+              value={candidateClearanceFilter}
+              onChange={(e) => setCandidateClearanceFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+            >
+              <option value="All">All Clearance Stages</option>
+              <option value="100">100% Cleared (Senate Approved)</option>
+              <option value="pending">Pending Clearance (&lt;100%)</option>
+              <option value="conferred">Conferred Graduate</option>
+            </select>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
@@ -786,7 +1150,7 @@ export const GraduationManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {graduationCandidates.map((candidate) => {
+                  {filteredCandidates.map((candidate) => {
                     const ceremony = graduationCeremonies.find((c) => c.id === candidate.ceremonyId);
 
                     return (
@@ -838,6 +1202,13 @@ export const GraduationManagement: React.FC = () => {
                       </tr>
                     );
                   })}
+                  {filteredCandidates.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center text-slate-400">
+                        No candidates found matching the selected filters.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -850,14 +1221,70 @@ export const GraduationManagement: React.FC = () => {
         <div className="space-y-4">
           <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-bold font-display text-[#002366]">Conferred Certificates Registry</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-bold font-display text-[#002366]">Conferred Certificates Registry</h3>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-[#002366]">
+                  {filteredCertificates.length} of {graduationCertificates.length} Shown
+                </span>
+              </div>
               <p className="text-xs text-slate-500">
                 Official certificates issued with unique registrar serials and blockchain verification codes.
               </p>
             </div>
-            <div className="text-xs font-bold text-slate-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
-              Total Certificates: <span className="text-[#002366]">{graduationCertificates.length}</span>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setCertSearchQuery('');
+                  setCertCeremonyFilter('All');
+                  setCertAwardFilter('All');
+                }}
+                className="text-xs font-bold text-slate-600 hover:text-[#002366] px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer"
+              >
+                Reset Filters
+              </button>
             </div>
+          </div>
+
+          {/* Certificates Filter Bar */}
+          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-col sm:flex-row items-center gap-3">
+            <div className="relative flex-1 w-full">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={certSearchQuery}
+                onChange={(e) => setCertSearchQuery(e.target.value)}
+                placeholder="Search certificates by serial, graduate name, degree title, or hash..."
+                className="w-full pl-9 pr-4 py-2 text-xs rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#002366]"
+              />
+            </div>
+
+            {/* Ceremony Filter */}
+            <select
+              value={certCeremonyFilter}
+              onChange={(e) => setCertCeremonyFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+            >
+              <option value="All">All Ceremonies</option>
+              {graduationCeremonies.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.graduationNumber}
+                </option>
+              ))}
+            </select>
+
+            {/* Award Level Filter */}
+            <select
+              value={certAwardFilter}
+              onChange={(e) => setCertAwardFilter(e.target.value)}
+              className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+            >
+              <option value="All">All Award Levels</option>
+              <option value="Bachelor">Bachelor Degrees</option>
+              <option value="Master">Master Degrees</option>
+              <option value="Doctoral">Doctoral Degrees</option>
+              <option value="Diploma">Diplomas</option>
+            </select>
           </div>
 
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
@@ -875,7 +1302,7 @@ export const GraduationManagement: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
-                  {graduationCertificates.map((cert) => (
+                  {filteredCertificates.map((cert) => (
                     <tr key={cert.id} className="hover:bg-slate-50/80 transition-colors">
                       <td className="py-3.5 px-4 font-mono font-bold text-[#002366]">
                         {cert.certificateNumber}
@@ -904,6 +1331,13 @@ export const GraduationManagement: React.FC = () => {
                       </td>
                     </tr>
                   ))}
+                  {filteredCertificates.length === 0 && (
+                    <tr>
+                      <td colSpan={7} className="py-10 text-center text-slate-400">
+                        No certificates found matching the selected filters.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -967,34 +1401,78 @@ export const GraduationManagement: React.FC = () => {
                 </div>
               </div>
 
-              {/* Row 2: Convocation Theme */}
-              <div className="space-y-1">
-                <label className="font-bold text-slate-700">Convocation Theme & Scripture *</label>
+              {/* Row 2: Convocation Theme with Presets */}
+              <div className="space-y-2 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>Convocation Theme & Scripture Citation *</span>
+                  </label>
+                  <span className="text-[10px] text-slate-500 font-medium">Official booklet citation</span>
+                </div>
                 <input
                   type="text"
                   required
                   value={formData.theme}
                   onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
                   placeholder="e.g. Equipped for Ministry, Leadership and Global Impact (2 Timothy 3:16-17)"
-                  className="w-full px-3 py-2 rounded-lg border border-slate-300 focus:outline-none focus:ring-1 focus:ring-[#002366]"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#002366] font-medium"
                 />
+
+                {/* Biblical Theme Presets */}
+                <div className="space-y-1 pt-1">
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
+                    <Tag className="w-3 h-3 text-[#C5A059]" />
+                    <span>Quick-Select Theme Presets:</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {GRADUATION_THEME_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, theme: `${preset.theme} (${preset.scripture})` })}
+                        className="px-2 py-1 text-[10px] font-medium rounded-md bg-white hover:bg-[#002366] hover:text-white border border-slate-200 text-slate-700 transition-colors cursor-pointer text-left"
+                        title={`${preset.category}: ${preset.scripture}`}
+                      >
+                        <span className="font-bold text-[#C5A059] mr-1">✦</span>
+                        {preset.scripture}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Theme Plaque Preview */}
+                {formData.theme && (
+                  <div className="p-2.5 rounded-lg bg-amber-50/80 border border-[#C5A059]/40 text-slate-800 text-[11px] italic">
+                    <span className="font-bold text-[#002366] not-italic block text-[10px] uppercase tracking-wider mb-0.5">
+                      Theme Preview:
+                    </span>
+                    “{formData.theme}”
+                  </div>
+                )}
               </div>
 
               {/* Row 3: Status & Academic Year */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Ceremony Status *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-slate-700">Ceremony Status *</label>
+                    <span className="text-[10px] text-slate-500">Operational Phase</span>
+                  </div>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as GraduationCeremonyStatus })}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#002366] font-medium"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#002366] font-bold text-slate-800"
                   >
-                    <option value="Planning">Planning</option>
-                    <option value="Registration Open">Registration Open</option>
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Archived">Archived</option>
+                    {CEREMONY_STATUS_DEFINITIONS.map((def) => (
+                      <option key={def.status} value={def.status}>
+                        {def.status}
+                      </option>
+                    ))}
                   </select>
+                  <p className="text-[10px] text-slate-500 italic leading-snug pt-0.5">
+                    {CEREMONY_STATUS_DEFINITIONS.find((s) => s.status === formData.status)?.description}
+                  </p>
                 </div>
 
                 <div className="space-y-1">
