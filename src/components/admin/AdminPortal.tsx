@@ -36,7 +36,7 @@ import { RplAdminManager } from './RplAdminManager';
 import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal';
 import { TVRadioManagement } from './TVRadioManagement';
 import { TVAdminPortal } from './TVAdminPortal';
-import { GraduationManagementPortal } from '../graduation/GraduationManagementPortal';
+import { GraduationManagement } from './GraduationManagement';
 import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -308,7 +308,7 @@ export const AdminPortal: React.FC = () => {
       </div>
 
       {/* TAB: Graduation Management & Digital Convocation Portal */}
-      {activeTab === 'graduation' && <GraduationManagementPortal />}
+      {activeTab === 'graduation' && <GraduationManagement />}
 
       {/* TAB: Global Exam Centres & 47 Counties System */}
       {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}

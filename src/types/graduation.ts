@@ -51,12 +51,16 @@ export type CandidateGraduationStatus =
   | 'Approved' 
   | 'Confirmed Graduate' 
   | 'Graduated' 
-  | 'Deferred';
+  | 'Deferred'
+  | 'Eligible Candidate'
+  | 'Clearance Approved'
+  | 'Conferred Graduate'
+  | string;
 
 export type DepartmentClearanceStatus = 'Pending' | 'Completed' | 'Not Required' | 'Rejected';
 
 export interface DepartmentClearanceRecord {
-  department: 'Academic' | 'Examination' | 'Finance' | 'Library' | 'Student Affairs' | 'Registrar' | 'Graduation Office';
+  department?: 'Academic' | 'Examination' | 'Finance' | 'Library' | 'Student Affairs' | 'Registrar' | 'Graduation Office';
   status: DepartmentClearanceStatus;
   clearedBy?: string;
   clearedDate?: string;
@@ -76,18 +80,18 @@ export interface GraduationCandidate {
   gender: 'Male' | 'Female';
   nationality: string;
   country: string;
-  countryCode: string;
+  countryCode?: string;
   city: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
   schoolId: string;
   schoolName: string;
   programId: string;
   programName: string;
   awardLevel: AcademicLevel | 'Honorary Doctorate' | 'Diploma' | 'Certificate';
   specialization?: string;
-  studyMode: 'Online / Distance Learning' | 'On-Campus Resident' | 'Hybrid Academic Track';
-  campus: string;
+  studyMode: 'Online / Distance Learning' | 'On-Campus Resident' | 'Hybrid Academic Track' | 'Online Distance Learning' | string;
+  campus?: string;
   graduationYear: number;
   ceremonyId: string; // Linked Graduation Ceremony
   ceremonyNumber?: string;
@@ -217,6 +221,7 @@ export interface GraduationBooklet {
   awards: AcademicAwardWinner[];
   
   generatedAt: string;
+  generatedBy?: string;
   lastEditedBy: string;
   isDemo?: boolean;
 }
@@ -224,8 +229,12 @@ export interface GraduationBooklet {
 export interface GraduationAuditLog {
   id: string;
   timestamp: string;
-  actorName: string;
-  actorRole: string;
+  actorName?: string;
+  actorRole?: string;
+  performedBy?: string;
+  role?: string;
+  ceremonyId?: string;
+  candidateId?: string;
   action: 
     | 'CEREMONY_CREATED'
     | 'CEREMONY_UPDATED'
@@ -236,7 +245,8 @@ export interface GraduationAuditLog {
     | 'CERTIFICATE_ISSUED'
     | 'BOOKLET_GENERATED'
     | 'ALUMNI_CONFERRED'
-    | 'BULK_IMPORT';
+    | 'BULK_IMPORT'
+    | string;
   details: string;
   targetId?: string;
   targetName?: string;
@@ -247,18 +257,24 @@ export interface GraduationCertificateRecord {
   certificateNumber: string;
   studentId: string;
   candidateId?: string;
-  fullName: string;
-  programName: string;
+  fullName?: string;
+  studentName?: string;
+  degreeTitle?: string;
+  programName?: string;
   schoolName: string;
   awardLevel: string;
   honors?: string;
-  graduationDate: string;
-  graduationYear: number;
-  ceremonyNumber: string;
-  status: 'Pending' | 'Approved' | 'Issued' | 'Replaced' | 'Cancelled';
+  graduationDate?: string;
+  graduationYear?: number;
+  ceremonyId?: string;
+  ceremonyNumber?: string;
+  status: 'Pending' | 'Approved' | 'Issued' | 'Replaced' | 'Cancelled' | 'Conferred & Valid' | string;
   issuedDate?: string;
+  conferralDate?: string;
   verificationCode: string;
+  qrCodeUrl?: string;
   chancellorName: string;
+  viceChancellorName?: string;
   registrarName: string;
   registrarApprovalDate?: string;
   isDemo?: boolean;
