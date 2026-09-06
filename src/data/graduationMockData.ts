@@ -89,6 +89,42 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
     isDemo: true,
     createdAt: '2025-01-10T08:00:00Z',
     updatedAt: '2025-11-01T15:00:00Z'
+  },
+  {
+    id: 'ceremony-2022-nakuru-hon',
+    graduationNumber: 'Honorary Doctorate Convocation',
+    academicYear: '2021/2022',
+    graduationYear: 2022,
+    graduationDate: '2022-04-08',
+    graduationTime: '10:00 AM (EAT)',
+    venue: "Nakuru Mother's Chapter Convocation Assembly",
+    city: 'Nakuru',
+    country: 'Kenya',
+    theme: 'Honorary Doctorate Investiture & Christian Leadership Conferment (2 Timothy 2:15)',
+    chiefGuest: 'Chancellor Dr. Michael C. Sterling & Presiding Council',
+    chancellor: 'Dr. Michael C. Sterling, Th.D., D.Min.',
+    viceChancellor: 'Prof. Dr. Patrick Njuguna, Ph.D., Th.D.',
+    registrar: 'Rev. Dr. Sarah M. Jenkins, Th.D.',
+    graduationCoordinator: "Nakuru Mother's Chapter Council",
+    status: 'Completed',
+    logoUrl: 'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=600',
+    bannerUrl: 'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?auto=format&fit=crop&q=80&w=1200',
+    description: "Special Honorary Doctorate Graduation Ceremony for Nakuru Mother's Chapter Class of 2022, held on 08/04/2022 in Nakuru, Kenya.",
+    programmeSchedule: [
+      { id: 'p22-1', order: 1, time: '09:00 AM', activity: 'Arrival of Honorary Graduands and Dignitaries', facilitator: "Nakuru Protocol Team" },
+      { id: 'p22-2', order: 2, time: '10:00 AM', activity: 'Academic Procession & Solemn Invocation', facilitator: 'University Senate' },
+      { id: 'p22-3', order: 3, time: '11:00 AM', activity: 'Conferment of Honorary Doctorate of Divinity Degrees (Honoris Causa)', facilitator: 'Chancellor Dr. Michael C. Sterling & Vice Chancellor Prof. Dr. Patrick Njuguna' },
+      { id: 'p22-4', order: 4, time: '12:30 PM', activity: 'Presentation of Doctoral Hoods, Stoles & Credentials', facilitator: 'Registrar Rev. Dr. Sarah M. Jenkins' },
+      { id: 'p22-5', order: 5, time: '01:00 PM', activity: 'Ministerial Charge & Benediction', facilitator: 'Presiding Overseers' }
+    ],
+    photos: [
+      'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&q=80&w=800'
+    ],
+    videos: [],
+    livestreamUrl: '',
+    isDemo: false,
+    createdAt: '2022-04-01T08:00:00Z',
+    updatedAt: '2022-04-08T15:00:00Z'
   }
 ];
 

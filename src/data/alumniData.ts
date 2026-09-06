@@ -1,4 +1,5 @@
 import { Alumni, AlumniChapter, AlumniStory, AlumniEvent } from '../types/alumni';
+import { NAKURU_2022_HONORARY_GRADUATES } from './nakuru2022GraduatesData';
 
 export interface CountryInfo {
   name: string;
@@ -67,7 +68,8 @@ export const COUNTRIES_50_PLUS: CountryInfo[] = [
 export const GRADUATION_YEARS_10 = [2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017];
 
 export const OFFICIAL_BIBU_PROGRAMS = [
-  // Doctoral
+  // Doctoral & Honorary Degrees
+  'Honorary Doctorate of Divinity (D.Div. Honoris Causa)',
   'Doctor of Philosophy in Christian Leadership and Management',
   'Doctor of Ministry (D.Min)',
   'Doctor of Theological Studies',
@@ -1304,10 +1306,29 @@ export const INITIAL_ALUMNI_DATABASE: Alumni[] = [
     created_at: '2026-06-15T00:00:00Z',
     updated_at: '2026-08-25T00:00:00Z',
   },
+  ...NAKURU_2022_HONORARY_GRADUATES,
 ];
 
 // Global Alumni Chapters
 export const GLOBAL_ALUMNI_CHAPTERS: AlumniChapter[] = [
+  {
+    id: 'ch-nakuru-mothers',
+    name: "Nakuru Mother's Chapter Alumni & Fellowship Chapter",
+    country: 'Kenya',
+    country_code: 'KE',
+    city: 'Nakuru',
+    president_name: 'Dr. Nancy Njeri Gitau',
+    president_alumni_id: 'BIBU-ALM-2022-NK01',
+    secretary_name: 'Dr. Hellen Wanjeri Musyoka',
+    contact_email: 'nakuru.mothers@bibu-edu.org',
+    contact_phone: '+254 722 646 553',
+    member_count: 32,
+    established_year: 2022,
+    description: "Conferred Honorary Doctorate Cohort and maternal ministerial chapter championing women's empowerment, spiritual mentorship, and community charity outreach across Nakuru and the Central Rift region.",
+    is_active: true,
+    created_at: '2022-04-08T00:00:00Z',
+    updated_at: '2026-09-06T12:00:00Z',
+  },
   {
     id: 'ch-north-america',
     name: 'BIBU North America & Headquarters Alumni Chapter',

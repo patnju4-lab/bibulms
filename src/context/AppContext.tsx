@@ -741,7 +741,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [alumniList, setAlumniList] = useState<Alumni[]>(() => {
     const saved = localStorage.getItem('bibu_alumni_database');
-    return saved ? JSON.parse(saved) : INITIAL_ALUMNI_DATABASE;
+    if (saved) {
+      try {
+        const parsed: Alumni[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const existingIds = new Set(parsed.map(a => a.id));
+          const missing = INITIAL_ALUMNI_DATABASE.filter(a => !existingIds.has(a.id));
+          if (missing.length > 0) {
+            return [...parsed, ...missing];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_alumni_database', e);
+      }
+    }
+    return INITIAL_ALUMNI_DATABASE;
   });
 
   // Global Examination Centre & Student Registration System States
@@ -870,7 +885,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Graduation Module States
   const [graduationCeremonies, setGraduationCeremonies] = useState<GraduationCeremony[]>(() => {
     const saved = localStorage.getItem('bibu_graduation_ceremonies');
-    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CEREMONIES;
+    if (saved) {
+      try {
+        const parsed: GraduationCeremony[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const existingIds = new Set(parsed.map(c => c.id));
+          const missing = INITIAL_GRADUATION_CEREMONIES.filter(c => !existingIds.has(c.id));
+          if (missing.length > 0) {
+            return [...parsed, ...missing];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_graduation_ceremonies', e);
+      }
+    }
+    return INITIAL_GRADUATION_CEREMONIES;
   });
 
   const [graduationCandidates, setGraduationCandidates] = useState<GraduationCandidate[]>(() => {

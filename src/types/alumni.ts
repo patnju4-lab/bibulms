@@ -9,7 +9,7 @@ export type AlumniVerificationStatus =
 
 export type AlumniPrivacyStatus = 'Public Profile' | 'Public Directory' | 'Alumni Only' | 'Private';
 
-export type AlumniQualificationLevel = AcademicLevel | 'Certificate' | 'Diploma' | 'Bachelor' | 'Master' | 'Doctorate' | 'PhD' | 'DMin' | 'MDiv' | 'ThD';
+export type AlumniQualificationLevel = AcademicLevel | 'Certificate' | 'Diploma' | 'Bachelor' | 'Master' | 'Doctorate' | 'PhD' | 'DMin' | 'MDiv' | 'ThD' | 'Honorary Doctorate';
 
 export interface Alumni {
   id: string;

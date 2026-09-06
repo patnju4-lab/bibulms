@@ -85,9 +85,14 @@ export const AlumniDirectory: React.FC<AlumniDirectoryProps> = ({
         !q ||
         item.full_name.toLowerCase().includes(q) ||
         item.alumni_id.toLowerCase().includes(q) ||
+        (item.student_id && item.student_id.toLowerCase().includes(q)) ||
+        (item.certificate_number && item.certificate_number.toLowerCase().includes(q)) ||
+        (item.phone && item.phone.toLowerCase().includes(q)) ||
+        (item.email && item.email.toLowerCase().includes(q)) ||
         item.country.toLowerCase().includes(q) ||
         item.city.toLowerCase().includes(q) ||
         item.program_name.toLowerCase().includes(q) ||
+        (item.campus && item.campus.toLowerCase().includes(q)) ||
         (item.organization && item.organization.toLowerCase().includes(q)) ||
         (item.current_position && item.current_position.toLowerCase().includes(q)) ||
         (item.ministry && item.ministry.toLowerCase().includes(q)) ||
@@ -105,7 +110,8 @@ export const AlumniDirectory: React.FC<AlumniDirectoryProps> = ({
       // 5. Qualification Level Filter
       const matchesLevel =
         selectedLevel === 'All' ||
-        (selectedLevel === 'Doctoral' && ['PhD', 'Doctorate', 'DMin', 'ThD', 'Doctor'].some(lvl => item.qualification_level.toLowerCase().includes(lvl.toLowerCase()) || item.program_name.toLowerCase().includes(lvl.toLowerCase()))) ||
+        (selectedLevel === 'Doctoral' && ['PhD', 'Doctorate', 'DMin', 'ThD', 'Doctor', 'Honorary'].some(lvl => item.qualification_level.toLowerCase().includes(lvl.toLowerCase()) || item.program_name.toLowerCase().includes(lvl.toLowerCase()))) ||
+        (selectedLevel === 'Honorary' && (item.qualification_level.toLowerCase().includes('honorary') || item.program_name.toLowerCase().includes('honoris') || item.program_name.toLowerCase().includes('honorary'))) ||
         (selectedLevel === 'Master' && ['Master', 'MDiv', 'MTS', 'MBS', 'MA'].some(lvl => item.qualification_level.toLowerCase().includes(lvl.toLowerCase()) || item.program_name.toLowerCase().includes(lvl.toLowerCase()))) ||
         (selectedLevel === 'Bachelor' && ['Bachelor', 'BTh', 'BBS', 'BA'].some(lvl => item.qualification_level.toLowerCase().includes(lvl.toLowerCase()) || item.program_name.toLowerCase().includes(lvl.toLowerCase()))) ||
         (selectedLevel === 'Diploma' && (item.qualification_level === 'Diploma' || item.program_name.toLowerCase().includes('diploma'))) ||
@@ -311,7 +317,8 @@ export const AlumniDirectory: React.FC<AlumniDirectoryProps> = ({
               className="w-full px-3 py-2 text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#002366]"
             >
               <option value="All">All Degree Levels</option>
-              <option value="Doctoral">Doctorate (PhD / DMin / ThD)</option>
+              <option value="Doctoral">Doctorate (PhD / DMin / ThD / Honorary)</option>
+              <option value="Honorary">Honorary Doctorate (D.Div.)</option>
               <option value="Master">Master's (MDiv / MA / MTS)</option>
               <option value="Bachelor">Bachelor's (BTh / BBS / BA)</option>
               <option value="Diploma">Diploma Programs</option>
@@ -484,8 +491,11 @@ export const AlumniDirectory: React.FC<AlumniDirectoryProps> = ({
                         <span className="text-sm">{flag}</span>
                         <span className="truncate">{alum.city}, {alum.country}</span>
                       </div>
-                      <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                        ID: {alum.alumni_id}
+                      <div className="text-[10px] text-slate-400 font-mono mt-0.5 flex flex-wrap items-center gap-x-2">
+                        <span>ID: {alum.alumni_id}</span>
+                        {alum.student_id && (
+                          <span className="text-slate-600 font-semibold">• Reg: {alum.student_id}</span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -750,6 +760,30 @@ export const AlumniDirectory: React.FC<AlumniDirectoryProps> = ({
                       {activeProfile.campus || 'Online Global Center'} ({activeProfile.study_mode || 'Distance Learning'})
                     </div>
                   </div>
+                  {activeProfile.student_id && (
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-bold uppercase">Official Student Reg No.</div>
+                      <div className="font-mono font-bold text-[#002366] mt-0.5">
+                        {activeProfile.student_id}
+                      </div>
+                    </div>
+                  )}
+                  {activeProfile.phone && (
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-bold uppercase">Mobile Contact</div>
+                      <div className="font-semibold text-slate-800 mt-0.5">
+                        {activeProfile.phone}
+                      </div>
+                    </div>
+                  )}
+                  {activeProfile.email && (
+                    <div>
+                      <div className="text-[11px] text-slate-500 font-bold uppercase">Alumni Email</div>
+                      <div className="font-semibold text-slate-800 mt-0.5 break-all">
+                        {activeProfile.email}
+                      </div>
+                    </div>
+                  )}
                   {activeProfile.certificate_number && (
                     <div className="sm:col-span-2 pt-2 border-t border-slate-200">
                       <div className="text-[11px] text-slate-500 font-bold uppercase">Official Certificate Reference</div>
