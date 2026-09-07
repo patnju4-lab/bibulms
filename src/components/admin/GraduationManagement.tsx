@@ -36,6 +36,8 @@ import {
   Tag
 } from 'lucide-react';
 import { UniversityLogo } from '../common/UniversityLogo';
+import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
+import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
 
 export interface ThemePreset {
   theme: string;
@@ -166,7 +168,9 @@ export const GraduationManagement: React.FC = () => {
   } = useApp();
 
   // Active view tab
-  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates'>('ceremonies');
+  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates' | 'booklet'>('ceremonies');
+  const [selectedBookletCeremonyId, setSelectedBookletCeremonyId] = useState<string | undefined>(undefined);
+  const [bookletMode, setBookletMode] = useState<'editor' | 'reader'>('editor');
 
   // Search and Filter states for Ceremonies
   const [searchQuery, setSearchQuery] = useState('');
@@ -675,6 +679,21 @@ export const GraduationManagement: React.FC = () => {
           <Award className="w-4 h-4 text-[#C5A059]" />
           <span>Certificates Issued ({graduationCertificates.length})</span>
         </button>
+
+        <button
+          onClick={() => {
+            setSelectedBookletCeremonyId(undefined);
+            setActiveTab('booklet');
+          }}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'booklet'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/80 font-black'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <BookOpen className="w-4 h-4 text-[#C5A059]" />
+          <span>Booklet Generator & PDF</span>
+        </button>
       </div>
 
       {/* TAB 1: CEREMONIES DIRECTORY */}
@@ -921,6 +940,17 @@ export const GraduationManagement: React.FC = () => {
 
                       <div className="flex items-center gap-1">
                         <button
+                          onClick={() => {
+                            setSelectedBookletCeremonyId(ceremony.id);
+                            setActiveTab('booklet');
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-[#002366] font-bold text-[11px] border border-amber-300 flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Generate & View Convocation Booklet"
+                        >
+                          <BookOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+                          <span>Booklet</span>
+                        </button>
+                        <button
                           onClick={() => handleOpenEditModal(ceremony)}
                           className="p-1.5 rounded-lg text-slate-600 hover:text-[#002366] hover:bg-slate-200 transition-colors cursor-pointer"
                           title="Edit Ceremony Fields"
@@ -1013,6 +1043,17 @@ export const GraduationManagement: React.FC = () => {
                           </td>
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedBookletCeremonyId(ceremony.id);
+                                  setActiveTab('booklet');
+                                }}
+                                className="px-2 py-1 rounded bg-amber-50 hover:bg-amber-100 text-[#002366] font-bold text-[11px] border border-amber-300 flex items-center gap-1 cursor-pointer"
+                                title="Generate Convocation Booklet"
+                              >
+                                <BookOpen className="w-3 h-3 text-[#C5A059]" />
+                                <span>Booklet</span>
+                              </button>
                               <button
                                 onClick={() => setViewingCeremony(ceremony)}
                                 className="p-1.5 rounded hover:bg-slate-100 text-slate-600"
@@ -1342,6 +1383,52 @@ export const GraduationManagement: React.FC = () => {
               </table>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB 4: GRADUATION BOOKLET GENERATOR & PRINTABLE PDF */}
+      {activeTab === 'booklet' && (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between bg-white p-3 rounded-2xl border border-slate-200 shadow-2xs">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-[#002366] uppercase tracking-wider px-2">Booklet Workspace:</span>
+              <button
+                onClick={() => setBookletMode('editor')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  bookletMode === 'editor'
+                    ? 'bg-[#002366] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                ✏️ Administrative Editor (Drag-and-Drop Photos & Speeches)
+              </button>
+              <button
+                onClick={() => setBookletMode('reader')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  bookletMode === 'reader'
+                    ? 'bg-[#002366] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                📖 Publication Reader & Catalog
+              </button>
+            </div>
+            <button
+              onClick={() => setActiveTab('ceremonies')}
+              className="px-3 py-1 text-xs font-medium text-slate-500 hover:text-slate-800"
+            >
+              Back to Ceremonies
+            </button>
+          </div>
+
+          {bookletMode === 'editor' ? (
+            <AdministrativeBookletEditor initialCeremonyId={selectedBookletCeremonyId} />
+          ) : (
+            <GraduationBookletGenerator
+              initialCeremonyId={selectedBookletCeremonyId}
+              onClose={() => setActiveTab('ceremonies')}
+            />
+          )}
         </div>
       )}
 

@@ -37,6 +37,7 @@ import { GlobalExamCentresPortal } from '../examCentres/GlobalExamCentresPortal'
 import { TVRadioManagement } from './TVRadioManagement';
 import { TVAdminPortal } from './TVAdminPortal';
 import { GraduationManagement } from './GraduationManagement';
+import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
 import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -59,7 +60,7 @@ export const AdminPortal: React.FC = () => {
     graduationCandidates
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'graduation' | 'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('graduation');
+  const [activeTab, setActiveTab] = useState<'graduation' | 'booklet-editor' | 'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('graduation');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -160,6 +161,21 @@ export const AdminPortal: React.FC = () => {
         >
           <GraduationCap className="w-4 h-4 text-[#C5A059]" />
           <span>🎓 Graduation & Convocation Portal ({graduationCandidates.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('booklet-editor')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'booklet-editor'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/70 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <BookOpen className="w-4 h-4 text-[#C5A059]" />
+          <span>📖 Administrative Booklet Editor</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-[#C5A059]/20 text-[#002366] text-[10px] font-mono font-black">
+            Registrar Studio
+          </span>
         </button>
 
         <button
@@ -309,6 +325,9 @@ export const AdminPortal: React.FC = () => {
 
       {/* TAB: Graduation Management & Digital Convocation Portal */}
       {activeTab === 'graduation' && <GraduationManagement />}
+
+      {/* TAB: Administrative Convocation Booklet Editor */}
+      {activeTab === 'booklet-editor' && <AdministrativeBookletEditor />}
 
       {/* TAB: Global Exam Centres & 47 Counties System */}
       {activeTab === 'exam-centres' && <GlobalExamCentresPortal />}

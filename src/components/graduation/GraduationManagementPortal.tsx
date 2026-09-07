@@ -12,6 +12,7 @@ import {
 } from '../../types/graduation';
 import { Alumni } from '../../types/alumni';
 import { GraduationBookletViewer } from './GraduationBookletViewer';
+import { GraduationBookletGenerator } from './GraduationBookletGenerator';
 import { GraduationCandidateModal } from './GraduationCandidateModal';
 import { AlumniDigitalCard } from './AlumniDigitalCard';
 import {
@@ -792,14 +793,11 @@ export const GraduationManagementPortal: React.FC = () => {
         </div>
       )}
 
-      {/* TAB CONTENT 4: DIGITAL GRADUATION BOOKLET */}
-      {activeTab === 'booklet' && currentBooklet && (
+      {/* TAB CONTENT 4: DIGITAL GRADUATION BOOKLET & PDF GENERATOR */}
+      {activeTab === 'booklet' && (
         <div className="space-y-6">
-          <GraduationBookletViewer
-            booklet={currentBooklet}
-            ceremony={currentCeremony}
-            candidates={graduationCandidates}
-            onSelectCandidate={(cand) => setSelectedCandidate(cand)}
+          <GraduationBookletGenerator
+            initialCeremonyId={selectedCeremonyFilter !== 'All' ? selectedCeremonyFilter : currentCeremony?.id}
           />
         </div>
       )}
