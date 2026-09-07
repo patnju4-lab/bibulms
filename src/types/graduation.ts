@@ -90,6 +90,8 @@ export interface GraduationCandidate {
   programName: string;
   awardLevel: AcademicLevel | 'Honorary Doctorate' | 'Diploma' | 'Certificate';
   specialization?: string;
+  institution?: string; // Associated institution, e.g. Kingdom Calvary Theological College, BLTI, etc.
+  academicAchievement?: string; // Exact convocation achievement text e.g. "RPL Course/Master of Science In Civil Engineering"
   studyMode: 'Online / Distance Learning' | 'On-Campus Resident' | 'Hybrid Academic Track' | 'Online Distance Learning' | string;
   campus?: string;
   graduationYear: number;

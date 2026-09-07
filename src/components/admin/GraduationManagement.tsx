@@ -1202,6 +1202,12 @@ export const GraduationManagement: React.FC = () => {
                         </td>
                         <td className="py-3.5 px-4">
                           <div className="text-slate-900 font-medium">{candidate.programName}</div>
+                          {candidate.academicAchievement && candidate.academicAchievement !== candidate.programName && (
+                            <div className="text-[11px] text-slate-600">{candidate.academicAchievement}</div>
+                          )}
+                          {candidate.institution && (
+                            <div className="text-[10px] text-indigo-700 font-semibold">{candidate.institution}</div>
+                          )}
                           <div className="text-[10px] text-slate-400">{candidate.schoolName}</div>
                         </td>
                         <td className="py-3.5 px-4">

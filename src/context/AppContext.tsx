@@ -136,6 +136,7 @@ import {
   INITIAL_GRADUATION_CEREMONIES,
   INITIAL_GRADUATION_CANDIDATES,
   INITIAL_GRADUATION_BOOKLET,
+  INITIAL_GRADUATION_BOOKLETS,
   INITIAL_ACADEMIC_AWARDS,
   INITIAL_GRADUATION_CERTIFICATES,
   INITIAL_AUDIT_LOGS as INITIAL_GRADUATION_AUDIT_LOGS
@@ -917,12 +918,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [graduationCandidates, setGraduationCandidates] = useState<GraduationCandidate[]>(() => {
     const saved = localStorage.getItem('bibu_graduation_candidates');
-    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CANDIDATES;
+    if (saved) {
+      try {
+        const parsed: GraduationCandidate[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const existingIds = new Set(parsed.map(c => c.id));
+          const missing = INITIAL_GRADUATION_CANDIDATES.filter(c => !existingIds.has(c.id));
+          if (missing.length > 0) {
+            return [...missing, ...parsed];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_graduation_candidates', e);
+      }
+    }
+    return INITIAL_GRADUATION_CANDIDATES;
   });
 
   const [graduationBooklets, setGraduationBooklets] = useState<GraduationBooklet[]>(() => {
     const saved = localStorage.getItem('bibu_graduation_booklets');
-    return saved ? JSON.parse(saved) : [INITIAL_GRADUATION_BOOKLET];
+    if (saved) {
+      try {
+        const parsed: GraduationBooklet[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const existingIds = new Set(parsed.map(b => b.id));
+          const missing = INITIAL_GRADUATION_BOOKLETS.filter(b => !existingIds.has(b.id));
+          if (missing.length > 0) {
+            return [...parsed, ...missing];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_graduation_booklets', e);
+      }
+    }
+    return INITIAL_GRADUATION_BOOKLETS;
   });
 
   const [activeGraduationBooklet, setActiveGraduationBooklet] = useState<GraduationBooklet | null>(() => {
@@ -936,7 +967,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [graduationCertificates, setGraduationCertificates] = useState<GraduationCertificateRecord[]>(() => {
     const saved = localStorage.getItem('bibu_graduation_certificates');
-    return saved ? JSON.parse(saved) : INITIAL_GRADUATION_CERTIFICATES;
+    if (saved) {
+      try {
+        const parsed: GraduationCertificateRecord[] = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const existingIds = new Set(parsed.map(c => c.id));
+          const missing = INITIAL_GRADUATION_CERTIFICATES.filter(c => !existingIds.has(c.id));
+          if (missing.length > 0) {
+            return [...missing, ...parsed];
+          }
+          return parsed;
+        }
+      } catch (e) {
+        console.error('Failed to parse bibu_graduation_certificates', e);
+      }
+    }
+    return INITIAL_GRADUATION_CERTIFICATES;
   });
 
   const [graduationAuditLogs, setGraduationAuditLogs] = useState<GraduationAuditLog[]>(() => {

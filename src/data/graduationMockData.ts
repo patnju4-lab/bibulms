@@ -6,6 +6,12 @@ import {
   GraduationCertificateRecord,
   GraduationAuditLog
 } from '../types/graduation';
+import {
+  CEREMONY_2024_DEC,
+  DECEMBER_2024_CANDIDATES,
+  DECEMBER_2024_BOOKLET,
+  DECEMBER_2024_CERTIFICATES
+} from './graduation2024Data';
 
 export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
   {
@@ -90,6 +96,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
     createdAt: '2025-01-10T08:00:00Z',
     updatedAt: '2025-11-01T15:00:00Z'
   },
+  CEREMONY_2024_DEC,
   {
     id: 'ceremony-2022-nakuru-hon',
     graduationNumber: 'Honorary Doctorate Convocation',
@@ -165,6 +172,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
 ];
 
 export const INITIAL_GRADUATION_CANDIDATES: GraduationCandidate[] = [
+  ...DECEMBER_2024_CANDIDATES,
   {
     id: 'cand-2026-001',
     studentId: 'BIBU-2024-ST-7492',
@@ -765,7 +773,13 @@ export const INITIAL_GRADUATION_BOOKLET: GraduationBooklet = {
   isDemo: true
 };
 
+export const INITIAL_GRADUATION_BOOKLETS: GraduationBooklet[] = [
+  INITIAL_GRADUATION_BOOKLET,
+  DECEMBER_2024_BOOKLET
+];
+
 export const INITIAL_GRADUATION_CERTIFICATES: GraduationCertificateRecord[] = [
+  ...DECEMBER_2024_CERTIFICATES,
   {
     id: 'cert-rec-2026-001',
     certificateNumber: 'BIBU-CERT-2026-BTH-0842',

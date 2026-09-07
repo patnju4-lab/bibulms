@@ -2085,6 +2085,18 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                                       {cand.programName}
                                     </div>
 
+                                    {cand.academicAchievement && cand.academicAchievement !== cand.programName && (
+                                      <div className="text-[10px] text-slate-600 line-clamp-1">
+                                        {cand.academicAchievement}
+                                      </div>
+                                    )}
+
+                                    {cand.institution && (
+                                      <div className="text-[10px] text-indigo-700 font-medium truncate">
+                                        {cand.institution}
+                                      </div>
+                                    )}
+
                                     {cand.specialization && (
                                       <div className="text-[10px] text-slate-500 italic truncate">
                                         Spec: {cand.specialization}
@@ -2131,6 +2143,16 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                                   <div className="flex-1 min-w-0 space-y-1 text-xs">
                                     <div className="font-bold text-slate-900 text-sm">{cand.fullName}</div>
                                     <div className="text-[#002366] font-semibold">{cand.programName}</div>
+                                    {cand.academicAchievement && cand.academicAchievement !== cand.programName && (
+                                      <div className="text-[11px] text-slate-600 font-medium">
+                                        Award: {cand.academicAchievement}
+                                      </div>
+                                    )}
+                                    {cand.institution && (
+                                      <div className="text-[11px] text-indigo-700 font-medium">
+                                        Institution: {cand.institution}
+                                      </div>
+                                    )}
                                     <div className="text-[11px] text-slate-500 font-mono">
                                       Reg: {cand.admissionNumber || cand.studentId} • {cand.country}
                                     </div>
@@ -2159,7 +2181,8 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                                     <th className="py-2.5 px-3 w-10">Photo</th>
                                     <th className="py-2.5 px-3">Graduate Full Name</th>
                                     <th className="py-2.5 px-3">Student Reg.</th>
-                                    <th className="py-2.5 px-3">Degree Programme</th>
+                                    <th className="py-2.5 px-3">Degree Programme / Award</th>
+                                    <th className="py-2.5 px-3">Institution</th>
                                     <th className="py-2.5 px-3">Honors / Standing</th>
                                     <th className="py-2.5 px-3">Country</th>
                                   </tr>
@@ -2187,7 +2210,13 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                                       </td>
                                       <td className="py-2 px-3 font-bold text-slate-900">{cand.fullName}</td>
                                       <td className="py-2 px-3 font-mono text-slate-500">{cand.admissionNumber || cand.studentId}</td>
-                                      <td className="py-2 px-3 text-[#002366]">{cand.programName}</td>
+                                      <td className="py-2 px-3 text-[#002366]">
+                                        <div>{cand.programName}</div>
+                                        {cand.academicAchievement && cand.academicAchievement !== cand.programName && (
+                                          <div className="text-[10px] text-slate-500">{cand.academicAchievement}</div>
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-3 text-indigo-700 text-[11px] font-medium">{cand.institution || 'BIBU Main'}</td>
                                       <td className="py-2 px-3 font-semibold text-amber-700">{cand.academicHonors || 'Conferred'}</td>
                                       <td className="py-2 px-3 text-slate-600">{cand.country}</td>
                                     </tr>
@@ -2322,6 +2351,12 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
               <div className="space-y-1.5 text-xs flex-1">
                 <div className="font-bold text-slate-900 text-base">{inspectCandidate.fullName}</div>
                 <div className="text-[#002366] font-semibold">{inspectCandidate.programName}</div>
+                {inspectCandidate.academicAchievement && inspectCandidate.academicAchievement !== inspectCandidate.programName && (
+                  <div className="text-slate-700 font-medium">Award: {inspectCandidate.academicAchievement}</div>
+                )}
+                {inspectCandidate.institution && (
+                  <div className="text-indigo-700 font-medium">Institution: {inspectCandidate.institution}</div>
+                )}
                 <div className="text-slate-500">{inspectCandidate.schoolName}</div>
                 <div className="font-mono text-slate-600 text-[11px]">
                   Reg No: <strong>{inspectCandidate.admissionNumber || inspectCandidate.studentId}</strong>
