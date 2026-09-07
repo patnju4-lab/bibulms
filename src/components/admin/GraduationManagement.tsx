@@ -33,11 +33,13 @@ import {
   Info,
   BookMarked,
   Check,
-  Tag
+  Tag,
+  Database
 } from 'lucide-react';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
 import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
+import { Rpl2024MigrationUtility } from './Rpl2024MigrationUtility';
 
 export interface ThemePreset {
   theme: string;
@@ -168,7 +170,7 @@ export const GraduationManagement: React.FC = () => {
   } = useApp();
 
   // Active view tab
-  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates' | 'booklet'>('ceremonies');
+  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates' | 'booklet' | 'rpl-migration'>('ceremonies');
   const [selectedBookletCeremonyId, setSelectedBookletCeremonyId] = useState<string | undefined>(undefined);
   const [bookletMode, setBookletMode] = useState<'editor' | 'reader'>('editor');
 
@@ -289,7 +291,9 @@ export const GraduationManagement: React.FC = () => {
         cand.fullName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
         cand.studentId.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
         cand.programName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
-        cand.schoolName.toLowerCase().includes(candidateSearchQuery.toLowerCase());
+        cand.schoolName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
+        (cand.institution && cand.institution.toLowerCase().includes(candidateSearchQuery.toLowerCase())) ||
+        (cand.academicAchievement && cand.academicAchievement.toLowerCase().includes(candidateSearchQuery.toLowerCase()));
 
       const matchesCeremony =
         candidateCeremonyFilter === 'All' ||
@@ -694,6 +698,18 @@ export const GraduationManagement: React.FC = () => {
           <BookOpen className="w-4 h-4 text-[#C5A059]" />
           <span>Booklet Generator & PDF</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('rpl-migration')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'rpl-migration'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/80 font-black'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Database className="w-4 h-4 text-[#C5A059]" />
+          <span>RPL 2024 Data Utility & Institutions (118)</span>
+        </button>
       </div>
 
       {/* TAB 1: CEREMONIES DIRECTORY */}
@@ -939,6 +955,16 @@ export const GraduationManagement: React.FC = () => {
                       </button>
 
                       <div className="flex items-center gap-1">
+                        {ceremony.id === 'ceremony-2024-rpl-practitioners' && (
+                          <button
+                            onClick={() => setActiveTab('rpl-migration')}
+                            className="px-2.5 py-1 rounded-lg bg-[#002366] hover:bg-[#001740] text-amber-300 font-bold text-[11px] border border-[#C5A059]/50 flex items-center gap-1 transition-colors cursor-pointer"
+                            title="Open RPL 2024 Institutional Migration & Roster Utility"
+                          >
+                            <Database className="w-3.5 h-3.5 text-[#C5A059]" />
+                            <span>RPL Data (118)</span>
+                          </button>
+                        )}
                         <button
                           onClick={() => {
                             setSelectedBookletCeremonyId(ceremony.id);
@@ -1436,6 +1462,11 @@ export const GraduationManagement: React.FC = () => {
             />
           )}
         </div>
+      )}
+
+      {/* TAB 5: RPL 2024 PRACTITIONERS MIGRATION & INSTITUTIONAL DIRECTORY */}
+      {activeTab === 'rpl-migration' && (
+        <Rpl2024MigrationUtility />
       )}
 
       {/* DEFINE / EDIT CEREMONY MODAL */}

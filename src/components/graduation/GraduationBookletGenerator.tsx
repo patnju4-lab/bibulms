@@ -203,10 +203,16 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
 
   // Candidates for this ceremony
   const ceremonyCandidates = useMemo(() => {
+    if (!currentCeremony) return [];
+    const targetCeremonyId = currentCeremony.id || selectedCeremonyId;
+    const matchingById = graduationCandidates.filter(
+      (c) => c.ceremonyId === targetCeremonyId
+    );
+    if (matchingById.length > 0) {
+      return matchingById;
+    }
     return graduationCandidates.filter(
-      (c) =>
-        c.ceremonyId === selectedCeremonyId ||
-        c.graduationYear === currentCeremony?.graduationYear
+      (c) => !c.ceremonyId && c.graduationYear === currentCeremony.graduationYear
     );
   }, [graduationCandidates, selectedCeremonyId, currentCeremony]);
 
@@ -219,6 +225,8 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
         c.programName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
         c.studentId.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
         c.schoolName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
+        (c.institution && c.institution.toLowerCase().includes(candidateSearchQuery.toLowerCase())) ||
+        (c.academicAchievement && c.academicAchievement.toLowerCase().includes(candidateSearchQuery.toLowerCase())) ||
         (c.city && c.city.toLowerCase().includes(candidateSearchQuery.toLowerCase())) ||
         (c.country && c.country.toLowerCase().includes(candidateSearchQuery.toLowerCase()));
 

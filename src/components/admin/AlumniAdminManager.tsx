@@ -28,9 +28,11 @@ import {
   FileSpreadsheet,
   Check,
   Globe,
-  Award
+  Award,
+  Database
 } from 'lucide-react';
 import { AlumniStatistics } from './AlumniStatistics';
+import { Rpl2024MigrationUtility } from './Rpl2024MigrationUtility';
 import {
   RAW_NAKURU_2022_GRADUATES,
   RawNakuruGraduateRecord,
@@ -55,7 +57,7 @@ export const AlumniAdminManager: React.FC = () => {
   } = useApp();
 
   const [activeTab, setActiveTab] = useState<'manage' | 'stats' | 'add' | 'import'>('manage');
-  const [cohortTab, setCohortTab] = useState<'2020' | '2022' | 'generic'>('2020');
+  const [cohortTab, setCohortTab] = useState<'2020' | '2022' | '2024-rpl' | 'generic'>('2020');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterYear, setFilterYear] = useState<number | 'All'>('All');
   const [filterStatus, setFilterStatus] = useState<string>('All');
@@ -779,6 +781,20 @@ Marcus,Johnson,United States,Atlanta,2022,Bachelor of Theology (B.Th),Bachelor,L
 
             <button
               type="button"
+              onClick={() => setCohortTab('2024-rpl')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                cohortTab === '2024-rpl'
+                  ? 'bg-[#002366] text-[#C5A059] shadow-md'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>RPL Practitioners 2024 (118)</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-emerald-500/20 text-emerald-300">Conferred</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setCohortTab('generic')}
               className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
                 cohortTab === 'generic'
@@ -1375,7 +1391,12 @@ Marcus,Johnson,United States,Atlanta,2022,Bachelor of Theology (B.Th),Bachelor,L
             </div>
           )}
 
-          {/* 3. GENERIC BATCH CSV IMPORT */}
+          {/* 3. DEDICATED RPL PRACTITIONERS 2024 INSTITUTIONAL DATA MIGRATION ENGINE */}
+          {cohortTab === '2024-rpl' && (
+            <Rpl2024MigrationUtility />
+          )}
+
+          {/* 4. GENERIC BATCH CSV IMPORT */}
           {cohortTab === 'generic' && (
             <div className="space-y-4">
 

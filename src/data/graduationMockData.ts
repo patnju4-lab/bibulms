@@ -12,6 +12,19 @@ import {
   DECEMBER_2024_BOOKLET,
   DECEMBER_2024_CERTIFICATES
 } from './graduation2024Data';
+import {
+  CEREMONY_2024_RPL,
+  RPL_2024_CANDIDATES,
+  RPL_2024_BOOKLET,
+  RPL_2024_CERTIFICATES
+} from './graduationRPL2024Data';
+
+export {
+  CEREMONY_2024_RPL,
+  RPL_2024_CANDIDATES,
+  RPL_2024_BOOKLET,
+  RPL_2024_CERTIFICATES
+};
 
 export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
   {
@@ -97,6 +110,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
     updatedAt: '2025-11-01T15:00:00Z'
   },
   CEREMONY_2024_DEC,
+  CEREMONY_2024_RPL,
   {
     id: 'ceremony-2022-nakuru-hon',
     graduationNumber: 'Honorary Doctorate Convocation',
@@ -173,6 +187,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
 
 export const INITIAL_GRADUATION_CANDIDATES: GraduationCandidate[] = [
   ...DECEMBER_2024_CANDIDATES,
+  ...RPL_2024_CANDIDATES,
   {
     id: 'cand-2026-001',
     studentId: 'BIBU-2024-ST-7492',
@@ -775,11 +790,13 @@ export const INITIAL_GRADUATION_BOOKLET: GraduationBooklet = {
 
 export const INITIAL_GRADUATION_BOOKLETS: GraduationBooklet[] = [
   INITIAL_GRADUATION_BOOKLET,
-  DECEMBER_2024_BOOKLET
+  DECEMBER_2024_BOOKLET,
+  RPL_2024_BOOKLET
 ];
 
 export const INITIAL_GRADUATION_CERTIFICATES: GraduationCertificateRecord[] = [
   ...DECEMBER_2024_CERTIFICATES,
+  ...RPL_2024_CERTIFICATES,
   {
     id: 'cert-rec-2026-001',
     certificateNumber: 'BIBU-CERT-2026-BTH-0842',

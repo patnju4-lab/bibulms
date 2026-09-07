@@ -62,6 +62,17 @@ import {
   Migration2020Report,
 } from '../utils/graduates2020Migration';
 import {
+  migrateRPL2024Practitioners,
+  MigrationRPLReport,
+  RPLMigrationOptions
+} from '../utils/rplPractitioners2024Migration';
+import {
+  CEREMONY_2024_RPL,
+  RPL_2024_CANDIDATES,
+  RPL_2024_BOOKLET,
+  RPL_2024_CERTIFICATES
+} from '../data/graduationRPL2024Data';
+import {
   RPLApplicationRecord,
   RPLProgramRule,
   RPLCompetencyItem,
@@ -534,6 +545,7 @@ interface AppContextType {
     alumni?: Alumni;
     message: string;
   };
+  runRPL2024Migration: (options?: RPLMigrationOptions) => MigrationRPLReport;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -4015,6 +4027,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   };
 
+  const runRPL2024Migration = (options?: RPLMigrationOptions): MigrationRPLReport => {
+    const report = migrateRPL2024Practitioners({
+      ...options,
+      persistToStorage: options?.dryRun ? false : true
+    });
+
+    if (report.success && !options?.dryRun) {
+      // 1. Sync React candidates state
+      setGraduationCandidates((prev) => {
+        const candidateMap = new Map<string, GraduationCandidate>();
+        prev.forEach(c => candidateMap.set(c.id, c));
+        RPL_2024_CANDIDATES.forEach(cand => {
+          candidateMap.set(cand.id, cand);
+        });
+        return Array.from(candidateMap.values());
+      });
+
+      // 2. Sync React ceremonies state
+      setGraduationCeremonies((prev) => {
+        const ceremonyMap = new Map<string, GraduationCeremony>();
+        prev.forEach(c => ceremonyMap.set(c.id, c));
+        ceremonyMap.set(CEREMONY_2024_RPL.id, CEREMONY_2024_RPL);
+        return Array.from(ceremonyMap.values());
+      });
+
+      // 3. Sync React booklets state
+      setGraduationBooklets((prev) => {
+        const bookletMap = new Map<string, GraduationBooklet>();
+        prev.forEach(b => bookletMap.set(b.id, b));
+        bookletMap.set(RPL_2024_BOOKLET.id, RPL_2024_BOOKLET);
+        return Array.from(bookletMap.values());
+      });
+
+      // 4. Sync React certificates state
+      setGraduationCertificates((prev) => {
+        const certMap = new Map<string, GraduationCertificateRecord>();
+        prev.forEach(c => certMap.set(c.id, c));
+        RPL_2024_CERTIFICATES.forEach(cert => certMap.set(cert.id, cert));
+        return Array.from(certMap.values());
+      });
+
+      logGraduationAudit({
+        ceremonyId: CEREMONY_2024_RPL.id,
+        action: 'RPL 2024 Data Migration',
+        performedBy: currentUser?.name || 'System Administrator',
+        role: currentUser?.role || 'Admin',
+        details: `Successfully persisted 118 RPL Practitioner records categorized into ${report.institutionsCount} affiliate institutions.`
+      });
+    }
+
+    return report;
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -4065,6 +4130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         logGraduationAudit,
         bulkImportCandidates,
         verifyGraduationCredential,
+        runRPL2024Migration,
 
         selectedSchoolId,
         setSelectedSchoolId,
