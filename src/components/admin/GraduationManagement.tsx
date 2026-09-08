@@ -1466,7 +1466,12 @@ export const GraduationManagement: React.FC = () => {
 
       {/* TAB 5: RPL 2024 PRACTITIONERS MIGRATION & INSTITUTIONAL DIRECTORY */}
       {activeTab === 'rpl-migration' && (
-        <Rpl2024MigrationUtility />
+        <Rpl2024MigrationUtility
+          onOpenBooklet={(ceremonyId) => {
+            setSelectedBookletCeremonyId(ceremonyId || 'ceremony-2024-rpl-practitioners');
+            setActiveTab('booklet');
+          }}
+        />
       )}
 
       {/* DEFINE / EDIT CEREMONY MODAL */}

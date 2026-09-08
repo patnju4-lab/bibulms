@@ -47,8 +47,16 @@ import {
   Globe,
   Share2,
   BookMarked,
-  Filter
+  Filter,
+  Loader2,
+  AlertCircle,
+  FileDown
 } from 'lucide-react';
+import {
+  exportBookletToPdf,
+  PdfExportProgress,
+  BOOKLET_PAGE_TITLES
+} from '../../utils/graduationBookletPdfExport';
 
 interface GraduationBookletGeneratorProps {
   initialCeremonyId?: string;
@@ -244,13 +252,25 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
     });
   }, [ceremonyCandidates, candidateSearchQuery, selectedSchoolFilter, selectedLevelFilter, clearanceFilter]);
 
-  // Group candidates by School and then Award Level for ceremonial presentation
+  // Check if current ceremony is the RPL Practitioners Convocation
+  const isRplCeremony = useMemo(() => {
+    return (
+      currentCeremony?.graduationCategory === 'RPL Practitioners Graduation 2024' ||
+      currentCeremony?.id === 'ceremony-2024-rpl-practitioners' ||
+      Boolean(currentCeremony?.graduationNumber?.toLowerCase().includes('rpl'))
+    );
+  }, [currentCeremony]);
+
+  // Group candidates by School / Associated Institution and then Award Level for ceremonial presentation
   const groupedCandidatesBySchool = useMemo(() => {
     const groups: { [school: string]: { [level: string]: GraduationCandidate[] } } = {};
 
     filteredCandidates.forEach((cand) => {
-      const school = cand.schoolName || 'Faculty of Biblical Studies';
-      const level = cand.awardLevel || 'Bachelor';
+      // In RPL ceremony or where candidate has an affiliate institution, group by the affiliated institution
+      const school = (isRplCeremony && cand.institution)
+        ? cand.institution
+        : (cand.schoolName || cand.institution || 'Faculty of Biblical Studies');
+      const level = cand.awardLevel || 'Certificate';
 
       if (!groups[school]) groups[school] = {};
       if (!groups[school][level]) groups[school][level] = [];
@@ -259,13 +279,17 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
     });
 
     return groups;
-  }, [filteredCandidates]);
+  }, [filteredCandidates, isRplCeremony]);
 
   // Filter options
   const uniqueSchools = useMemo(() => {
-    const set = new Set(ceremonyCandidates.map((c) => c.schoolName));
+    const set = new Set(
+      ceremonyCandidates.map((c) =>
+        (isRplCeremony && c.institution) ? c.institution : (c.schoolName || c.institution)
+      )
+    );
     return ['All', ...Array.from(set).filter(Boolean)];
-  }, [ceremonyCandidates]);
+  }, [ceremonyCandidates, isRplCeremony]);
 
   const uniqueLevels = useMemo(() => {
     const set = new Set(ceremonyCandidates.map((c) => c.awardLevel));
@@ -317,9 +341,90 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
     setTimeout(() => setSaveSuccessNotice(null), 4000);
   };
 
-  // Handle Print PDF
+  // Handle Print PDF via browser dialog
   const handlePrint = () => {
     window.print();
+  };
+
+  // PDF Export States (jsPDF Direct In-Browser Download)
+  const [showPdfExportModal, setShowPdfExportModal] = useState(false);
+  const [pdfExportScope, setPdfExportScope] = useState<'full' | 'current'>('full');
+  const [pdfExportScale, setPdfExportScale] = useState<number>(2); // 2 = High-Res Print (300DPI equivalent), 1.5 = Fast Standard
+  const [pdfFilename, setPdfFilename] = useState<string>('');
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [pdfExportProgress, setPdfExportProgress] = useState<PdfExportProgress | null>(null);
+  const cancelPdfExportRef = useRef<boolean>(false);
+
+  const openPdfExportModal = () => {
+    const ceremonyLabel = (currentCeremony?.graduationNumber || 'Convocation')
+      .replace(/[^a-zA-Z0-9]/g, '_');
+    const defaultName = `BIBU_Convocation_Booklet_${currentCeremony?.academicYear || 2024}_${ceremonyLabel}.pdf`;
+    setPdfFilename(defaultName);
+    setPdfExportProgress(null);
+    setShowPdfExportModal(true);
+  };
+
+  const handleExecutePdfExport = async () => {
+    setIsExportingPdf(true);
+    cancelPdfExportRef.current = false;
+    const originalViewMode = viewMode;
+
+    try {
+      // If exporting the full booklet while currently in paged view, temporarily switch to printPreview so all pages are in the DOM
+      if (pdfExportScope === 'full' && originalViewMode === 'paged') {
+        setViewMode('printPreview');
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      const container = document.getElementById('official-graduation-booklet-content');
+      if (!container) {
+        throw new Error('Booklet container not found in DOM');
+      }
+
+      const result = await exportBookletToPdf(container, {
+        scale: pdfExportScale,
+        filename: pdfFilename.trim() || 'BIBU_Graduation_Booklet.pdf',
+        scope: pdfExportScope,
+        onProgress: (progress) => {
+          setPdfExportProgress(progress);
+        },
+        shouldCancel: () => cancelPdfExportRef.current
+      });
+
+      if (!result.success && result.error !== 'Cancelled by user') {
+        throw new Error(result.error || 'Failed to export PDF');
+      }
+    } catch (err) {
+      console.error('PDF Export Error:', err);
+      setPdfExportProgress({
+        currentPage: 0,
+        totalPages: 1,
+        pageTitle: 'Export encountered an issue',
+        percent: 0,
+        stage: 'error',
+        errorMessage: err instanceof Error ? err.message : String(err)
+      });
+    } finally {
+      setIsExportingPdf(false);
+      // Restore previous view mode if it was changed
+      if (pdfExportScope === 'full' && originalViewMode === 'paged') {
+        setViewMode(originalViewMode);
+      }
+    }
+  };
+
+  const handleCancelPdfExport = () => {
+    cancelPdfExportRef.current = true;
+    setIsExportingPdf(false);
+    setPdfExportProgress((prev) =>
+      prev
+        ? {
+            ...prev,
+            stage: 'error',
+            errorMessage: 'Export was cancelled by user.'
+          }
+        : null
+    );
   };
 
   // Handle Candidate Photo Update
@@ -361,9 +466,16 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                 </span>
                 <span className="text-xs text-slate-400 font-mono">v3.8 • Multi-Format</span>
               </div>
-              <h2 className="text-xl font-bold font-display text-[#002366]">
-                {editableBooklet.title}
-              </h2>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-xl font-bold font-display text-[#002366]">
+                  {editableBooklet.title}
+                </h2>
+                {currentCeremony?.graduationCategory && (
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#C5A059]/15 text-[#8A6D3B] border border-[#C5A059]/30">
+                    Category: {currentCeremony.graduationCategory}
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
                 <span>{currentCeremony?.venue}</span>
                 <span>•</span>
@@ -461,13 +573,24 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
               <span>Save Booklet</span>
             </button>
 
-            {/* PRINT / DOWNLOAD PDF BUTTON */}
+            {/* DIRECT PDF EXPORT (jsPDF Engine) BUTTON */}
+            <button
+              onClick={openPdfExportModal}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-400 to-[#C5A059] hover:from-amber-500 hover:to-[#B38F48] text-[#002366] text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md transition-all cursor-pointer border border-[#C5A059] hover:scale-[1.02] active:scale-[0.98]"
+              title="Download official PDF booklet directly from the browser using jsPDF"
+            >
+              <Download className="w-4 h-4 text-[#002366]" />
+              <span>Download PDF</span>
+            </button>
+
+            {/* PRINT / BROWSER DIALOG BUTTON */}
             <button
               onClick={handlePrint}
-              className="px-4 py-2 rounded-xl bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold flex items-center gap-2 shadow-md transition-all cursor-pointer border border-[#C5A059]/40"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold flex items-center gap-1.5 border border-slate-200 shadow-xs transition-all cursor-pointer"
+              title="Open browser print dialog"
             >
-              <Printer className="w-4 h-4 text-[#C5A059]" />
-              <span className="font-extrabold">Print Booklet / PDF</span>
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
+              <span className="hidden sm:inline">Print</span>
             </button>
 
             {onClose && (
@@ -2009,16 +2132,23 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
 
                 return (
                   <div key={schoolName} className="space-y-4 avoid-break">
-                    {/* Faculty Banner */}
+                    {/* Faculty / Affiliate Institution Banner */}
                     <div className="p-3.5 rounded-xl bg-gradient-to-r from-[#001A4D] to-[#002366] text-white flex items-center justify-between shadow-sm">
                       <div className="flex items-center gap-2.5">
                         <GraduationCap className="w-5 h-5 text-[#C5A059]" />
-                        <h3 className="text-sm font-bold font-display uppercase tracking-wider text-white">
-                          {schoolName}
-                        </h3>
+                        <div>
+                          {isRplCeremony && (
+                            <span className="text-[10px] uppercase tracking-wider text-[#C5A059] block font-mono font-bold">
+                              Affiliated Theological Institution
+                            </span>
+                          )}
+                          <h3 className="text-sm font-bold font-display uppercase tracking-wider text-white">
+                            {schoolName}
+                          </h3>
+                        </div>
                       </div>
                       <span className="text-xs text-[#C5A059] font-mono font-bold">
-                        {Object.values(schoolLevels).reduce((acc: number, curr: GraduationCandidate[]) => acc + curr.length, 0)} Candidates
+                        {Object.values(schoolLevels).reduce((acc: number, curr: GraduationCandidate[]) => acc + curr.length, 0)} {isRplCeremony ? 'Practitioners' : 'Candidates'}
                       </span>
                     </div>
 
@@ -2420,6 +2550,309 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                 </p>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* DIRECT PDF EXPORT MODAL (Powered by jsPDF Engine) */}
+      {/* ========================================================================= */}
+      {showPdfExportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs no-print overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border-2 border-[#C5A059]/50 my-8 space-y-6 animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#001A4D] to-[#002366] text-[#C5A059] flex items-center justify-center shadow-md border border-[#C5A059]">
+                  <Download className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black font-display text-[#002366]">
+                      Official Convocation Booklet PDF Export
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                      jsPDF Engine
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500">
+                    Generate and download high-resolution ceremonial PDF directly from the browser
+                  </p>
+                </div>
+              </div>
+
+              {!isExportingPdf && (
+                <button
+                  onClick={() => setShowPdfExportModal(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Ceremony Info Capsule */}
+            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Ceremony Edition</span>
+                <span className="font-bold text-[#002366] font-display text-sm">
+                  {currentCeremony?.graduationNumber || 'Annual Congregation'}
+                </span>
+                {currentCeremony?.graduationCategory && (
+                  <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-bold">
+                    {currentCeremony.graduationCategory}
+                  </span>
+                )}
+              </div>
+              <div className="text-left sm:text-right text-slate-500">
+                <span className="font-semibold text-slate-700">{ceremonyCandidates.length} Graduands</span> • {ceremonyAwards.length} Awards
+              </div>
+            </div>
+
+            {/* ACTIVE EXPORT PROGRESS DISPLAY */}
+            {isExportingPdf || pdfExportProgress ? (
+              <div className="space-y-4 p-5 rounded-xl border border-slate-200 bg-gradient-to-b from-blue-50/50 to-white shadow-xs">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {pdfExportProgress?.stage === 'completed' ? (
+                      <div className="w-7 h-7 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <Check className="w-4 h-4" />
+                      </div>
+                    ) : pdfExportProgress?.stage === 'error' ? (
+                      <div className="w-7 h-7 rounded-full bg-red-100 text-red-700 flex items-center justify-center">
+                        <AlertCircle className="w-4 h-4" />
+                      </div>
+                    ) : (
+                      <Loader2 className="w-6 h-6 text-[#C5A059] animate-spin" />
+                    )}
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-[#002366]">
+                        {pdfExportProgress?.stage === 'completed'
+                          ? 'Export Completed'
+                          : pdfExportProgress?.stage === 'error'
+                          ? 'Export Status'
+                          : 'Generating PDF Document...'}
+                      </h4>
+                      <p className="text-xs text-slate-600 font-medium">
+                        {pdfExportProgress?.pageTitle || 'Processing pages...'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <span className="text-base font-black font-mono text-[#002366]">
+                    {pdfExportProgress?.percent || 0}%
+                  </span>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className={`h-2.5 transition-all duration-300 rounded-full ${
+                      pdfExportProgress?.stage === 'completed'
+                        ? 'bg-emerald-500'
+                        : pdfExportProgress?.stage === 'error'
+                        ? 'bg-red-500'
+                        : 'bg-gradient-to-r from-[#002366] via-[#C5A059] to-amber-400'
+                    }`}
+                    style={{ width: `${pdfExportProgress?.percent || 5}%` }}
+                  />
+                </div>
+
+                {/* Error Banner if applicable */}
+                {pdfExportProgress?.stage === 'error' && (
+                  <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-lg text-xs space-y-1">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                      <span>Export Notice</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed">
+                      {pdfExportProgress.errorMessage || 'An error occurred during canvas compilation.'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Completed Banner */}
+                {pdfExportProgress?.stage === 'completed' && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-lg text-xs space-y-1 animate-in fade-in">
+                    <div className="font-bold flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>Download Initiated Successfully</span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800">
+                      The official PDF has been saved to your browser downloads folder as <strong>{pdfFilename}</strong>.
+                    </p>
+                  </div>
+                )}
+
+                {/* Cancel action while processing */}
+                {isExportingPdf && (
+                  <div className="flex justify-end pt-1">
+                    <button
+                      onClick={handleCancelPdfExport}
+                      className="text-xs text-red-600 hover:text-red-800 font-bold px-3 py-1 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
+                    >
+                      Cancel Export
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* EXPORT CONFIGURATION OPTIONS */
+              <div className="space-y-4">
+                {/* 1. Scope Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-600">
+                    1. Booklet Export Scope
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPdfExportScope('full')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        pdfExportScope === 'full'
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-[#002366]">Full Convocation Booklet</span>
+                        {pdfExportScope === 'full' && <Check className="w-4 h-4 text-[#002366]" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Complete 11+ page ceremonial edition (Covers, Council, Schedule, Speeches, Awards, Directory & Back Cover).
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPdfExportScope('current')}
+                      className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
+                        pdfExportScope === 'current'
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-[#002366]">Current Page Only</span>
+                        {pdfExportScope === 'current' && <Check className="w-4 h-4 text-[#002366]" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Export Page {currentPage}: {BOOKLET_PAGE_TITLES[currentPage] || 'Current View'} as a single-page PDF.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 2. Print Quality Selection */}
+                <div className="space-y-2">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-600">
+                    2. Print Resolution & Quality
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setPdfExportScale(2)}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        pdfExportScale === 2
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-[#002366]">Ultra HD Print (2x)</span>
+                        {pdfExportScale === 2 && <Check className="w-3.5 h-3.5 text-[#002366]" />}
+                      </div>
+                      <span className="text-[10px] text-emerald-700 font-semibold mt-0.5 block">
+                        Recommended for Official Printing
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPdfExportScale(1.5)}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        pdfExportScale === 1.5
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black text-[#002366]">Standard (1.5x)</span>
+                        {pdfExportScale === 1.5 && <Check className="w-3.5 h-3.5 text-[#002366]" />}
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-0.5 block">
+                        Faster generation • Smaller file
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 3. Output Filename */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-black uppercase tracking-wider text-slate-600">
+                    3. Output PDF Filename
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={pdfFilename}
+                      onChange={(e) => setPdfFilename(e.target.value)}
+                      placeholder="BIBU_Graduation_Booklet.pdf"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-medium focus:ring-2 focus:ring-[#002366] focus:bg-white"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-400">
+                    Direct browser download will save this file to your computer's default downloads location.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Action Buttons */}
+            <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (pdfExportProgress?.stage === 'completed') {
+                    setPdfExportProgress(null);
+                  }
+                  setShowPdfExportModal(false);
+                }}
+                disabled={isExportingPdf}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {pdfExportProgress?.stage === 'completed' ? 'Done' : 'Close'}
+              </button>
+
+              {pdfExportProgress?.stage === 'completed' ? (
+                <button
+                  type="button"
+                  onClick={() => setPdfExportProgress(null)}
+                  className="px-5 py-2.5 rounded-xl bg-[#002366] text-white text-xs font-bold hover:bg-[#001740] transition-all cursor-pointer"
+                >
+                  Export Again / Change Settings
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleExecutePdfExport}
+                  disabled={isExportingPdf}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 to-[#C5A059] hover:from-amber-500 hover:to-[#B38F48] text-[#002366] text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isExportingPdf ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-[#002366]" />
+                      <span>Generating PDF...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 text-[#002366]" />
+                      <span>Start PDF Download</span>
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

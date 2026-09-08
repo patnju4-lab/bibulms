@@ -7,6 +7,13 @@ export type GraduationCeremonyStatus =
   | 'Completed' 
   | 'Archived';
 
+export type GraduationCategory = 
+  | 'RPL Practitioners Graduation 2024'
+  | 'Regular Annual Convocation'
+  | 'Special Institutional Commissioning'
+  | 'Affiliate Theological Colleges Cohort'
+  | string;
+
 export interface ProgrammeScheduleItem {
   id: string;
   order: number;
@@ -19,6 +26,7 @@ export interface ProgrammeScheduleItem {
 export interface GraduationCeremony {
   id: string;
   graduationNumber: string; // e.g., "15th Congregation"
+  graduationCategory?: GraduationCategory; // e.g. "RPL Practitioners Graduation 2024"
   academicYear: string; // e.g. "2025/2026"
   graduationYear: number; // e.g. 2026
   graduationDate: string; // YYYY-MM-DD
@@ -97,6 +105,7 @@ export interface GraduationCandidate {
   graduationYear: number;
   ceremonyId: string; // Linked Graduation Ceremony
   ceremonyNumber?: string;
+  graduationCategory?: GraduationCategory; // e.g. "RPL Practitioners Graduation 2024"
   status: CandidateGraduationStatus;
   
   // Clearances
@@ -194,6 +203,7 @@ export interface FacultyLeadershipMember {
 export interface GraduationBooklet {
   id: string;
   ceremonyId: string;
+  graduationCategory?: GraduationCategory;
   title: string;
   academicYear: string;
   edition: string;
@@ -270,6 +280,7 @@ export interface GraduationCertificateRecord {
   graduationYear?: number;
   ceremonyId?: string;
   ceremonyNumber?: string;
+  graduationCategory?: GraduationCategory;
   status: 'Pending' | 'Approved' | 'Issued' | 'Replaced' | 'Cancelled' | 'Conferred & Valid' | string;
   issuedDate?: string;
   conferralDate?: string;
