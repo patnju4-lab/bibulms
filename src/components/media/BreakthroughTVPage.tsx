@@ -47,7 +47,9 @@ export const BreakthroughTVPage: React.FC = () => {
     mediaVideos,
     tvPrograms,
     setCurrentView,
-    recordVideoView
+    recordVideoView,
+    studentMediaProgress,
+    toggleVideoWatchedStatus
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -1256,11 +1258,52 @@ export const BreakthroughTVPage: React.FC = () => {
             })}
           </div>
 
+          {/* Student Progress Tracker Banner */}
+          {currentUser && (
+            <div className="bg-[#001744] border border-[#C5A059]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-[#C5A059]/20 rounded-xl text-[#C5A059] border border-[#C5A059]/30">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="text-xs text-[#C5A059] font-bold uppercase tracking-wider">
+                    Student Theological Series & Lecture Progress
+                  </div>
+                  <div className="text-sm font-bold text-white">
+                    {currentUser.name} • {currentUser.programName || 'Theology & Ministerial Studies'}
+                  </div>
+                  <div className="text-xs text-slate-300 mt-0.5">
+                    Watched <span className="font-bold text-[#C5A059]">
+                      {mediaVideos.filter(v => studentMediaProgress.some(p => p.studentId === currentUser.id && p.videoId === v.id && (p.completed || p.isCompleted))).length}
+                    </span> of {mediaVideos.length} Theological Lectures & Series
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="text-right">
+                  <div className="text-xs font-mono font-bold text-emerald-400">
+                    {Math.round((mediaVideos.filter(v => studentMediaProgress.some(p => p.studentId === currentUser.id && p.videoId === v.id && (p.completed || p.isCompleted))).length / (mediaVideos.length || 1)) * 100)}% Complete
+                  </div>
+                  <div className="w-32 bg-slate-900 h-2 rounded-full overflow-hidden mt-1 border border-slate-700">
+                    <div
+                      className="bg-emerald-500 h-full rounded-full transition-all duration-500"
+                      style={{
+                        width: `${Math.round((mediaVideos.filter(v => studentMediaProgress.some(p => p.studentId === currentUser.id && p.videoId === v.id && (p.completed || p.isCompleted))).length / (mediaVideos.length || 1)) * 100)}%`
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Video Grid: 1 col (mobile), 2 cols (tablet), 3-4 cols (desktop) */}
           {filteredVideos.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredVideos.map((video) => {
                 const isCurrentTheater = activeTheaterVideo.id === video.id;
+                const prog = currentUser ? studentMediaProgress.find(p => p.studentId === currentUser.id && p.videoId === video.id) : undefined;
+                const isWatched = prog?.completed || prog?.isCompleted || false;
                 return (
                   <div
                     key={video.id}
@@ -1290,6 +1333,24 @@ export const BreakthroughTVPage: React.FC = () => {
                       <span className="absolute bottom-2 right-2 bg-black/85 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
                         {video.duration}
                       </span>
+
+                      {/* Watched Status Badge */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleVideoWatchedStatus(video.id);
+                        }}
+                        className={`absolute top-2 left-2 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all z-10 ${
+                          isWatched
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-black/80 hover:bg-emerald-600 text-slate-300 hover:text-white border border-slate-700'
+                        }`}
+                        title="Toggle video watched status"
+                      >
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${isWatched ? 'text-white' : 'text-emerald-400'}`} />
+                        <span>{isWatched ? 'Watched ✓' : 'Mark Watched'}</span>
+                      </button>
 
                       {/* Share Button on Thumbnail Hover */}
                       <button

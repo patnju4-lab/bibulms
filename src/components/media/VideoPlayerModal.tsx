@@ -36,6 +36,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
     currentUser,
     toggleStudentBookmarkVideo,
     toggleStudentFavoriteVideo,
+    toggleVideoWatchedStatus,
     studentMediaProgress,
     mediaVideos,
     setActivePlayingVideo,
@@ -57,6 +58,7 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
 
   const isBookmarked = userProgress?.isBookmarked || false;
   const isFavorite = userProgress?.isFavorite || false;
+  const isWatched = userProgress?.completed || userProgress?.isCompleted || false;
 
   const handleShare = () => {
     setIsShareModalOpen(true);
@@ -177,6 +179,19 @@ export const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({ video, onClo
               >
                 <Share2 className="w-4 h-4" />
                 <span>{copiedLink ? 'Link Copied!' : 'Share'}</span>
+              </button>
+
+              <button
+                onClick={() => toggleVideoWatchedStatus(video.id)}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  isWatched
+                    ? 'bg-emerald-600 text-white'
+                    : 'bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700'
+                }`}
+                title="Mark video as watched / completed"
+              >
+                <CheckCircle2 className={`w-4 h-4 ${isWatched ? 'text-white' : 'text-emerald-400'}`} />
+                <span>{isWatched ? 'Watched ✓' : 'Mark Watched'}</span>
               </button>
 
               <a

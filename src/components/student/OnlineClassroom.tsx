@@ -48,10 +48,13 @@ export const OnlineClassroom: React.FC = () => {
     openAuthModal,
     isStudentEnrolledInCourse,
     getStudentEnrolledCourses,
-    requestCourseEnrolment
+    requestCourseEnrolment,
+    mediaVideos,
+    studentMediaProgress,
+    toggleVideoWatchedStatus
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'content' | 'assignments' | 'quiz' | 'discussion'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'assignments' | 'quiz' | 'discussion' | 'video-series'>('content');
 
   // Enrolment request local state
   const [enrolmentReason, setEnrolmentReason] = useState('');
@@ -561,6 +564,18 @@ export const OnlineClassroom: React.FC = () => {
           <MessageSquare className="w-4 h-4" />
           <span>Theological Forum</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('video-series')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'video-series'
+              ? 'border-[#002366] text-[#002366]'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Video className="w-4 h-4 text-rose-600" />
+          <span>Theological Video Series Tracker</span>
+        </button>
       </div>
 
       {/* TAB 1: Lecture Content & Lesson Player */}
@@ -941,6 +956,88 @@ export const OnlineClassroom: React.FC = () => {
               <span>Post Inquiry</span>
             </button>
           </form>
+        </div>
+      )}
+
+      {/* TAB: Theological Video Series Tracker */}
+      {activeTab === 'video-series' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded bg-[#C5A059]/20 text-[#002366] text-[10px] font-black uppercase tracking-wider mb-1">
+                <Sparkles className="w-3 h-3 text-[#C5A059]" />
+                <span>Student Media & Video Progress</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-bold font-display text-[#002366]">
+                Theological Video Series & Masterclass Tracker
+              </h2>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Track your progress through BIBU theological classes, seminars, and video series. Mark videos as watched to update your academic progress.
+              </p>
+            </div>
+
+            <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Completed Series</span>
+              <span className="text-lg font-black text-emerald-600 font-display">
+                {mediaVideos.filter(v => studentMediaProgress.some(p => p.studentId === currentUser?.id && p.videoId === v.id && (p.completed || p.isCompleted))).length} / {mediaVideos.length}
+              </span>
+            </div>
+          </div>
+
+          {/* Theological Videos Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mediaVideos.map(video => {
+              const prog = currentUser ? studentMediaProgress.find(p => p.studentId === currentUser.id && p.videoId === video.id) : undefined;
+              const isWatched = prog?.completed || prog?.isCompleted || false;
+              return (
+                <div key={video.id} className="bg-slate-50 rounded-2xl border border-slate-200 overflow-hidden shadow-xs flex flex-col justify-between group">
+                  <div className="relative aspect-video bg-black overflow-hidden">
+                    <img
+                      src={video.youtubeVideoId ? `https://img.youtube.com/vi/${video.youtubeVideoId}/hqdefault.jpg` : (video.thumbnail || `https://images.unsplash.com/photo-1504052434569-70ad5836ab65?auto=format&fit=crop&q=80&w=600`)}
+                      alt={video.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      referrerPolicy="no-referrer"
+                    />
+                    <span className="absolute top-2 left-2 bg-[#002366] text-[#C5A059] text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded">
+                      {video.category}
+                    </span>
+                    <span className="absolute bottom-2 right-2 bg-black/80 text-white text-[10px] font-mono px-2 py-0.5 rounded font-bold">
+                      {video.duration}
+                    </span>
+                  </div>
+
+                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div className="space-y-1.5">
+                      <h3 className="text-sm font-bold text-slate-900 group-hover:text-[#002366] transition-colors line-clamp-2">
+                        {video.title}
+                      </h3>
+                      <p className="text-xs text-slate-600 line-clamp-2">
+                        {video.description}
+                      </p>
+                    </div>
+
+                    <div className="pt-3 border-t border-slate-200 flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-semibold text-slate-500 truncate max-w-[140px]">
+                        {video.presenter || video.speakerName || 'Faculty'}
+                      </span>
+
+                      <button
+                        onClick={() => toggleVideoWatchedStatus(video.id)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-xs ${
+                          isWatched
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-[#002366] hover:bg-[#001A4D] text-white'
+                        }`}
+                      >
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${isWatched ? 'text-white' : 'text-[#C5A059]'}`} />
+                        <span>{isWatched ? 'Watched ✓' : 'Mark Watched'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

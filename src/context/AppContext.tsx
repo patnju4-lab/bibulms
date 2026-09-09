@@ -504,6 +504,7 @@ interface AppContextType {
   toggleStudentBookmarkVideo: (videoId: string) => void;
   toggleStudentFavoriteVideo: (videoId: string) => void;
   updateStudentVideoProgress: (videoId: string, watchedSeconds: number, totalSeconds: number) => void;
+  toggleVideoWatchedStatus: (videoId: string) => void;
   recordVideoView: (videoId: string) => void;
 
   // Graduation Management, Candidates, Booklets, Certificates & Awards
@@ -3592,15 +3593,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           watchedSeconds: Math.max(p.watchedSeconds, watchedSeconds),
           totalSeconds: totalSeconds || p.totalSeconds,
           completed: completed || p.completed,
+          isCompleted: completed || p.completed || p.isCompleted,
           lastWatchedAt: new Date().toISOString()
         } : p);
       } else {
         return [...prev, {
+          id: `prog-${Date.now()}`,
           studentId: currentUser.id,
           videoId,
           watchedSeconds,
           totalSeconds,
+          percentage: totalSeconds > 0 ? Math.round((watchedSeconds / totalSeconds) * 100) : (completed ? 100 : 0),
           completed,
+          isCompleted: completed,
+          lastWatchedAt: new Date().toISOString(),
+          isBookmarked: false,
+          isFavorite: false
+        }];
+      }
+    });
+  };
+
+  const toggleVideoWatchedStatus = (videoId: string) => {
+    if (!currentUser) return;
+    setStudentMediaProgress(prev => {
+      const existing = prev.find(p => p.studentId === currentUser.id && p.videoId === videoId);
+      if (existing) {
+        const nextCompleted = !existing.completed && !existing.isCompleted;
+        return prev.map(p => p.studentId === currentUser.id && p.videoId === videoId ? {
+          ...p,
+          completed: nextCompleted,
+          isCompleted: nextCompleted,
+          watchedSeconds: nextCompleted ? (p.totalSeconds || 1800) : 0,
+          percentage: nextCompleted ? 100 : 0,
+          lastWatchedAt: new Date().toISOString()
+        } : p);
+      } else {
+        return [...prev, {
+          id: `prog-${Date.now()}`,
+          studentId: currentUser.id,
+          videoId,
+          watchedSeconds: 1800,
+          totalSeconds: 1800,
+          percentage: 100,
+          completed: true,
+          isCompleted: true,
           lastWatchedAt: new Date().toISOString(),
           isBookmarked: false,
           isFavorite: false
@@ -4395,6 +4432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         toggleStudentBookmarkVideo,
         toggleStudentFavoriteVideo,
         updateStudentVideoProgress,
+        toggleVideoWatchedStatus,
         recordVideoView,
       }}
     >
