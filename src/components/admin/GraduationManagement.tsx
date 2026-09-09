@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
   GraduationCeremony,
@@ -34,12 +34,21 @@ import {
   BookMarked,
   Check,
   Tag,
-  Database
+  Database,
+  BookmarkCheck,
+  BookmarkX,
+  XCircle
 } from 'lucide-react';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
 import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
 import { Rpl2024MigrationUtility } from './Rpl2024MigrationUtility';
+import { GraduandsDataVisualization } from './GraduandsDataVisualization';
+import { GraduandApprovalWorkflowDashboard } from './GraduandApprovalWorkflowDashboard';
+
+export interface GraduationManagementProps {
+  initialTab?: 'ceremonies' | 'candidates' | 'certificates' | 'booklet' | 'rpl-migration' | 'visualizations' | 'workflow-status';
+}
 
 export interface ThemePreset {
   theme: string;
@@ -155,7 +164,7 @@ interface CeremonyFormData {
   livestreamUrl: string;
 }
 
-export const GraduationManagement: React.FC = () => {
+export const GraduationManagement: React.FC<GraduationManagementProps> = ({ initialTab = 'ceremonies' }) => {
   const {
     currentUser,
     universityInfo,
@@ -164,15 +173,29 @@ export const GraduationManagement: React.FC = () => {
     updateGraduationCeremony,
     deleteGraduationCeremony,
     graduationCandidates,
+    bulkUpdateGraduationCandidates,
+    toggleCandidateBookletFlag,
     graduationCertificates,
     graduationBooklets,
     academicAwards
   } = useApp();
 
   // Active view tab
-  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates' | 'booklet' | 'rpl-migration'>('ceremonies');
+  const [activeTab, setActiveTab] = useState<'ceremonies' | 'candidates' | 'certificates' | 'booklet' | 'rpl-migration' | 'visualizations' | 'workflow-status'>(initialTab);
   const [selectedBookletCeremonyId, setSelectedBookletCeremonyId] = useState<string | undefined>(undefined);
   const [bookletMode, setBookletMode] = useState<'editor' | 'reader'>('editor');
+
+  // Sync initialTab when prop changes
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
+  // Bulk Selection & Booklet Flagging State
+  const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set());
+  const [candidateBookletFilter, setCandidateBookletFilter] = useState<'All' | 'flagged' | 'unflagged'>('All');
+  const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   // Search and Filter states for Ceremonies
   const [searchQuery, setSearchQuery] = useState('');
@@ -305,9 +328,97 @@ export const GraduationManagement: React.FC = () => {
         (candidateClearanceFilter === 'pending' && cand.clearanceProgress < 100) ||
         (candidateClearanceFilter === 'conferred' && cand.status === 'Conferred Graduate');
 
-      return matchesSearch && matchesCeremony && matchesClearance;
+      const isFlagged = cand.includedInBooklet !== false;
+      const matchesBooklet =
+        candidateBookletFilter === 'All' ||
+        (candidateBookletFilter === 'flagged' && isFlagged) ||
+        (candidateBookletFilter === 'unflagged' && !isFlagged);
+
+      return matchesSearch && matchesCeremony && matchesClearance && matchesBooklet;
     });
-  }, [graduationCandidates, candidateSearchQuery, candidateCeremonyFilter, candidateClearanceFilter]);
+  }, [graduationCandidates, candidateSearchQuery, candidateCeremonyFilter, candidateClearanceFilter, candidateBookletFilter]);
+
+  // Bulk Selection Statistics & Computations
+  const totalBookletFlagged = useMemo(() => {
+    return graduationCandidates.filter((c) => c.includedInBooklet !== false).length;
+  }, [graduationCandidates]);
+
+  const totalBookletExcluded = useMemo(() => {
+    return graduationCandidates.filter((c) => c.includedInBooklet === false).length;
+  }, [graduationCandidates]);
+
+  const isAllFilteredSelected = useMemo(() => {
+    if (filteredCandidates.length === 0) return false;
+    return filteredCandidates.every((c) => selectedCandidateIds.has(c.id));
+  }, [filteredCandidates, selectedCandidateIds]);
+
+  const isSomeFilteredSelected = useMemo(() => {
+    return filteredCandidates.some((c) => selectedCandidateIds.has(c.id)) && !isAllFilteredSelected;
+  }, [filteredCandidates, selectedCandidateIds, isAllFilteredSelected]);
+
+  useEffect(() => {
+    if (headerCheckboxRef.current) {
+      headerCheckboxRef.current.indeterminate = isSomeFilteredSelected;
+    }
+  }, [isSomeFilteredSelected]);
+
+  const handleToggleCandidateSelect = (id: string) => {
+    setSelectedCandidateIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSelectAllFiltered = () => {
+    if (isAllFilteredSelected) {
+      setSelectedCandidateIds((prev) => {
+        const next = new Set(prev);
+        filteredCandidates.forEach((c) => next.delete(c.id));
+        return next;
+      });
+    } else {
+      setSelectedCandidateIds((prev) => {
+        const next = new Set(prev);
+        filteredCandidates.forEach((c) => next.add(c.id));
+        return next;
+      });
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedCandidateIds(new Set());
+  };
+
+  const handleBulkFlagForBooklet = (flag: boolean) => {
+    if (selectedCandidateIds.size === 0) return;
+    const ids = Array.from(selectedCandidateIds);
+    bulkUpdateGraduationCandidates(ids, {
+      includedInBooklet: flag,
+      bookletFlaggedAt: flag ? new Date().toISOString() : undefined,
+      bookletFlaggedBy: flag ? currentUser.name : undefined
+    });
+    displayNotice(
+      `✓ Successfully ${flag ? 'flagged' : 'excluded'} ${ids.length} candidate${ids.length > 1 ? 's' : ''} ${flag ? 'for inclusion in' : 'from'} the Graduation Booklet export!`
+    );
+  };
+
+  const handleFlagAllFiltered = (flag: boolean) => {
+    if (filteredCandidates.length === 0) return;
+    const ids = filteredCandidates.map((c) => c.id);
+    bulkUpdateGraduationCandidates(ids, {
+      includedInBooklet: flag,
+      bookletFlaggedAt: flag ? new Date().toISOString() : undefined,
+      bookletFlaggedBy: flag ? currentUser.name : undefined
+    });
+    displayNotice(
+      `✓ Successfully ${flag ? 'flagged' : 'excluded'} all ${ids.length} filtered candidate${ids.length > 1 ? 's' : ''} ${flag ? 'for' : 'from'} Graduation Booklet export!`
+    );
+  };
 
   // Filtered Certificates
   const filteredCertificates = useMemo(() => {
@@ -709,6 +820,38 @@ export const GraduationManagement: React.FC = () => {
         >
           <Database className="w-4 h-4 text-[#C5A059]" />
           <span>RPL 2024 Data Utility & Institutions (118)</span>
+        </button>
+
+        <button
+          id="tab-btn-grad-analytics"
+          onClick={() => setActiveTab('visualizations')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'visualizations'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/80 font-black'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4 text-[#C5A059]" />
+          <span>📊 Program & Regional Analytics</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-[#002366] text-white text-[10px] font-mono font-bold">
+            Recharts
+          </span>
+        </button>
+
+        <button
+          id="tab-btn-workflow-status"
+          onClick={() => setActiveTab('workflow-status')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 cursor-pointer ${
+            activeTab === 'workflow-status'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/80 font-black'
+              : 'border-transparent text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+          <span>⚡ Approval Workflow Pipeline</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-mono font-bold">
+            Audit
+          </span>
         </button>
       </div>
 
@@ -1131,31 +1274,65 @@ export const GraduationManagement: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: CANDIDATES ROSTER SUMMARY */}
+      {/* TAB 2: CANDIDATES ROSTER SUMMARY & BOOKLET INCLUSION SELECTION */}
       {activeTab === 'candidates' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold font-display text-[#002366]">Graduation Candidates Roster</h3>
+          {/* Header Card with Stats & Quick Actions */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h3 className="text-base font-bold font-display text-[#002366]">
+                  Graduation Candidates & Student Management
+                </h3>
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-100 text-[#002366]">
                   {filteredCandidates.length} of {graduationCandidates.length} Shown
                 </span>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                  <BookmarkCheck className="w-3 h-3 text-emerald-600" />
+                  <span>{totalBookletFlagged} Flagged for Booklet</span>
+                </span>
+                {totalBookletExcluded > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1">
+                    <BookmarkX className="w-3 h-3 text-slate-400" />
+                    <span>{totalBookletExcluded} Excluded</span>
+                  </span>
+                )}
               </div>
-              <p className="text-xs text-slate-500">
-                Official candidate roster submitted for degree conferral, academic clearance verification, and commencement program.
+              <p className="text-xs text-slate-500 max-w-3xl">
+                Official candidate roster for degree conferral and academic clearance. Use the checkboxes to bulk-flag or exclude candidates for the next <strong>GraduationBookletGenerator</strong> export roll.
               </p>
             </div>
 
-            {/* Quick Action */}
-            <div className="flex items-center gap-2">
+            {/* Top Quick Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                onClick={() => handleFlagAllFiltered(true)}
+                className="text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg border border-emerald-200 transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Flag all visible candidates in the current filter for the booklet"
+              >
+                <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Flag All Filtered ({filteredCandidates.length})</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveTab('booklet');
+                }}
+                className="text-xs font-bold text-[#002366] bg-[#C5A059]/15 hover:bg-[#C5A059]/25 border border-[#C5A059]/40 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Navigate to the Graduation Booklet Generator"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#002366]" />
+                <span>Open Booklet Generator</span>
+              </button>
+
               <button
                 onClick={() => {
                   setCandidateSearchQuery('');
                   setCandidateCeremonyFilter('All');
                   setCandidateClearanceFilter('All');
+                  setCandidateBookletFilter('All');
                 }}
-                className="text-xs font-bold text-slate-600 hover:text-[#002366] px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer"
+                className="text-xs font-bold text-slate-600 hover:text-[#002366] px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -1163,7 +1340,7 @@ export const GraduationManagement: React.FC = () => {
           </div>
 
           {/* Candidates Filter Bar */}
-          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-col sm:flex-row items-center gap-3">
+          <div className="bg-white rounded-xl border border-slate-200 p-3 shadow-xs flex flex-col md:flex-row items-center gap-3">
             <div className="relative flex-1 w-full">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -1200,18 +1377,98 @@ export const GraduationManagement: React.FC = () => {
               <option value="pending">Pending Clearance (&lt;100%)</option>
               <option value="conferred">Conferred Graduate</option>
             </select>
+
+            {/* Booklet Export Status Filter */}
+            <select
+              value={candidateBookletFilter}
+              onChange={(e) => setCandidateBookletFilter(e.target.value as 'All' | 'flagged' | 'unflagged')}
+              className="w-full sm:w-auto px-3 py-2 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+            >
+              <option value="All">Booklet Roll: All Candidates</option>
+              <option value="flagged">📖 Flagged for Booklet ({totalBookletFlagged})</option>
+              <option value="unflagged">🚫 Excluded from Booklet ({totalBookletExcluded})</option>
+            </select>
           </div>
 
+          {/* Quick Selection Sub-Bar */}
+          <div className="bg-slate-50 rounded-xl border border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-2 font-bold text-slate-700 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  ref={headerCheckboxRef}
+                  checked={isAllFilteredSelected}
+                  onChange={handleToggleSelectAllFiltered}
+                  className="w-4 h-4 rounded text-[#002366] focus:ring-[#002366] border-slate-300 cursor-pointer"
+                />
+                <span>
+                  {isAllFilteredSelected
+                    ? `All ${filteredCandidates.length} Selected`
+                    : selectedCandidateIds.size > 0
+                    ? `${selectedCandidateIds.size} of ${filteredCandidates.length} Selected`
+                    : `Select All Visible (${filteredCandidates.length})`}
+                </span>
+              </label>
+
+              {selectedCandidateIds.size > 0 && (
+                <button
+                  onClick={handleClearSelection}
+                  className="text-[11px] font-semibold text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                >
+                  Clear Selection
+                </button>
+              )}
+            </div>
+
+            {/* Batch Action Buttons in Sub-Bar */}
+            <div className="flex items-center gap-2">
+              {selectedCandidateIds.size > 0 ? (
+                <>
+                  <button
+                    onClick={() => handleBulkFlagForBooklet(true)}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  >
+                    <BookmarkCheck className="w-3.5 h-3.5" />
+                    <span>Flag Selected ({selectedCandidateIds.size})</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleBulkFlagForBooklet(false)}
+                    className="px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-800 text-white font-bold text-[11px] flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <BookmarkX className="w-3.5 h-3.5 text-rose-300" />
+                    <span>Exclude Selected</span>
+                  </button>
+                </>
+              ) : (
+                <div className="text-[11px] text-slate-500 italic">
+                  Select candidates via checkboxes to apply bulk booklet export actions.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Candidates Table */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[10px]">
+                    <th className="py-3 px-3 w-12 text-center">
+                      <input
+                        type="checkbox"
+                        checked={isAllFilteredSelected}
+                        onChange={handleToggleSelectAllFiltered}
+                        title={isAllFilteredSelected ? "Deselect all filtered" : "Select all filtered"}
+                        className="w-4 h-4 rounded text-[#002366] focus:ring-[#002366] border-slate-300 cursor-pointer"
+                      />
+                    </th>
                     <th className="py-3 px-4">Student ID / Candidate</th>
                     <th className="py-3 px-4">Degree Program</th>
                     <th className="py-3 px-4">Assigned Ceremony</th>
                     <th className="py-3 px-4">GPA / Honors</th>
                     <th className="py-3 px-4">Clearance</th>
+                    <th className="py-3 px-4">Booklet Roll</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Fee Status</th>
                   </tr>
@@ -1219,13 +1476,42 @@ export const GraduationManagement: React.FC = () => {
                 <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
                   {filteredCandidates.map((candidate) => {
                     const ceremony = graduationCeremonies.find((c) => c.id === candidate.ceremonyId);
+                    const isSelected = selectedCandidateIds.has(candidate.id);
+                    const isFlaggedForBooklet = candidate.includedInBooklet !== false;
 
                     return (
-                      <tr key={candidate.id} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-3.5 px-4 font-bold text-slate-900">
-                          <div>{candidate.fullName}</div>
-                          <div className="text-[10px] text-slate-400 font-mono">{candidate.studentId}</div>
+                      <tr
+                        key={candidate.id}
+                        className={`transition-colors ${
+                          isSelected
+                            ? 'bg-amber-50/80 hover:bg-amber-100/70 border-l-4 border-l-[#C5A059]'
+                            : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* Row Checkbox */}
+                        <td className="py-3.5 px-3 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleCandidateSelect(candidate.id)}
+                            className="w-4 h-4 rounded text-[#002366] focus:ring-[#002366] border-slate-300 cursor-pointer"
+                          />
                         </td>
+
+                        <td className="py-3.5 px-4 font-bold text-slate-900">
+                          <div className="flex items-center gap-2">
+                            <div>
+                              <div className="text-slate-900 font-bold font-display">{candidate.fullName}</div>
+                              <div className="text-[10px] text-slate-400 font-mono">{candidate.studentId}</div>
+                            </div>
+                            {isFlaggedForBooklet && (
+                              <span title="Flagged for Booklet Export" className="text-emerald-600 shrink-0">
+                                <BookmarkCheck className="w-3.5 h-3.5" />
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
                         <td className="py-3.5 px-4">
                           <div className="text-slate-900 font-medium">{candidate.programName}</div>
                           {candidate.academicAchievement && candidate.academicAchievement !== candidate.programName && (
@@ -1236,15 +1522,18 @@ export const GraduationManagement: React.FC = () => {
                           )}
                           <div className="text-[10px] text-slate-400">{candidate.schoolName}</div>
                         </td>
+
                         <td className="py-3.5 px-4">
                           <span className="px-2 py-0.5 rounded text-[11px] bg-blue-50 text-[#002366] font-semibold">
                             {ceremony?.graduationNumber || candidate.ceremonyNumber || 'Annual Ceremony'}
                           </span>
                         </td>
+
                         <td className="py-3.5 px-4">
                           <div className="font-mono font-bold text-slate-800">{candidate.finalGpa.toFixed(2)}</div>
                           <div className="text-[10px] text-[#C5A059] font-semibold">{candidate.academicHonors}</div>
                         </td>
+
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2">
                             <div className="w-16 bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -1256,6 +1545,36 @@ export const GraduationManagement: React.FC = () => {
                             <span className="text-[10px] font-mono font-bold">{candidate.clearanceProgress}%</span>
                           </div>
                         </td>
+
+                        {/* Interactive Booklet Roll Inclusion Badge Column */}
+                        <td className="py-3.5 px-4">
+                          <button
+                            onClick={() => toggleCandidateBookletFlag(candidate.id)}
+                            title={
+                              isFlaggedForBooklet
+                                ? 'Included in Booklet. Click to exclude.'
+                                : 'Excluded from Booklet. Click to include.'
+                            }
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold border transition-all cursor-pointer ${
+                              isFlaggedForBooklet
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100 hover:border-emerald-400'
+                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 hover:text-slate-700'
+                            }`}
+                          >
+                            {isFlaggedForBooklet ? (
+                              <>
+                                <BookmarkCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>In Booklet</span>
+                              </>
+                            ) : (
+                              <>
+                                <BookmarkX className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Excluded</span>
+                              </>
+                            )}
+                          </button>
+                        </td>
+
                         <td className="py-3.5 px-4">
                           <span
                             className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -1269,6 +1588,7 @@ export const GraduationManagement: React.FC = () => {
                             {candidate.status}
                           </span>
                         </td>
+
                         <td className="py-3.5 px-4 font-semibold text-emerald-700">
                           ${candidate.graduationFeePaid} (Paid)
                         </td>
@@ -1277,7 +1597,7 @@ export const GraduationManagement: React.FC = () => {
                   })}
                   {filteredCandidates.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="py-10 text-center text-slate-400">
+                      <td colSpan={9} className="py-10 text-center text-slate-400">
                         No candidates found matching the selected filters.
                       </td>
                     </tr>
@@ -1286,6 +1606,65 @@ export const GraduationManagement: React.FC = () => {
               </table>
             </div>
           </div>
+
+          {/* Sticky Bulk Action Floating Bar when items are selected */}
+          {selectedCandidateIds.size > 0 && (
+            <div className="sticky bottom-4 z-30 bg-[#002366] text-white rounded-xl p-3.5 sm:p-4 shadow-2xl border-2 border-[#C5A059] flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom-2">
+              <div className="flex items-center gap-3">
+                <span className="flex h-8 w-8 rounded-full bg-[#C5A059] text-[#002366] items-center justify-center font-black text-xs shadow-inner">
+                  {selectedCandidateIds.size}
+                </span>
+                <div>
+                  <div className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                    <span>{selectedCandidateIds.size} Candidates Selected</span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#C5A059]/20 text-[#C5A059] border border-[#C5A059]/40 font-mono">
+                      Bulk Action Ready
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-300">
+                    Flag or exclude selected candidates for the next Graduation Booklet export
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handleBulkFlagForBooklet(true)}
+                  className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  title="Flag selected candidates to be included in the graduation booklet export"
+                >
+                  <BookmarkCheck className="w-4 h-4" />
+                  <span>Flag for Booklet Export ({selectedCandidateIds.size})</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkFlagForBooklet(false)}
+                  className="px-3.5 py-2 rounded-lg bg-rose-900/80 hover:bg-rose-900 text-rose-100 text-xs font-bold flex items-center gap-1.5 border border-rose-700 transition-all cursor-pointer"
+                  title="Exclude selected candidates from graduation booklet export"
+                >
+                  <BookmarkX className="w-4 h-4 text-rose-300" />
+                  <span>Exclude from Booklet</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setActiveTab('booklet');
+                  }}
+                  className="px-3.5 py-2 rounded-lg bg-[#C5A059] hover:bg-[#B38E46] text-[#002366] text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>Open Booklet Generator →</span>
+                </button>
+
+                <button
+                  onClick={handleClearSelection}
+                  className="px-2.5 py-2 text-xs font-semibold text-slate-300 hover:text-white underline cursor-pointer"
+                >
+                  Deselect All
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1472,6 +1851,16 @@ export const GraduationManagement: React.FC = () => {
             setActiveTab('booklet');
           }}
         />
+      )}
+
+      {/* TAB 6: GRADUAND DATA VISUALIZATION (RECHARTS) */}
+      {activeTab === 'visualizations' && (
+        <GraduandsDataVisualization />
+      )}
+
+      {/* TAB 7: GRADUAND APPROVAL WORKFLOW DASHBOARD */}
+      {activeTab === 'workflow-status' && (
+        <GraduandApprovalWorkflowDashboard />
       )}
 
       {/* DEFINE / EDIT CEREMONY MODAL */}

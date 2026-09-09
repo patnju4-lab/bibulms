@@ -38,6 +38,8 @@ import { TVRadioManagement } from './TVRadioManagement';
 import { TVAdminPortal } from './TVAdminPortal';
 import { GraduationManagement } from './GraduationManagement';
 import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
+import { GraduandsDataVisualization } from './GraduandsDataVisualization';
+import { GraduandApprovalWorkflowDashboard } from './GraduandApprovalWorkflowDashboard';
 import { Tv } from 'lucide-react';
 
 export const AdminPortal: React.FC = () => {
@@ -60,7 +62,7 @@ export const AdminPortal: React.FC = () => {
     graduationCandidates
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'graduation' | 'booklet-editor' | 'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('graduation');
+  const [activeTab, setActiveTab] = useState<'graduation' | 'students' | 'workflow-status' | 'graduands-visualization' | 'booklet-editor' | 'exam-centres' | 'tv-radio' | 'alumni-stats' | 'alumni-records' | 'rpl-manager' | 'users-portals' | 'bulletins' | 'admissions' | 'certificates' | 'academics' | 'financials' | 'cms'>('graduation');
 
   // CMS Form State
   const [cmsInfo, setCmsInfo] = useState({ ...universityInfo });
@@ -161,6 +163,53 @@ export const AdminPortal: React.FC = () => {
         >
           <GraduationCap className="w-4 h-4 text-[#C5A059]" />
           <span>🎓 Graduation & Convocation Portal ({graduationCandidates.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('students')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'students'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/70 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <Users className="w-4 h-4 text-[#C5A059]" />
+          <span>👨‍🎓 Student Management & Booklet Selection ({graduationCandidates.length})</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-mono font-black">
+            Bulk Flags
+          </span>
+        </button>
+
+        <button
+          id="tab-admin-graduands-visualization"
+          onClick={() => setActiveTab('graduands-visualization')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'graduands-visualization'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/70 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4 text-[#C5A059]" />
+          <span>📊 Graduands Analytics & Summary</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-[#002366] text-white text-[10px] font-mono font-black">
+            Recharts
+          </span>
+        </button>
+
+        <button
+          id="tab-admin-workflow-status"
+          onClick={() => setActiveTab('workflow-status')}
+          className={`px-4 py-2.5 text-xs font-bold uppercase tracking-wider border-b-2 whitespace-nowrap transition-all flex items-center gap-2 ${
+            activeTab === 'workflow-status'
+              ? 'border-[#002366] text-[#002366] bg-amber-50/70 font-black'
+              : 'border-transparent text-[#002366] hover:text-[#001A4D] bg-amber-50/30'
+          }`}
+        >
+          <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+          <span>⚡ Approval Workflow & Status Pipeline</span>
+          <span className="px-1.5 py-0.5 rounded-full bg-emerald-700 text-white text-[10px] font-mono font-black">
+            4 Stages
+          </span>
         </button>
 
         <button
@@ -323,8 +372,17 @@ export const AdminPortal: React.FC = () => {
         </button>
       </div>
 
+      {/* TAB: Student Management & Booklet Selection */}
+      {activeTab === 'students' && <GraduationManagement initialTab="candidates" />}
+
+      {/* TAB: Graduands Summary & Regional Visualizations (Recharts) */}
+      {activeTab === 'graduands-visualization' && <GraduandsDataVisualization />}
+
+      {/* TAB: Graduand Approval & Booklet-Ready Workflow Dashboard */}
+      {activeTab === 'workflow-status' && <GraduandApprovalWorkflowDashboard />}
+
       {/* TAB: Graduation Management & Digital Convocation Portal */}
-      {activeTab === 'graduation' && <GraduationManagement />}
+      {activeTab === 'graduation' && <GraduationManagement initialTab="ceremonies" />}
 
       {/* TAB: Administrative Convocation Booklet Editor */}
       {activeTab === 'booklet-editor' && <AdministrativeBookletEditor />}

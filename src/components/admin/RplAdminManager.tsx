@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Award, CheckCircle2, Clock, FileText, Search, UserCheck, ShieldCheck, AlertCircle, DollarSign, BookOpen, Printer, ArrowUpRight, Check, X } from 'lucide-react';
+import { Award, CheckCircle2, Clock, FileText, Search, UserCheck, ShieldCheck, AlertCircle, DollarSign, BookOpen, Printer, ArrowUpRight, Check, X, FolderOpen } from 'lucide-react';
 import { RPLApplicationRecord, RPLCompetencyItem, RPLStatus, RPLAssessmentMethod } from '../../types/rpl';
 import { RplSlideDeck } from '../rpl/RplSlideDeck';
+import { RplPortfolioEvidenceBinder } from '../rpl/RplPortfolioEvidenceBinder';
 
 export const RplAdminManager: React.FC = () => {
   const { rplRecords, rplProgramRules, assessRPLCompetency, scheduleRPLInterview, finalizeRPLAssessment, syncRPLToTranscript } = useApp();
@@ -10,7 +11,7 @@ export const RplAdminManager: React.FC = () => {
   const [selectedAppId, setSelectedAppId] = useState<string>(rplRecords[0]?.id || '');
   const [filterStatus, setFilterStatus] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeSubTab, setActiveSubTab] = useState<'applications' | 'rules' | 'verification' | 'analytics' | 'slides'>('applications');
+  const [activeSubTab, setActiveSubTab] = useState<'applications' | 'rules' | 'verification' | 'analytics' | 'slides' | 'binder'>('applications');
 
   // Assessment Modal / Drawer state
   const [assessmentNotes, setAssessmentNotes] = useState('');
@@ -76,6 +77,13 @@ export const RplAdminManager: React.FC = () => {
           >
             <Award className="w-3.5 h-3.5 text-[#C5A059]" />
             <span>15-Slide Counselling Deck</span>
+          </button>
+          <button
+            onClick={() => setActiveSubTab('binder')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${activeSubTab === 'binder' ? 'bg-[#002366] text-white shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+          >
+            <FolderOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>📁 POE & e-Portfolio Binder</span>
           </button>
         </div>
       </div>
@@ -372,6 +380,12 @@ export const RplAdminManager: React.FC = () => {
       {activeSubTab === 'slides' && (
         <div className="space-y-6 animate-in fade-in">
           <RplSlideDeck />
+        </div>
+      )}
+
+      {activeSubTab === 'binder' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplPortfolioEvidenceBinder rplRecord={selectedRecord} isAssessorView={true} />
         </div>
       )}
     </div>

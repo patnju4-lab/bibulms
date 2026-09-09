@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Award, CheckCircle2, Clock, FileText, Plus, ShieldCheck, Sparkles, User, ArrowRight, BookOpen } from 'lucide-react';
+import { Award, CheckCircle2, Clock, FileText, Plus, ShieldCheck, Sparkles, User, ArrowRight, BookOpen, FolderOpen } from 'lucide-react';
 import { RPLApplicationRecord, RPLMinistryPosition, RPLEvidenceItem, RPLCompetencyItem } from '../../types/rpl';
 import { RplSlideDeck } from '../rpl/RplSlideDeck';
+import { RplPortfolioEvidenceBinder } from '../rpl/RplPortfolioEvidenceBinder';
 
 export const RplStudentModule: React.FC = () => {
   const { currentUser, rplRecords, submitDetailedRPLApplication, submitRPLAppeal, programs } = useApp();
 
-  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript' | 'slides'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript' | 'slides' | 'binder'>('overview');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // New Application Form State
@@ -182,10 +183,12 @@ export const RplStudentModule: React.FC = () => {
           <span>Proposed Slide Deck (15 Slides)</span>
         </button>
         <button
-          onClick={() => setActiveView('apply')}
-          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${activeView === 'apply' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+          id="tab-rpl-student-binder"
+          onClick={() => setActiveView('binder')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeView === 'binder' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
         >
-          New Application
+          <FolderOpen className="w-3.5 h-3.5 text-[#C5A059]" />
+          <span>📁 POE & e-Portfolio Binder</span>
         </button>
       </div>
 
@@ -375,19 +378,9 @@ export const RplStudentModule: React.FC = () => {
         </form>
       )}
 
-      {activeView === 'portfolio' && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-xs">
-          <h3 className="text-lg font-display font-bold text-[#002366]">Portfolio & Evidence Document Builder</h3>
-          <p className="text-xs text-slate-600">Upload ordination certificates, sermon manuscripts, church bylaws, and pastoral references to substantiate your prior learning.</p>
-
-          <div className="p-6 rounded-xl border-2 border-dashed border-slate-300 bg-[#F8F9FB] text-center space-y-3">
-            <FileText className="w-10 h-10 text-slate-400 mx-auto" />
-            <div className="text-xs font-bold text-slate-700">Drag & Drop Ministry Evidence Documents Here</div>
-            <p className="text-[11px] text-slate-500">Supports PDF, DOCX, JPG, PNG up to 25MB with personal info redacted.</p>
-            <button className="px-4 py-2 rounded-lg bg-[#002366] text-white text-xs font-bold uppercase tracking-wider shadow">
-              Browse Files
-            </button>
-          </div>
+      {activeView === 'binder' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplPortfolioEvidenceBinder />
         </div>
       )}
     </div>

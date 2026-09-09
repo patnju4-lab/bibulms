@@ -515,6 +515,8 @@ interface AppContextType {
   graduationCandidates: GraduationCandidate[];
   addGraduationCandidate: (candidate: Omit<GraduationCandidate, 'id' | 'createdAt' | 'updatedAt'>) => GraduationCandidate;
   updateGraduationCandidate: (id: string, updates: Partial<GraduationCandidate>) => void;
+  bulkUpdateGraduationCandidates: (ids: string[], updates: Partial<GraduationCandidate>) => void;
+  toggleCandidateBookletFlag: (id: string) => void;
   deleteGraduationCandidate: (id: string) => void;
   updateDepartmentClearance: (candidateId: string, department: keyof GraduationCandidate['clearances'], record: Partial<DepartmentClearanceRecord>) => void;
   conferCandidateToGraduate: (candidateId: string) => { candidate: GraduationCandidate; certificate: GraduationCertificateRecord; alumni?: Alumni };
@@ -936,10 +938,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (Array.isArray(parsed)) {
           const existingIds = new Set(parsed.map(c => c.id));
           const missing = INITIAL_GRADUATION_CANDIDATES.filter(c => !existingIds.has(c.id));
+          const normalized = parsed.map(c => {
+            if (c.includedInBooklet === undefined) {
+              const initial = INITIAL_GRADUATION_CANDIDATES.find(ic => ic.id === c.id);
+              return {
+                ...c,
+                includedInBooklet: initial?.includedInBooklet ?? true
+              };
+            }
+            return c;
+          });
           if (missing.length > 0) {
-            return [...missing, ...parsed];
+            return [...missing, ...normalized];
           }
-          return parsed;
+          return normalized;
         }
       } catch (e) {
         console.error('Failed to parse bibu_graduation_candidates', e);
@@ -3672,6 +3684,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  const bulkUpdateGraduationCandidates = (ids: string[], updates: Partial<GraduationCandidate>) => {
+    const idSet = new Set(ids);
+    setGraduationCandidates(prev =>
+      prev.map(c => (idSet.has(c.id) ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c))
+    );
+    logGraduationAudit({
+      action: 'Bulk Update Candidates',
+      performedBy: currentUser.name,
+      role: currentUser.role,
+      details: `Bulk updated ${ids.length} candidates (${Object.keys(updates).join(', ')})`
+    });
+  };
+
+  const toggleCandidateBookletFlag = (id: string) => {
+    setGraduationCandidates(prev =>
+      prev.map(c => {
+        if (c.id !== id) return c;
+        const currentFlag = c.includedInBooklet !== false;
+        const newFlag = !currentFlag;
+        return {
+          ...c,
+          includedInBooklet: newFlag,
+          bookletFlaggedAt: newFlag ? new Date().toISOString() : undefined,
+          bookletFlaggedBy: newFlag ? currentUser.name : undefined,
+          updatedAt: new Date().toISOString()
+        };
+      })
+    );
+  };
+
   const deleteGraduationCandidate = (id: string) => {
     setGraduationCandidates(prev => prev.filter(c => c.id !== id));
     logGraduationAudit({
@@ -4111,6 +4153,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         graduationCandidates,
         addGraduationCandidate,
         updateGraduationCandidate,
+        bulkUpdateGraduationCandidates,
+        toggleCandidateBookletFlag,
         deleteGraduationCandidate,
         updateDepartmentClearance,
         conferCandidateToGraduate,

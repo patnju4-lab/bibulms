@@ -144,6 +144,11 @@ export interface GraduationCandidate {
   bookletNumber?: string;
   conferralDate?: string;
   
+  // Booklet inclusion flag & export metadata
+  includedInBooklet?: boolean;
+  bookletFlaggedAt?: string;
+  bookletFlaggedBy?: string;
+  
   // Graduate Profile details
   biography?: string;
   currentMinistry?: string;

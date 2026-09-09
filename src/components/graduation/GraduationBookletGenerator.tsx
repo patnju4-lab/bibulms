@@ -203,6 +203,7 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
   const [selectedSchoolFilter, setSelectedSchoolFilter] = useState<string>('All');
   const [selectedLevelFilter, setSelectedLevelFilter] = useState<string>('All');
   const [clearanceFilter, setClearanceFilter] = useState<'All' | 'ClearedOnly' | 'ConferredOnly'>('All');
+  const [bookletInclusionFilter, setBookletInclusionFilter] = useState<'flaggedOnly' | 'all'>('flaggedOnly');
   const [photoLayoutMode, setPhotoLayoutMode] = useState<'cards' | 'yearbook' | 'compact'>('cards');
 
   // Candidate quick preview / photo edit modal
@@ -224,9 +225,23 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
     );
   }, [graduationCandidates, selectedCeremonyId, currentCeremony]);
 
+  // Counts of flagged vs excluded candidates in this ceremony
+  const ceremonyBookletFlaggedCount = useMemo(() => {
+    return ceremonyCandidates.filter((c) => c.includedInBooklet !== false).length;
+  }, [ceremonyCandidates]);
+
+  const ceremonyBookletExcludedCount = useMemo(() => {
+    return ceremonyCandidates.filter((c) => c.includedInBooklet === false).length;
+  }, [ceremonyCandidates]);
+
   // Filtered candidate list
   const filteredCandidates = useMemo(() => {
     return ceremonyCandidates.filter((c) => {
+      // Respect inclusion flag for the booklet
+      if (bookletInclusionFilter === 'flaggedOnly' && c.includedInBooklet === false) {
+        return false;
+      }
+
       const matchSearch =
         candidateSearchQuery === '' ||
         c.fullName.toLowerCase().includes(candidateSearchQuery.toLowerCase()) ||
@@ -250,7 +265,7 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
 
       return matchSearch && matchSchool && matchLevel && matchClearance;
     });
-  }, [ceremonyCandidates, candidateSearchQuery, selectedSchoolFilter, selectedLevelFilter, clearanceFilter]);
+  }, [ceremonyCandidates, candidateSearchQuery, selectedSchoolFilter, selectedLevelFilter, clearanceFilter, bookletInclusionFilter]);
 
   // Check if current ceremony is the RPL Practitioners Convocation
   const isRplCeremony = useMemo(() => {
@@ -2125,6 +2140,113 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
               </p>
             </div>
 
+            {/* NO-PRINT: LIVE CANDIDATE ROSTER CONTROLS & BOOKLET ROLL TOGGLE */}
+            <div className="no-print p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold text-slate-700">Booklet Roll Scope:</span>
+                  <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setBookletInclusionFilter('flaggedOnly')}
+                      className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                        bookletInclusionFilter === 'flaggedOnly'
+                          ? 'bg-[#002366] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Flagged Candidates Only ({ceremonyBookletFlaggedCount})
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setBookletInclusionFilter('all')}
+                      className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                        bookletInclusionFilter === 'all'
+                          ? 'bg-[#002366] text-white shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      All Candidates in Registry ({ceremonyCandidates.length})
+                    </button>
+                  </div>
+                  {ceremonyBookletExcludedCount > 0 && bookletInclusionFilter === 'flaggedOnly' && (
+                    <span className="text-[11px] font-semibold text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                      {ceremonyBookletExcludedCount} excluded from booklet
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-slate-600">Layout:</span>
+                  <div className="inline-flex rounded-lg border border-slate-300 p-0.5 bg-white text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setPhotoLayoutMode('cards')}
+                      className={`px-2.5 py-1 rounded font-bold cursor-pointer ${
+                        photoLayoutMode === 'cards' ? 'bg-[#002366] text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      Cards
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoLayoutMode('yearbook')}
+                      className={`px-2.5 py-1 rounded font-bold cursor-pointer ${
+                        photoLayoutMode === 'yearbook' ? 'bg-[#002366] text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      Yearbook Bio
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPhotoLayoutMode('compact')}
+                      className={`px-2.5 py-1 rounded font-bold cursor-pointer ${
+                        photoLayoutMode === 'compact' ? 'bg-[#002366] text-white' : 'text-slate-600'
+                      }`}
+                    >
+                      Compact Roll
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & School Filter Bar */}
+              <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className="relative flex-1 w-full">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={candidateSearchQuery}
+                    onChange={(e) => setCandidateSearchQuery(e.target.value)}
+                    placeholder="Filter graduands by name, reg ID, program, or honors..."
+                    className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 bg-white focus:outline-none focus:ring-1 focus:ring-[#002366]"
+                  />
+                </div>
+                <select
+                  value={selectedSchoolFilter}
+                  onChange={(e) => setSelectedSchoolFilter(e.target.value)}
+                  className="w-full sm:w-auto px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+                >
+                  {uniqueSchools.map((s) => (
+                    <option key={s} value={s}>
+                      {s === 'All' ? 'All Schools / Institutions' : s}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={selectedLevelFilter}
+                  onChange={(e) => setSelectedLevelFilter(e.target.value)}
+                  className="w-full sm:w-auto px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 bg-white font-medium text-slate-700 cursor-pointer"
+                >
+                  {uniqueLevels.map((lvl) => (
+                    <option key={lvl} value={lvl}>
+                      {lvl === 'All' ? 'All Award Levels' : lvl}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             {/* DIRECTORY CONTENT GROUPED BY FACULTY & LEVEL */}
             <div className="space-y-8">
               {Object.keys(groupedCandidatesBySchool).map((schoolName) => {
@@ -2605,7 +2727,13 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                 )}
               </div>
               <div className="text-left sm:text-right text-slate-500">
-                <span className="font-semibold text-slate-700">{ceremonyCandidates.length} Graduands</span> • {ceremonyAwards.length} Awards
+                <span className="font-semibold text-slate-700">
+                  {filteredCandidates.length} Graduand{filteredCandidates.length === 1 ? '' : 's'} in PDF Roll
+                </span>{' '}
+                {ceremonyBookletExcludedCount > 0 && bookletInclusionFilter === 'flaggedOnly' && (
+                  <span className="text-[11px] text-slate-400">({ceremonyBookletExcludedCount} excluded)</span>
+                )}
+                {' '}• {ceremonyAwards.length} Awards
               </div>
             </div>
 
@@ -2787,10 +2915,61 @@ export const GraduationBookletGenerator: React.FC<GraduationBookletGeneratorProp
                   </div>
                 </div>
 
-                {/* 3. Output Filename */}
+                {/* 3. Graduand Roll Candidate Inclusion */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-black uppercase tracking-wider text-slate-600">
+                      3. Graduand Roll Candidate Inclusion
+                    </label>
+                    <span className="text-[10px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      {bookletInclusionFilter === 'flaggedOnly'
+                        ? `${ceremonyBookletFlaggedCount} Flagged in PDF`
+                        : `${ceremonyCandidates.length} Total in PDF`}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setBookletInclusionFilter('flaggedOnly')}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        bookletInclusionFilter === 'flaggedOnly'
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-[#002366]">Flagged Candidates Only</span>
+                        {bookletInclusionFilter === 'flaggedOnly' && <Check className="w-3.5 h-3.5 text-[#002366]" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Include {ceremonyBookletFlaggedCount} candidate{ceremonyBookletFlaggedCount === 1 ? '' : 's'} flagged in Student Management.
+                      </p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setBookletInclusionFilter('all')}
+                      className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                        bookletInclusionFilter === 'all'
+                          ? 'border-[#002366] bg-blue-50/70 shadow-xs'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-black text-[#002366]">All Registry Candidates</span>
+                        {bookletInclusionFilter === 'all' && <Check className="w-3.5 h-3.5 text-[#002366]" />}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        Include all {ceremonyCandidates.length} ceremony candidates regardless of booklet flag.
+                      </p>
+                    </button>
+                  </div>
+                </div>
+
+                {/* 4. Output Filename */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-black uppercase tracking-wider text-slate-600">
-                    3. Output PDF Filename
+                    4. Output PDF Filename
                   </label>
                   <div className="relative">
                     <input
