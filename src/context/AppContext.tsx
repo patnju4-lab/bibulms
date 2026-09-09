@@ -177,6 +177,8 @@ export type CurrentView =
   | 'finance'
   | 'faculty-portal'
   | 'admin-portal'
+  | 'admin-dashboard'
+  | 'admin'
   | 'support'
   | 'alumni'
   | 'fellowships'

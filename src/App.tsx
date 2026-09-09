@@ -3,7 +3,7 @@
  * Comprehensive Online Bible School, Theological Learning & Examination Management System
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Footer } from './components/layout/Footer';
@@ -61,7 +61,13 @@ import { AdminPortal } from './components/admin/AdminPortal';
 import { GlobalExamCentresPortal } from './components/examCentres/GlobalExamCentresPortal';
 
 const MainContent: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, setCurrentView } = useApp();
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/admin')) {
+      setCurrentView('admin-dashboard');
+    }
+  }, [setCurrentView]);
 
   const renderView = () => {
     switch (currentView) {
@@ -184,11 +190,13 @@ const MainContent: React.FC = () => {
 
       // Protected Route: Admin & Registrar Portal
       case 'admin-portal':
+      case 'admin-dashboard':
+      case 'admin':
         return (
           <ProtectedPortalWrapper
             portalKey="admin"
             portalName="University Administration & Registrar"
-            targetView="admin-portal"
+            targetView="admin-dashboard"
           >
             <AdminPortal />
           </ProtectedPortalWrapper>
@@ -269,6 +277,16 @@ const MainContent: React.FC = () => {
         return <PublicHome />;
     }
   };
+
+  const isAdminView = currentView === 'admin-portal' || currentView === 'admin-dashboard' || currentView === 'admin';
+
+  if (isAdminView) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-800 selection:bg-[#C5A059] selection:text-[#002366]">
+        {renderView()}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F8F9FB] flex flex-col font-sans text-[#1E293B] selection:bg-[#C5A059] selection:text-[#002366]">
