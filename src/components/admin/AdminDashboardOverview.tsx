@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Users,
   UserCheck,
@@ -17,10 +17,29 @@ import {
   ShieldCheck,
   Building2,
   Clock,
-  Sparkles,
   ExternalLink,
-  PlusCircle
+  PlusCircle,
+  Calendar,
+  CheckCircle2,
+  XCircle,
+  MapPin,
+  BarChart3
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell
+} from 'recharts';
 import { AdminNavigationItem } from '../../types/admin';
 
 interface DashboardStats {
@@ -46,6 +65,94 @@ interface AdminDashboardOverviewProps {
   campus: string;
 }
 
+// Chart Data: Monthly Student Enrollment Trends
+const MONTHLY_ENROLLMENT_DATA = [
+  { month: 'Oct 25', degree: 48, diploma: 22, rpl: 12, total: 82 },
+  { month: 'Nov 25', degree: 55, diploma: 26, rpl: 15, total: 96 },
+  { month: 'Dec 25', degree: 68, diploma: 30, rpl: 16, total: 114 },
+  { month: 'Jan 26', degree: 110, diploma: 48, rpl: 30, total: 188 },
+  { month: 'Feb 26', degree: 84, diploma: 38, rpl: 20, total: 142 },
+  { month: 'Mar 26', degree: 76, diploma: 34, rpl: 18, total: 128 },
+  { month: 'Apr 26', degree: 80, diploma: 36, rpl: 19, total: 135 },
+  { month: 'May 26', degree: 95, diploma: 42, rpl: 23, total: 160 },
+  { month: 'Jun 26', degree: 88, diploma: 37, rpl: 20, total: 145 },
+  { month: 'Jul 26', degree: 92, diploma: 39, rpl: 21, total: 152 },
+  { month: 'Aug 26', degree: 118, diploma: 50, rpl: 27, total: 195 },
+  { month: 'Sep 26', degree: 126, diploma: 54, rpl: 30, total: 210 }
+];
+
+// Chart Data: Honorary Application Submissions by Status & Degree
+const HONORARY_SUBMISSION_DATA = [
+  {
+    period: 'Q4 2025',
+    Submitted: 3,
+    'Under Review': 4,
+    Approved: 5,
+    Rejected: 1
+  },
+  {
+    period: 'Q1 2026',
+    Submitted: 5,
+    'Under Review': 6,
+    Approved: 7,
+    Rejected: 2
+  },
+  {
+    period: 'Q2 2026',
+    Submitted: 8,
+    'Under Review': 7,
+    Approved: 8,
+    Rejected: 2
+  },
+  {
+    period: 'Q3 2026',
+    Submitted: 11,
+    'Under Review': 8,
+    Approved: 10,
+    Rejected: 3
+  }
+];
+
+const HONORARY_DEGREE_PIE_DATA = [
+  { name: 'Doctor of Divinity (D.D.)', value: 18, color: '#C5A059' },
+  { name: 'Doctor of Humane Letters (D.H.L.)', value: 11, color: '#002366' },
+  { name: 'Doctor of Sacred Theology (S.T.D.)', value: 7, color: '#10B981' }
+];
+
+// Chart Data: Active Examination Center Activity by Regional Hub
+const EXAM_CENTER_ACTIVITY_DATA = [
+  {
+    hub: 'Kenya 47 Counties',
+    centers: 98,
+    candidates: 840,
+    attendanceRate: 98
+  },
+  {
+    hub: 'USA & North America',
+    centers: 12,
+    candidates: 192,
+    attendanceRate: 99
+  },
+  {
+    hub: 'Ghana & W. Africa',
+    centers: 18,
+    candidates: 264,
+    attendanceRate: 96
+  },
+  {
+    hub: 'UK & Diaspora',
+    centers: 8,
+    candidates: 114,
+    attendanceRate: 98
+  },
+  {
+    hub: 'South Africa & SADC',
+    centers: 14,
+    candidates: 178,
+    attendanceRate: 95
+  }
+];
+
 export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
   stats,
   onNavigate,
@@ -53,6 +160,14 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
   adminRole,
   campus
 }) => {
+  const [enrollmentTimeframe, setEnrollmentTimeframe] = useState<'12m' | '6m'>('12m');
+  const [examMetric, setExamMetric] = useState<'candidates' | 'centers'>('candidates');
+
+  const displayedEnrollmentData =
+    enrollmentTimeframe === '6m'
+      ? MONTHLY_ENROLLMENT_DATA.slice(-6)
+      : MONTHLY_ENROLLMENT_DATA;
+
   // 12 Required KPI Cards with direct click navigation
   const kpiCards: {
     title: string;
@@ -211,7 +326,7 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
         </div>
       </div>
 
-      {/* 12 Clickable KPI Cards Grid (Section 2) */}
+      {/* 12 Clickable KPI Cards Grid */}
       <div>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
@@ -259,8 +374,342 @@ export const AdminDashboardOverview: React.FC<AdminDashboardOverviewProps> = ({
         </div>
       </div>
 
-      {/* Quick Launchpad & Academic Pipeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* VISUAL ANALYTICS SECTION: RECHARTS DASHBOARD OVERVIEW */}
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-slate-200">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#C5A059] uppercase tracking-wider">
+              <BarChart3 className="w-4 h-4" />
+              <span>University Intelligence & Trajectory</span>
+            </div>
+            <h3 className="text-lg font-display font-black text-[#002366]">
+              Institutional Performance Visualizations
+            </h3>
+          </div>
+          <span className="text-xs text-slate-500 font-medium">
+            Synced with Academic Registrar & Examination Boards
+          </span>
+        </div>
+
+        {/* 1. Monthly Student Enrollment Trends (Full-Width Area Chart) */}
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+            <div>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4 text-[#002366]" />
+                <h4 className="text-sm font-bold text-[#002366] tracking-tight">
+                  Monthly Student Enrollment Trends
+                </h4>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                New admissions progression across Degree, Diploma/Certificate, and RPL pathways.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-xs font-medium">
+                <button
+                  onClick={() => setEnrollmentTimeframe('6m')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    enrollmentTimeframe === '6m'
+                      ? 'bg-[#002366] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Last 6 Months
+                </button>
+                <button
+                  onClick={() => setEnrollmentTimeframe('12m')}
+                  className={`px-3 py-1 rounded-md transition-colors ${
+                    enrollmentTimeframe === '12m'
+                      ? 'bg-[#002366] text-white font-bold shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  Full 12 Months
+                </button>
+              </div>
+
+              <button
+                onClick={() => onNavigate('enrollments')}
+                className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-xs font-bold text-slate-700 flex items-center gap-1 transition-colors"
+              >
+                <span>View Registry</span>
+                <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Key Trend Statistics Summary */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+              <span className="text-[11px] text-slate-500 block">Peak Monthly Intake</span>
+              <span className="text-lg font-bold text-[#002366]">210 Students</span>
+              <span className="text-[10px] text-emerald-600 font-medium block">Sep 2026 Cohort</span>
+            </div>
+            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200">
+              <span className="text-[11px] text-blue-700 block">Degree Programs</span>
+              <span className="text-lg font-bold text-blue-950">1,082 (63.8%)</span>
+              <span className="text-[10px] text-blue-600 font-medium block">B.Th, M.Div, D.Min</span>
+            </div>
+            <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200">
+              <span className="text-[11px] text-amber-800 block">Diplomas & Certificates</span>
+              <span className="text-lg font-bold text-amber-950">464 (27.4%)</span>
+              <span className="text-[10px] text-amber-700 font-medium block">Practical Ministry</span>
+            </div>
+            <div className="p-3 bg-indigo-50/60 rounded-xl border border-indigo-200">
+              <span className="text-[11px] text-indigo-700 block">RPL Portfolios</span>
+              <span className="text-lg font-bold text-indigo-950">250 (8.8%)</span>
+              <span className="text-[10px] text-indigo-600 font-medium block">Pastoral Recognition</span>
+            </div>
+          </div>
+
+          {/* Recharts Area Visualization */}
+          <div className="h-72 w-full pt-2">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={displayedEnrollmentData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorDegree" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#002366" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#002366" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="colorDiploma" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#C5A059" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#C5A059" stopOpacity={0.0} />
+                  </linearGradient>
+                  <linearGradient id="colorRpl" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} axisLine={false} />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#FFFFFF',
+                    borderRadius: '12px',
+                    borderColor: '#E2E8F0',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  formatter={(val: any, name: any) => {
+                    const labelMap: Record<string, string> = {
+                      degree: 'Degree Candidates',
+                      diploma: 'Diplomas/Certificates',
+                      rpl: 'RPL Prior Learning'
+                    };
+                    return [val, labelMap[name] || name];
+                  }}
+                />
+                <Legend
+                  wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }}
+                  formatter={(value) => {
+                    const labels: Record<string, string> = {
+                      degree: 'Degree Cohorts',
+                      diploma: 'Diploma/Certificate',
+                      rpl: 'RPL Assessment Track'
+                    };
+                    return labels[value] || value;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="degree"
+                  stroke="#002366"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#colorDegree)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="diploma"
+                  stroke="#C5A059"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorDiploma)"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="rpl"
+                  stroke="#6366F1"
+                  strokeWidth={2}
+                  fillOpacity={1}
+                  fill="url(#colorRpl)"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* 2 & 3: Honorary Submissions & Active Exam Center Activity (2-Column Grid) */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Chart 2: Honorary Application Submission Volume */}
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-[#C5A059]" />
+                  <h4 className="text-sm font-bold text-[#002366] tracking-tight">
+                    Honorary Application Submission Volume
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Quarterly nomination intake & Senate review status distribution.
+                </p>
+              </div>
+
+              <button
+                onClick={() => onNavigate('honorary-applications')}
+                className="px-3 py-1.5 rounded-lg border border-[#C5A059]/40 bg-amber-50 hover:bg-amber-100/70 text-[#002366] text-xs font-bold flex items-center gap-1.5 self-start sm:self-auto transition-colors"
+              >
+                <span>Senate Review</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C5A059]" />
+              </button>
+            </div>
+
+            {/* Quick Status Legend Cards */}
+            <div className="grid grid-cols-4 gap-2 text-center text-xs">
+              <div className="p-2 rounded-lg bg-blue-50 border border-blue-200">
+                <span className="text-[10px] font-bold text-blue-800 uppercase block">Submitted</span>
+                <span className="text-sm font-black text-blue-900">11 Dossiers</span>
+              </div>
+              <div className="p-2 rounded-lg bg-amber-50 border border-amber-200">
+                <span className="text-[10px] font-bold text-amber-800 uppercase block">Under Review</span>
+                <span className="text-sm font-black text-amber-900">8 Dossiers</span>
+              </div>
+              <div className="p-2 rounded-lg bg-emerald-50 border border-emerald-200">
+                <span className="text-[10px] font-bold text-emerald-800 uppercase block">Approved</span>
+                <span className="text-sm font-black text-emerald-900">10 Conferred</span>
+              </div>
+              <div className="p-2 rounded-lg bg-rose-50 border border-rose-200">
+                <span className="text-[10px] font-bold text-rose-800 uppercase block">Rejected</span>
+                <span className="text-sm font-black text-rose-900">3 Declined</span>
+              </div>
+            </div>
+
+            {/* Recharts Bar Chart: Honorary Submissions */}
+            <div className="h-64 w-full pt-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={HONORARY_SUBMISSION_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                  <XAxis dataKey="period" tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748B' }} tickLine={false} axisLine={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '12px',
+                      borderColor: '#E2E8F0',
+                      fontSize: '12px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }} />
+                  <Bar dataKey="Submitted" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Under Review" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Approved" fill="#10B981" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="Rejected" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Chart 3: Active Examination Center Activity */}
+          <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-sm font-bold text-[#002366] tracking-tight">
+                    Active Examination Center Activity
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Candidate volume & physical proctored centers by hub.
+                </p>
+              </div>
+
+              <div className="inline-flex rounded-lg border border-slate-200 p-0.5 bg-slate-50 text-[11px]">
+                <button
+                  onClick={() => setExamMetric('candidates')}
+                  className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                    examMetric === 'candidates' ? 'bg-[#002366] text-white' : 'text-slate-600'
+                  }`}
+                >
+                  Candidates
+                </button>
+                <button
+                  onClick={() => setExamMetric('centers')}
+                  className={`px-2 py-0.5 rounded font-medium transition-colors ${
+                    examMetric === 'centers' ? 'bg-[#002366] text-white' : 'text-slate-600'
+                  }`}
+                >
+                  Centers
+                </button>
+              </div>
+            </div>
+
+            {/* Regional Hub Activity Bar Chart */}
+            <div className="h-60 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  layout="vertical"
+                  data={EXAM_CENTER_ACTIVITY_DATA}
+                  margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#E2E8F0" />
+                  <XAxis type="number" tick={{ fontSize: 10, fill: '#64748B' }} tickLine={false} />
+                  <YAxis
+                    dataKey="hub"
+                    type="category"
+                    tick={{ fontSize: 10, fill: '#1E293B', fontWeight: 600 }}
+                    tickLine={false}
+                    width={105}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: '#FFFFFF',
+                      borderRadius: '12px',
+                      borderColor: '#E2E8F0',
+                      fontSize: '11px',
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                    }}
+                    formatter={(val: any) => [
+                      examMetric === 'candidates' ? `${val} Seated Candidates` : `${val} Exam Centers`,
+                      examMetric === 'candidates' ? 'Candidates' : 'Proctored Centers'
+                    ]}
+                  />
+                  <Bar
+                    dataKey={examMetric}
+                    fill="#002366"
+                    radius={[0, 6, 6, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Center Summary Banner */}
+            <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-xl flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-emerald-600 shrink-0" />
+                <div>
+                  <span className="font-bold text-emerald-950 block">Kenya 47 Counties Lead: 98 Centers</span>
+                  <span className="text-[11px] text-emerald-700">840 proctored examination candidates</span>
+                </div>
+              </div>
+              <button
+                onClick={() => onNavigate('exam-centers')}
+                className="text-[11px] font-bold text-emerald-800 underline hover:text-emerald-950"
+              >
+                Inspect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Launchpad & Academic Pipeline (Bottom Section) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
         {/* Core Administrative Links */}
         <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">

@@ -15,10 +15,17 @@ import {
   Eye,
   Plus,
   X,
-  FileCheck,
   Send,
   Upload,
-  AlertCircle
+  AlertCircle,
+  MessageSquare,
+  ShieldCheck,
+  Check,
+  ChevronRight,
+  RotateCcw,
+  Sparkles,
+  Save,
+  Info
 } from 'lucide-react';
 import { HonoraryApplication, HonoraryStatus } from '../../../types/admin';
 
@@ -29,6 +36,15 @@ interface HonoraryApplicationsManagerProps {
   onLogAudit: (action: string, record: string, details?: string) => void;
 }
 
+// Quick Comment Templates for Administrators
+const QUICK_COMMENT_TEMPLATES = [
+  'Senate verification passed: 25+ years exemplary pastoral leadership and church planting verified.',
+  'Dossier under Academic Senate review. Awaiting additional ministerial letters of attestation.',
+  'Approved by Academic Senate for Doctor of Divinity conferral at the upcoming International Convocation.',
+  'Nomination declined: Minimum requirement of 15 years ordained pastoral service is not evidenced in submitted records.',
+  'Nomination dossier verified. Candidate recommended for Doctor of Humane Letters (D.H.L. Honoris Causa).'
+];
+
 export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerProps> = ({
   applications,
   onUpdateStatus,
@@ -37,11 +53,21 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | HonoraryStatus>('All');
-  const [selectedApp, setSelectedApp] = useState<HonoraryApplication | null>(null);
-  const [isReviewing, setIsReviewing] = useState(false);
-  const [reviewComments, setReviewComments] = useState('');
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(
+    applications[0]?.id || null
+  );
+  const [reviewComments, setReviewComments] = useState(
+    applications[0]?.reviewComments || ''
+  );
+  const [customCertNo, setCustomCertNo] = useState('');
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
   const [printModalApp, setPrintModalApp] = useState<HonoraryApplication | null>(null);
-  const [notification, setNotification] = useState<string | null>(null);
+
+  // Modal confirmation for critical decision transitions
+  const [confirmModal, setConfirmModal] = useState<{
+    targetStatus: HonoraryStatus;
+    app: HonoraryApplication;
+  } | null>(null);
 
   // New Nomination Modal State
   const [showNewNomination, setShowNewNomination] = useState(false);
@@ -57,6 +83,10 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
   const [newTenure, setNewTenure] = useState(25);
   const [newCitations, setNewCitations] = useState('');
 
+  // Selected Application Lookup
+  const selectedApp = applications.find((a) => a.id === selectedAppId) || applications[0] || null;
+
+  // Filtered Applications
   const filteredApps = applications.filter((app) => {
     const matchesStatus = statusFilter === 'All' || app.status === statusFilter;
     const matchesSearch =
@@ -68,52 +98,146 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
     return matchesStatus && matchesSearch;
   });
 
-  const handleDecision = (status: HonoraryStatus) => {
-    if (!selectedApp) return;
+  // Calculate status counts for filter badges
+  const statusCounts = {
+    All: applications.length,
+    Submitted: applications.filter((a) => a.status === 'Submitted').length,
+    'Under Review': applications.filter((a) => a.status === 'Under Review').length,
+    Approved: applications.filter((a) => a.status === 'Approved').length,
+    Rejected: applications.filter((a) => a.status === 'Rejected').length,
+    Awarded: applications.filter((a) => a.status === 'Awarded').length
+  };
 
-    let certNo: string | undefined = undefined;
-    if (status === 'Approved' || status === 'Awarded') {
-      certNo = `BIBU-HON-${Date.now().toString().slice(-4)}`;
+  // Helper to sync comments when changing selected candidate
+  const handleSelectApp = (app: HonoraryApplication) => {
+    setSelectedAppId(app.id);
+    setReviewComments(app.reviewComments || '');
+    setCustomCertNo(app.awardCertificateNumber || `BIBU-HON-2026-${Date.now().toString().slice(-4)}`);
+  };
+
+  // Status Badge Component
+  const renderStatusBadge = (status: HonoraryStatus, size: 'sm' | 'md' = 'sm') => {
+    const sizeClasses = size === 'md' ? 'px-3 py-1 text-xs' : 'px-2.5 py-0.5 text-[11px]';
+
+    switch (status) {
+      case 'Submitted':
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-blue-50 text-blue-700 border border-blue-200 ${sizeClasses}`}
+          >
+            <Send className="w-3 h-3 text-blue-600 shrink-0" />
+            <span>Submitted</span>
+          </span>
+        );
+      case 'Under Review':
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-amber-50 text-amber-800 border border-amber-300 ${sizeClasses}`}
+          >
+            <Clock className="w-3 h-3 text-amber-600 shrink-0 animate-spin-slow" />
+            <span>Under Review</span>
+          </span>
+        );
+      case 'Approved':
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-emerald-50 text-emerald-800 border border-emerald-300 ${sizeClasses}`}
+          >
+            <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+            <span>Approved</span>
+          </span>
+        );
+      case 'Rejected':
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-rose-50 text-rose-800 border border-rose-300 ${sizeClasses}`}
+          >
+            <XCircle className="w-3 h-3 text-rose-600 shrink-0" />
+            <span>Rejected</span>
+          </span>
+        );
+      case 'Awarded':
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full font-bold bg-purple-50 text-purple-800 border border-purple-300 ${sizeClasses}`}
+          >
+            <Award className="w-3 h-3 text-purple-600 shrink-0" />
+            <span>Conferred & Awarded</span>
+          </span>
+        );
+      default:
+        return (
+          <span className={`inline-flex items-center rounded-full font-bold bg-slate-100 text-slate-700 ${sizeClasses}`}>
+            {status}
+          </span>
+        );
     }
+  };
 
-    onUpdateStatus(selectedApp.id, status, reviewComments, certNo);
+  // Save comments only without status modification
+  const handleSaveCommentsOnly = () => {
+    if (!selectedApp) return;
+    onUpdateStatus(selectedApp.id, selectedApp.status, reviewComments, selectedApp.awardCertificateNumber);
     onLogAudit(
-      `Updated Honorary Nomination Status to ${status}`,
+      'Updated Administrator Review Notes',
       `${selectedApp.applicationNumber} (${selectedApp.candidateName})`,
-      reviewComments || `Status set to ${status}`
+      reviewComments || 'Notes updated'
     );
-
-    setNotification(`Nomination for ${selectedApp.candidateName} updated to "${status}".`);
-    setSelectedApp(prev => prev ? { ...prev, status, reviewComments, awardCertificateNumber: certNo } : null);
-    setIsReviewing(false);
+    setNotification({
+      message: `Administrator review comments for ${selectedApp.candidateName} saved successfully.`,
+      type: 'success'
+    });
     setTimeout(() => setNotification(null), 3500);
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Application Number', 'Candidate Name', 'Current Title', 'Organization', 'Country', 'Degree', 'Status', 'Nomination Date'];
-    const rows = filteredApps.map(a => [
-      a.applicationNumber,
-      `"${a.candidateName}"`,
-      `"${a.currentTitle}"`,
-      `"${a.ministryOrganization}"`,
-      a.country,
-      `"${a.honoraryDegree}"`,
-      a.status,
-      a.nominationDate
-    ]);
+  // Perform status transition (with audit and notification)
+  const executeStatusTransition = (status: HonoraryStatus, notes?: string, certNo?: string) => {
+    if (!selectedApp) return;
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `BIBU_Honorary_Applications_${new Date().toISOString().slice(0, 10)}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    let finalCertNo: string | undefined = certNo;
+    if ((status === 'Approved' || status === 'Awarded') && !finalCertNo) {
+      finalCertNo = selectedApp.awardCertificateNumber || customCertNo || `BIBU-HON-2026-${Date.now().toString().slice(-4)}`;
+    }
 
-    onLogAudit('Exported Honorary Applications CSV', `Count: ${filteredApps.length}`);
+    const finalNotes = notes !== undefined ? notes : reviewComments;
+
+    onUpdateStatus(selectedApp.id, status, finalNotes, finalCertNo);
+    onLogAudit(
+      `Honorary Status Changed to ${status}`,
+      `${selectedApp.applicationNumber} (${selectedApp.candidateName})`,
+      finalNotes ? `Notes: ${finalNotes}` : `Workflow moved to ${status}`
+    );
+
+    setNotification({
+      message: `Nomination for ${selectedApp.candidateName} updated to "${status}".`,
+      type: 'success'
+    });
+    setConfirmModal(null);
+    setTimeout(() => setNotification(null), 3500);
   };
 
+  // Quick Action from list row
+  const handleQuickStatusChange = (app: HonoraryApplication, newStatus: HonoraryStatus) => {
+    let certNo: string | undefined = undefined;
+    if (newStatus === 'Approved' || newStatus === 'Awarded') {
+      certNo = app.awardCertificateNumber || `BIBU-HON-2026-${Date.now().toString().slice(-4)}`;
+    }
+
+    onUpdateStatus(app.id, newStatus, app.reviewComments, certNo);
+    onLogAudit(
+      `Quick Status Update to ${newStatus}`,
+      `${app.applicationNumber} (${app.candidateName})`,
+      `Changed directly from list view`
+    );
+
+    setNotification({
+      message: `Candidate ${app.candidateName} transitioned to "${newStatus}".`,
+      type: 'info'
+    });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  // Submission of New Candidate Nomination Dossier
   const handleCreateNomination = (e: React.FormEvent) => {
     e.preventDefault();
     const appNo = `BIBU-HON-2026-${(applications.length + 1).toString().padStart(3, '0')}`;
@@ -130,18 +254,25 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
       nominationCategory: newCategory,
       rationale: newRationale,
       ministryTenureYears: Number(newTenure),
-      achievements: [newRationale.slice(0, 80)],
-      citations: newCitations || `In recognition of dedicated gospel ministry and distinguished leadership.`,
+      achievements: [newRationale.slice(0, 90)],
+      citations: newCitations || `In recognition of dedicated gospel ministry and distinguished ecclesiastical leadership.`,
       documents: [{ name: 'Candidate_Nomination_Dossier.pdf', type: 'PDF', size: '2.4 MB' }],
       status: 'Submitted',
-      nominationDate: new Date().toISOString().slice(0, 10)
+      nominationDate: new Date().toISOString().slice(0, 10),
+      reviewComments: 'Dossier received and indexed. Ready for Academic Senate review.'
     };
 
     onAddApplication(newApp);
     onLogAudit('Submitted New Honorary Nomination', `${appNo} (${newCandidateName})`);
-    setNotification(`Nomination dossier for "${newCandidateName}" successfully registered!`);
+    setNotification({
+      message: `Nomination dossier for "${newCandidateName}" successfully registered with status "Submitted"!`,
+      type: 'success'
+    });
     setShowNewNomination(false);
-    // Reset form
+    setSelectedAppId(newApp.id);
+    setReviewComments(newApp.reviewComments || '');
+
+    // Reset Form
     setNewCandidateName('');
     setNewEmail('');
     setNewPhone('');
@@ -152,6 +283,23 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
     setTimeout(() => setNotification(null), 3500);
   };
 
+  // Workflow Stages Visual Stepper Helper
+  const getWorkflowStep = (status: HonoraryStatus) => {
+    switch (status) {
+      case 'Submitted':
+        return 1;
+      case 'Under Review':
+        return 2;
+      case 'Approved':
+      case 'Rejected':
+        return 3;
+      case 'Awarded':
+        return 4;
+      default:
+        return 1;
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
@@ -159,13 +307,13 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#C5A059] uppercase tracking-wider mb-1">
             <Award className="w-4 h-4" />
-            <span>Senate Adjudication & Honorary Doctorates Control</span>
+            <span>Academic Senate & Board of Regents Adjudication</span>
           </div>
           <h2 className="text-xl font-display font-black text-[#002366]">
-            Honorary Applications & Awards Adjudication
+            Honorary Applications & Approval Workflow
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Adjudicate nominations for Doctor of Divinity (D.D.), Doctor of Humane Letters (D.H.L.), and Doctor of Sacred Theology (S.T.D.).
+            Adjudicate honorary nominations with status tracking across Submitted, Under Review, Approved, and Rejected stages.
           </p>
         </div>
 
@@ -179,7 +327,28 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
           </button>
 
           <button
-            onClick={handleExportCSV}
+            onClick={() => {
+              const headers = ['Application Number', 'Candidate Name', 'Current Title', 'Organization', 'Country', 'Degree', 'Status', 'Cert Number', 'Comments'];
+              const rows = filteredApps.map((a) => [
+                a.applicationNumber,
+                `"${a.candidateName}"`,
+                `"${a.currentTitle}"`,
+                `"${a.ministryOrganization}"`,
+                a.country,
+                `"${a.honoraryDegree}"`,
+                a.status,
+                `"${a.awardCertificateNumber || 'N/A'}"`,
+                `"${(a.reviewComments || '').replace(/"/g, '""')}"`
+              ]);
+              const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
+              const link = document.createElement('a');
+              link.setAttribute('href', encodeURI(csvContent));
+              link.setAttribute('download', `BIBU_Honorary_Applications_${new Date().toISOString().slice(0, 10)}.csv`);
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              onLogAudit('Exported Honorary Applications CSV', `Count: ${filteredApps.length}`);
+            }}
             className="px-3 py-2 rounded-xl border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-all"
             title="Export to CSV"
           >
@@ -189,12 +358,124 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
         </div>
       </div>
 
+      {/* Real-time Notification Banner */}
       {notification && (
-        <div className="p-3 bg-emerald-50 border-l-4 border-emerald-600 rounded-r-xl text-emerald-800 text-xs font-bold flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-          <span>{notification}</span>
+        <div
+          className={`p-3.5 rounded-xl border flex items-center justify-between text-xs font-bold transition-all shadow-xs ${
+            notification.type === 'success'
+              ? 'bg-emerald-50 border-emerald-300 text-emerald-900'
+              : notification.type === 'error'
+              ? 'bg-rose-50 border-rose-300 text-rose-900'
+              : 'bg-blue-50 border-blue-300 text-blue-900'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            {notification.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            ) : notification.type === 'error' ? (
+              <XCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            ) : (
+              <Info className="w-4 h-4 text-blue-600 shrink-0" />
+            )}
+            <span>{notification.message}</span>
+          </div>
+          <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-600">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
+
+      {/* Interactive Workflow Status Filter Pills */}
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => setStatusFilter('All')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'All'
+              ? 'bg-[#002366] text-white border-[#002366] shadow-xs'
+              : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <span>All Dossiers</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'All' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
+            {statusCounts.All}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('Submitted')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'Submitted'
+              ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+              : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50'
+          }`}
+        >
+          <Send className="w-3.5 h-3.5" />
+          <span>Submitted</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'Submitted' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-800'}`}>
+            {statusCounts.Submitted}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('Under Review')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'Under Review'
+              ? 'bg-amber-600 text-white border-amber-600 shadow-xs'
+              : 'bg-white text-amber-800 border-amber-300 hover:bg-amber-50'
+          }`}
+        >
+          <Clock className="w-3.5 h-3.5" />
+          <span>Under Review</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'Under Review' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-900'}`}>
+            {statusCounts['Under Review']}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('Approved')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'Approved'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs'
+              : 'bg-white text-emerald-800 border-emerald-300 hover:bg-emerald-50'
+          }`}
+        >
+          <CheckCircle2 className="w-3.5 h-3.5" />
+          <span>Approved</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'Approved' ? 'bg-white/20 text-white' : 'bg-emerald-100 text-emerald-900'}`}>
+            {statusCounts.Approved}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('Rejected')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'Rejected'
+              ? 'bg-rose-600 text-white border-rose-600 shadow-xs'
+              : 'bg-white text-rose-800 border-rose-300 hover:bg-rose-50'
+          }`}
+        >
+          <XCircle className="w-3.5 h-3.5" />
+          <span>Rejected</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'Rejected' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-900'}`}>
+            {statusCounts.Rejected}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setStatusFilter('Awarded')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border ${
+            statusFilter === 'Awarded'
+              ? 'bg-purple-700 text-white border-purple-700 shadow-xs'
+              : 'bg-white text-purple-800 border-purple-200 hover:bg-purple-50'
+          }`}
+        >
+          <Award className="w-3.5 h-3.5" />
+          <span>Awarded</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${statusFilter === 'Awarded' ? 'bg-white/20 text-white' : 'bg-purple-100 text-purple-900'}`}>
+            {statusCounts.Awarded}
+          </span>
+        </button>
+      </div>
 
       {/* Filter & Search Bar */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -205,130 +486,258 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
             placeholder="Search candidate name, dossier #, degree, nation, or ministry..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 bg-white"
+            className="w-full pl-9 pr-4 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-1 focus:ring-[#C5A059]"
           />
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-700 w-full sm:w-auto"
-          >
-            <option value="All">All Statuses ({applications.length})</option>
-            <option value="Submitted">Submitted</option>
-            <option value="Under Review">Under Review</option>
-            <option value="Approved">Approved</option>
-            <option value="Awarded">Awarded</option>
-            <option value="Rejected">Rejected</option>
-          </select>
         </div>
       </div>
 
-      {/* Main Content: Split Master-Detail Layout */}
+      {/* Main Split Master-Detail Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Dossiers List (Left) */}
+        {/* Dossiers List (Left 5 cols) */}
         <div className="lg:col-span-5 space-y-3">
           <div className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
             <span>Nomination Dossiers ({filteredApps.length})</span>
-            <span className="text-[11px] text-slate-500">Select to inspect</span>
+            <span className="text-[11px] text-slate-500">Select candidate to adjudicate</span>
           </div>
 
           {filteredApps.length === 0 ? (
-            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-500">
-              No honorary applications match the selected criteria.
+            <div className="p-8 text-center bg-white rounded-xl border border-slate-200 text-xs text-slate-500 space-y-2">
+              <Award className="w-8 h-8 text-slate-300 mx-auto" />
+              <p className="font-medium">No honorary applications match the selected status or query.</p>
+              <button
+                onClick={() => {
+                  setStatusFilter('All');
+                  setSearchTerm('');
+                }}
+                className="text-[11px] text-[#002366] font-bold underline"
+              >
+                Clear all filters
+              </button>
             </div>
           ) : (
-            filteredApps.map((app) => {
-              const isSelected = selectedApp?.id === app.id;
-              const statusColors: Record<HonoraryStatus, string> = {
-                Submitted: 'bg-blue-100 text-blue-800 border-blue-200',
-                'Under Review': 'bg-amber-100 text-amber-800 border-amber-200',
-                Approved: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                Awarded: 'bg-purple-100 text-purple-800 border-purple-200',
-                Rejected: 'bg-rose-100 text-rose-800 border-rose-200'
-              };
+            <div className="space-y-2.5 max-h-[750px] overflow-y-auto pr-1">
+              {filteredApps.map((app) => {
+                const isSelected = selectedApp?.id === app.id;
 
-              return (
-                <div
-                  key={app.id}
-                  onClick={() => {
-                    setSelectedApp(app);
-                    setIsReviewing(false);
-                    setReviewComments(app.reviewComments || '');
-                  }}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer text-left ${
-                    isSelected
-                      ? 'bg-amber-50/50 border-[#C5A059] shadow-sm ring-1 ring-[#C5A059]'
-                      : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">
-                        {app.applicationNumber} • {app.nominationDate}
-                      </span>
-                      <h4 className="text-xs font-bold text-[#002366] truncate mt-0.5">
-                        {app.candidateName}
-                      </h4>
-                      <p className="text-[11px] text-slate-600 truncate">
-                        {app.currentTitle}
-                      </p>
+                return (
+                  <div
+                    key={app.id}
+                    onClick={() => handleSelectApp(app)}
+                    className={`p-4 rounded-xl border transition-all cursor-pointer text-left ${
+                      isSelected
+                        ? 'bg-amber-50/60 border-[#C5A059] shadow-sm ring-1 ring-[#C5A059]'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-xs'
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-slate-400 uppercase">
+                            {app.applicationNumber}
+                          </span>
+                          <span className="text-[10px] text-slate-400">• {app.nominationDate}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-[#002366] truncate mt-0.5">
+                          {app.candidateName}
+                        </h4>
+                        <p className="text-[11px] text-slate-600 truncate">
+                          {app.currentTitle} • {app.ministryOrganization}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0">{renderStatusBadge(app.status)}</div>
                     </div>
 
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${statusColors[app.status]}`}>
-                      {app.status}
-                    </span>
-                  </div>
+                    <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                      <span className="font-semibold text-amber-900 truncate max-w-[210px]">
+                        {app.honoraryDegree.split('(')[0]}
+                      </span>
+                      <span className="flex items-center gap-1 shrink-0">
+                        <MapPin className="w-3 h-3 text-slate-400" />
+                        <span>{app.country}</span>
+                      </span>
+                    </div>
 
-                  <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                    <span className="font-semibold text-amber-800 truncate max-w-[200px]">
-                      {app.honoraryDegree.split('(')[0]}
-                    </span>
-                    <span className="flex items-center gap-1 shrink-0">
-                      <MapPin className="w-3 h-3 text-slate-400" />
-                      <span>{app.country}</span>
-                    </span>
+                    {/* Quick inline status switcher */}
+                    <div className="mt-2 pt-2 border-t border-dashed border-slate-200 flex items-center justify-between text-[10px]" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-slate-400 font-mono">Quick Triage:</span>
+                      <div className="flex items-center gap-1">
+                        {app.status !== 'Under Review' && (
+                          <button
+                            onClick={() => handleQuickStatusChange(app, 'Under Review')}
+                            className="px-1.5 py-0.5 rounded bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold"
+                            title="Quick transition to Under Review"
+                          >
+                            Review
+                          </button>
+                        )}
+                        {app.status !== 'Approved' && (
+                          <button
+                            onClick={() => handleQuickStatusChange(app, 'Approved')}
+                            className="px-1.5 py-0.5 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold"
+                            title="Quick transition to Approved"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {app.status !== 'Rejected' && (
+                          <button
+                            onClick={() => handleQuickStatusChange(app, 'Rejected')}
+                            className="px-1.5 py-0.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200 font-bold"
+                            title="Quick transition to Rejected"
+                          >
+                            Reject
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </div>
 
-        {/* Detailed Dossier Inspector (Right) */}
+        {/* Detailed Dossier Inspector & Approval Workflow (Right 7 cols) */}
         <div className="lg:col-span-7">
           {selectedApp ? (
             <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6">
               {/* Header Bar */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
                 <div>
-                  <span className="text-[10px] font-mono font-bold text-[#C5A059] uppercase tracking-wider block">
-                    Candidate Dossier • {selectedApp.applicationNumber}
-                  </span>
-                  <h3 className="text-lg font-display font-black text-[#002366]">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-mono font-bold text-[#C5A059] uppercase tracking-wider">
+                      Candidate Dossier • {selectedApp.applicationNumber}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      (Nominated {selectedApp.nominationDate})
+                    </span>
+                  </div>
+                  <h3 className="text-xl font-display font-black text-[#002366] mt-0.5">
                     {selectedApp.candidateName}
                   </h3>
                   <p className="text-xs text-slate-600">
-                    {selectedApp.currentTitle} — {selectedApp.ministryOrganization}
+                    {selectedApp.currentTitle} — {selectedApp.ministryOrganization}, {selectedApp.country}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={() => setPrintModalApp(selectedApp)}
                     className="px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
                   >
                     <Printer className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Print Citation Letter</span>
+                    <span>Print Citation</span>
                   </button>
                 </div>
               </div>
 
-              {/* Status and Proposed Degree Box */}
+              {/* INTERACTIVE WORKFLOW STEPPER PIPELINE */}
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+                    <span>Adjudication Lifecycle Pipeline</span>
+                  </span>
+                  <div>{renderStatusBadge(selectedApp.status, 'md')}</div>
+                </div>
+
+                {/* 4-Step Progress Track */}
+                <div className="grid grid-cols-4 gap-2 pt-1 text-center">
+                  {/* Step 1: Submitted */}
+                  <div
+                    className={`p-2 rounded-lg border text-xs flex flex-col items-center gap-1 ${
+                      selectedApp.status === 'Submitted'
+                        ? 'bg-blue-50 border-blue-400 text-blue-900 font-bold ring-2 ring-blue-300'
+                        : getWorkflowStep(selectedApp.status) > 1
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-white border">
+                      {getWorkflowStep(selectedApp.status) > 1 ? (
+                        <Check className="w-3 h-3 text-emerald-600" />
+                      ) : (
+                        '1'
+                      )}
+                    </div>
+                    <span className="text-[11px] font-medium leading-tight">Submitted</span>
+                  </div>
+
+                  {/* Step 2: Under Review */}
+                  <div
+                    className={`p-2 rounded-lg border text-xs flex flex-col items-center gap-1 ${
+                      selectedApp.status === 'Under Review'
+                        ? 'bg-amber-50 border-amber-400 text-amber-900 font-bold ring-2 ring-amber-300'
+                        : getWorkflowStep(selectedApp.status) > 2
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-white border">
+                      {getWorkflowStep(selectedApp.status) > 2 ? (
+                        <Check className="w-3 h-3 text-emerald-600" />
+                      ) : (
+                        '2'
+                      )}
+                    </div>
+                    <span className="text-[11px] font-medium leading-tight">Under Review</span>
+                  </div>
+
+                  {/* Step 3: Decision (Approved or Rejected) */}
+                  <div
+                    className={`p-2 rounded-lg border text-xs flex flex-col items-center gap-1 ${
+                      selectedApp.status === 'Approved'
+                        ? 'bg-emerald-50 border-emerald-400 text-emerald-900 font-bold ring-2 ring-emerald-300'
+                        : selectedApp.status === 'Rejected'
+                        ? 'bg-rose-50 border-rose-400 text-rose-900 font-bold ring-2 ring-rose-300'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-white border">
+                      {selectedApp.status === 'Approved' ? (
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      ) : selectedApp.status === 'Rejected' ? (
+                        <XCircle className="w-3 h-3 text-rose-600" />
+                      ) : (
+                        '3'
+                      )}
+                    </div>
+                    <span className="text-[11px] font-medium leading-tight">
+                      {selectedApp.status === 'Rejected' ? 'Rejected' : 'Approved'}
+                    </span>
+                  </div>
+
+                  {/* Step 4: Convocation Awarded */}
+                  <div
+                    className={`p-2 rounded-lg border text-xs flex flex-col items-center gap-1 ${
+                      selectedApp.status === 'Awarded'
+                        ? 'bg-purple-50 border-purple-400 text-purple-900 font-bold ring-2 ring-purple-300'
+                        : 'bg-white border-slate-200 text-slate-400'
+                    }`}
+                  >
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold bg-white border">
+                      <Award className="w-3 h-3 text-purple-600" />
+                    </div>
+                    <span className="text-[11px] font-medium leading-tight">Conferred</span>
+                  </div>
+                </div>
+
+                {/* Certificate Number Display */}
+                {selectedApp.awardCertificateNumber && (
+                  <div className="p-2.5 bg-emerald-50/70 border border-emerald-200 rounded-lg flex items-center justify-between text-xs">
+                    <span className="text-emerald-800 font-medium">Official Award Certificate Issued:</span>
+                    <span className="font-mono font-bold text-emerald-950 bg-white px-2 py-0.5 rounded border border-emerald-300">
+                      {selectedApp.awardCertificateNumber}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Nominated Degree & Pastoral Tenure Box */}
               <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-slate-400 font-medium block">Nominated Degree:</span>
+                  <span className="text-slate-400 font-medium block">Conferred Degree & Title:</span>
                   <span className="font-bold text-[#002366] text-sm block mt-0.5">
                     {selectedApp.honoraryDegree}
                   </span>
@@ -338,25 +747,21 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
                 </div>
 
                 <div>
-                  <span className="text-slate-400 font-medium block">Adjudication Status:</span>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="font-bold text-xs uppercase px-2.5 py-0.5 rounded-full bg-[#002366] text-white">
-                      {selectedApp.status}
-                    </span>
-                    {selectedApp.awardCertificateNumber && (
-                      <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Cert: {selectedApp.awardCertificateNumber}
-                      </span>
-                    )}
-                  </div>
+                  <span className="text-slate-400 font-medium block">Tenure & Ministry Service:</span>
+                  <span className="font-bold text-slate-800 text-sm block mt-0.5">
+                    {selectedApp.ministryTenureYears} Years Pastoral Leadership
+                  </span>
+                  <span className="text-[11px] text-slate-500 block mt-0.5">
+                    Contact: {selectedApp.email} • {selectedApp.phone}
+                  </span>
                 </div>
               </div>
 
-              {/* Ministry Tenure & Rationale */}
-              <div className="space-y-2">
+              {/* Pastoral Ministry Rationale */}
+              <div className="space-y-1.5">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span>Ministry Tenure & Rationale ({selectedApp.ministryTenureYears} Years in Service)</span>
+                  <span>Ministry Impact & Pastoral Rationale</span>
                 </h4>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed">
                   {selectedApp.rationale}
@@ -364,7 +769,7 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
               </div>
 
               {/* Official Academic Citation */}
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-[#C5A059]" />
                   <span>Proposed Convocation Academic Citation</span>
@@ -374,8 +779,8 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
                 </div>
               </div>
 
-              {/* Supporting Evidence Documents */}
-              <div className="space-y-2">
+              {/* Supporting Dossier Documents */}
+              <div className="space-y-1.5">
                 <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                   <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
                   <span>Verified Supporting Documentation</span>
@@ -384,7 +789,7 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
                   {selectedApp.documents.map((doc, idx) => (
                     <div
                       key={idx}
-                      className="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between text-xs"
+                      className="p-2.5 rounded-lg border border-slate-200 bg-white flex items-center justify-between text-xs hover:border-slate-300"
                     >
                       <div className="flex items-center gap-2 truncate">
                         <FileText className="w-4 h-4 text-blue-600 shrink-0" />
@@ -396,58 +801,168 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
                 </div>
               </div>
 
-              {/* Adjudication Decision Controls */}
-              <div className="pt-4 border-t border-slate-200 space-y-3">
-                <h4 className="text-xs font-bold text-[#002366] uppercase tracking-wider">
-                  Senate Adjudication Action:
-                </h4>
+              {/* ADMINISTRATOR COMMENT FIELD & COMMITTEE NOTES SECTION */}
+              <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-[#002366]" />
+                    <h4 className="text-xs font-bold text-[#002366] uppercase tracking-wider">
+                      Administrator & Senate Committee Review Notes
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {reviewComments.length} / 1000 chars
+                  </span>
+                </div>
 
-                <div className="space-y-2">
-                  <label className="block text-[11px] text-slate-500 font-medium">
-                    Senate Committee Review Notes & Comments:
-                  </label>
+                <p className="text-[11px] text-slate-500">
+                  Record official committee findings, commendations, or reasons for status modification. Comments are securely audited into the candidate's permanent record.
+                </p>
+
+                {/* Textarea for Administrator Comments */}
+                <div className="relative">
                   <textarea
-                    rows={2}
+                    rows={3}
+                    maxLength={1000}
                     value={reviewComments}
                     onChange={(e) => setReviewComments(e.target.value)}
-                    placeholder="Enter review findings, committee commendations, or reasons for status change..."
-                    className="w-full p-2.5 text-xs rounded-xl border border-slate-300 bg-slate-50 focus:bg-white focus:ring-1 focus:ring-[#C5A059]"
+                    placeholder="Enter official Senate committee deliberations, verified ecclesiastical tenure, or reason for decision..."
+                    className="w-full p-3 text-xs rounded-xl border border-slate-300 bg-white focus:outline-hidden focus:ring-2 focus:ring-[#C5A059] shadow-inner font-sans"
                   />
                 </div>
 
-                <div className="flex flex-wrap gap-2 pt-1">
+                {/* Quick Comment Preset Templates */}
+                <div className="space-y-1.5">
+                  <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider block">
+                    Quick Preset Comments (Click to insert):
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_COMMENT_TEMPLATES.map((tmpl, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setReviewComments(tmpl)}
+                        className="text-[10px] px-2.5 py-1 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 text-slate-700 text-left transition-colors truncate max-w-xs"
+                        title={tmpl}
+                      >
+                        {tmpl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action to Save Comments Only without status change */}
+                <div className="flex justify-end pt-1">
                   <button
-                    onClick={() => handleDecision('Approved')}
-                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                    onClick={handleSaveCommentsOnly}
+                    className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+                  >
+                    <Save className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Save Notes Only</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* INTERACTIVE WORKFLOW APPROVAL ACTIONS */}
+              <div className="pt-2 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-[#002366] uppercase tracking-wider flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+                    <span>Execute Workflow Decision</span>
+                  </h4>
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Current: <strong>{selectedApp.status}</strong>
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  {/* Action 1: Move to Under Review */}
+                  <button
+                    onClick={() => {
+                      if (selectedApp.status === 'Under Review') {
+                        setNotification({ message: 'Nomination is already Under Review.', type: 'info' });
+                        return;
+                      }
+                      executeStatusTransition('Under Review');
+                    }}
+                    disabled={selectedApp.status === 'Under Review'}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${
+                      selectedApp.status === 'Under Review'
+                        ? 'bg-amber-50 border-amber-300 text-amber-900 opacity-60 cursor-not-allowed'
+                        : 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-xs hover:shadow-md'
+                    }`}
+                  >
+                    <Clock className="w-4 h-4" />
+                    <span>Under Review</span>
+                  </button>
+
+                  {/* Action 2: Approve Nomination */}
+                  <button
+                    onClick={() => {
+                      setConfirmModal({
+                        targetStatus: 'Approved',
+                        app: selectedApp
+                      });
+                    }}
+                    disabled={selectedApp.status === 'Approved'}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${
+                      selectedApp.status === 'Approved'
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-900 opacity-60 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-700 shadow-xs hover:shadow-md'
+                    }`}
                   >
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Approve Nomination</span>
                   </button>
 
+                  {/* Action 3: Reject Nomination */}
                   <button
-                    onClick={() => handleDecision('Awarded')}
-                    className="px-3.5 py-2 rounded-xl bg-[#002366] hover:bg-[#001845] text-[#C5A059] font-bold text-xs flex items-center gap-1.5 border border-[#C5A059] transition-colors shadow-xs"
-                  >
-                    <Award className="w-4 h-4 text-[#C5A059]" />
-                    <span>Mark as Awarded (Convocation)</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDecision('Under Review')}
-                    className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
-                  >
-                    <Clock className="w-4 h-4" />
-                    <span>Mark Under Review</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDecision('Rejected')}
-                    className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center gap-1.5 transition-colors"
+                    onClick={() => {
+                      setConfirmModal({
+                        targetStatus: 'Rejected',
+                        app: selectedApp
+                      });
+                    }}
+                    disabled={selectedApp.status === 'Rejected'}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${
+                      selectedApp.status === 'Rejected'
+                        ? 'bg-rose-50 border-rose-300 text-rose-900 opacity-60 cursor-not-allowed'
+                        : 'bg-rose-600 hover:bg-rose-700 text-white border-rose-700 shadow-xs hover:shadow-md'
+                    }`}
                   >
                     <XCircle className="w-4 h-4" />
                     <span>Reject Nomination</span>
                   </button>
+
+                  {/* Action 4: Mark as Conferred / Awarded */}
+                  <button
+                    onClick={() => {
+                      executeStatusTransition('Awarded');
+                    }}
+                    disabled={selectedApp.status === 'Awarded'}
+                    className={`p-2.5 rounded-xl border text-xs font-bold flex flex-col items-center justify-center gap-1 transition-all ${
+                      selectedApp.status === 'Awarded'
+                        ? 'bg-purple-50 border-purple-300 text-purple-900 opacity-60 cursor-not-allowed'
+                        : 'bg-[#002366] hover:bg-[#001845] text-[#C5A059] border-[#C5A059] shadow-xs hover:shadow-md'
+                    }`}
+                  >
+                    <Award className="w-4 h-4 text-[#C5A059]" />
+                    <span>Confer (Awarded)</span>
+                  </button>
                 </div>
+
+                {/* Reset to Submitted Option */}
+                {selectedApp.status !== 'Submitted' && (
+                  <div className="pt-2 flex justify-end">
+                    <button
+                      onClick={() => executeStatusTransition('Submitted', 'Workflow reset to Submitted by administrator.')}
+                      className="text-[11px] text-slate-500 hover:text-slate-800 flex items-center gap-1 hover:underline"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Re-open / Reset to Submitted</span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ) : (
@@ -461,6 +976,99 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
           )}
         </div>
       </div>
+
+      {/* Confirmation Modal for Critical Transitions (Approve / Reject) */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-in">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                {confirmModal.targetStatus === 'Approved' ? (
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                ) : (
+                  <XCircle className="w-5 h-5 text-rose-600" />
+                )}
+                <h3 className="text-sm font-bold uppercase tracking-wider text-[#002366]">
+                  Confirm {confirmModal.targetStatus} Decision
+                </h3>
+              </div>
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <p className="text-slate-600">
+                You are about to change the adjudication status for{' '}
+                <strong className="text-[#002366]">{confirmModal.app.candidateName}</strong> to{' '}
+                <strong className={confirmModal.targetStatus === 'Approved' ? 'text-emerald-700' : 'text-rose-700'}>
+                  {confirmModal.targetStatus}
+                </strong>
+                .
+              </p>
+
+              {confirmModal.targetStatus === 'Approved' && (
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">
+                    Conferral Certificate Number:
+                  </label>
+                  <input
+                    type="text"
+                    value={customCertNo || `BIBU-HON-2026-${Date.now().toString().slice(-4)}`}
+                    onChange={(e) => setCustomCertNo(e.target.value)}
+                    className="w-full p-2 rounded-lg border border-slate-300 font-mono text-xs bg-slate-50"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block font-bold text-slate-700 mb-1">
+                  Administrator Review Notes / Rationale:
+                </label>
+                <textarea
+                  rows={3}
+                  value={reviewComments}
+                  onChange={(e) => setReviewComments(e.target.value)}
+                  placeholder={
+                    confirmModal.targetStatus === 'Approved'
+                      ? 'Approved upon Academic Senate recommendation...'
+                      : 'Please provide justification for rejection...'
+                  }
+                  className="w-full p-2.5 rounded-lg border border-slate-300 text-xs focus:ring-1 focus:ring-[#C5A059]"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                onClick={() => setConfirmModal(null)}
+                className="px-3.5 py-1.5 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() =>
+                  executeStatusTransition(
+                    confirmModal.targetStatus,
+                    reviewComments,
+                    confirmModal.targetStatus === 'Approved' ? customCertNo : undefined
+                  )
+                }
+                className={`px-4 py-1.5 rounded-lg text-white font-bold text-xs shadow-xs ${
+                  confirmModal.targetStatus === 'Approved'
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-rose-600 hover:bg-rose-700'
+                }`}
+              >
+                Confirm {confirmModal.targetStatus}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Nomination Dossier Modal */}
       {showNewNomination && (
@@ -647,11 +1255,11 @@ export const HonoraryApplicationsManager: React.FC<HonoraryApplicationsManagerPr
 
             <div className="space-y-4 py-2 font-serif text-slate-800 text-sm leading-relaxed">
               <p>Be it known to all that the Academic Senate of Breakthrough International Bible University, upon the recommendation of the Board of Regents, does hereby confer upon:</p>
-              
+
               <h3 className="text-2xl font-bold text-[#002366] font-display">
                 {printModalApp.candidateName}
               </h3>
-              
+
               <p className="text-xs text-slate-600 font-sans">
                 {printModalApp.currentTitle} • {printModalApp.ministryOrganization}
               </p>
