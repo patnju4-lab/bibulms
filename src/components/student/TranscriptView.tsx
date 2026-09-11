@@ -23,7 +23,13 @@ import {
   QrCode,
   RotateCcw,
   BadgePercent,
-  CheckCircle
+  CheckCircle,
+  Mail,
+  History,
+  Clock,
+  Lock,
+  ArrowRightLeft,
+  MessageSquare
 } from 'lucide-react';
 import {
   exportTranscriptToPdf,
@@ -31,7 +37,25 @@ import {
 } from '../../utils/academicTranscriptPdfExport';
 import { TranscriptGeneratorModal } from './TranscriptGeneratorModal';
 import { TranscriptVerificationModal } from './TranscriptVerificationModal';
+import { EmailTranscriptModal } from './EmailTranscriptModal';
+import { SecureShareModal } from './SecureShareModal';
+import { TranscriptQrModal } from './TranscriptQrModal';
+import { CreditTransferEvaluatorModal } from './CreditTransferEvaluatorModal';
+import { GradeAppealModal } from './GradeAppealModal';
 import { GradeRecord } from '../../types';
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ReferenceLine,
+  Area,
+  AreaChart
+} from 'recharts';
 
 export const TranscriptView: React.FC = () => {
   const { currentUser, setCurrentView, grades } = useApp();
@@ -42,8 +66,14 @@ export const TranscriptView: React.FC = () => {
   // Modal states
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
   const [isVerificationOpen, setIsVerificationOpen] = useState(false);
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isSecureShareOpen, setIsSecureShareOpen] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isCreditEvaluatorOpen, setIsCreditEvaluatorOpen] = useState(false);
+  const [isGradeAppealOpen, setIsGradeAppealOpen] = useState(false);
   const [exportProgress, setExportProgress] = useState<TranscriptPdfProgress | null>(null);
   const [copiedRefToast, setCopiedRefToast] = useState(false);
+  const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
 
   // Configuration options for official transcript compilation
   const [showOptionsPanel, setShowOptionsPanel] = useState(false);
@@ -55,6 +85,72 @@ export const TranscriptView: React.FC = () => {
   const [includeInstructors, setIncludeInstructors] = useState(true);
   const [transcriptPurpose, setTranscriptPurpose] = useState<string>('Official Registrar Copy');
   const [issueDate, setIssueDate] = useState<string>('September 10, 2026');
+
+  interface TranscriptActivityLogItem {
+    id: string;
+    timestamp: string;
+    action: 'Generated PDF' | 'Downloaded CSV' | 'Emailed Transcript' | 'Verified Document' | 'Printed Report';
+    ipAddress: string;
+    status: 'Success' | 'Verified' | 'Dispatched';
+    details: string;
+  }
+
+  const [activityLogs, setActivityLogs] = useState<TranscriptActivityLogItem[]>([
+    {
+      id: 'log-1',
+      timestamp: 'Today, 08:35 AM',
+      action: 'Generated PDF',
+      ipAddress: '192.168.1.45 (Phoenix, AZ)',
+      status: 'Success',
+      details: 'Official Registrar Copy compiled with cryptographic verification hash.'
+    },
+    {
+      id: 'log-2',
+      timestamp: 'Yesterday, 04:12 PM',
+      action: 'Verified Document',
+      ipAddress: '172.56.21.90 (External Board)',
+      status: 'Verified',
+      details: 'Cryptographic hash check passed successfully against university ledger.'
+    },
+    {
+      id: 'log-3',
+      timestamp: 'May 14, 2026, 11:20 AM',
+      action: 'Emailed Transcript',
+      ipAddress: '192.168.1.45 (Phoenix, AZ)',
+      status: 'Dispatched',
+      details: 'Dispatched official transcript securely via SendGrid to admissions@seminary.edu.'
+    }
+  ]);
+
+  const logActivity = (action: TranscriptActivityLogItem['action'], details: string) => {
+    const newLog: TranscriptActivityLogItem = {
+      id: `log-${Date.now()}`,
+      timestamp: 'Just now',
+      action,
+      ipAddress: '192.168.1.45 (Current Session)',
+      status: action === 'Emailed Transcript' ? 'Dispatched' : action === 'Verified Document' ? 'Verified' : 'Success',
+      details
+    };
+    setActivityLogs(prev => [newLog, ...prev]);
+  };
+
+  // Digital Signatures State
+  const [chancellorSigUrl, setChancellorSigUrl] = useState<string | null>(null);
+  const [deanSigUrl, setDeanSigUrl] = useState<string | null>(null);
+  const [registrarSigUrl, setRegistrarSigUrl] = useState<string | null>(null);
+
+  const handleSigUpload = (e: React.ChangeEvent<HTMLInputElement>, setter: (val: string | null) => void) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setter(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   // Filter student grades from context or fallback to comprehensive default course records
   const studentGrades = useMemo(() => {
@@ -300,6 +396,7 @@ export const TranscriptView: React.FC = () => {
   const handleGeneratePdf = async () => {
     if (!transcriptDocumentRef.current) return;
     setIsGeneratorOpen(true);
+    logActivity('Generated PDF', `Compiled official academic transcript PDF (${pdfFilename}).`);
 
     try {
       await exportTranscriptToPdf(transcriptDocumentRef.current, {
@@ -314,7 +411,43 @@ export const TranscriptView: React.FC = () => {
     }
   };
 
+  const handleExportCsv = () => {
+    const headers = ['Student ID', 'Student Name', 'Semester', 'Course Code', 'Course Title', 'Credits', 'Letter Grade', 'Grade Point', 'Quality Points', 'Instructor'];
+    const rows = studentGrades.map((g) => [
+      currentUser.studentId,
+      `"${currentUser.name}"`,
+      `"${g.semester}"`,
+      `"${g.courseCode}"`,
+      `"${g.courseTitle}"`,
+      g.creditHours,
+      g.letterGrade,
+      g.gradePoint,
+      g.qualityPoints ?? (g.creditHours * g.gradePoint),
+      `"${g.instructorName || 'Department Faculty'}"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `BIBU_Academic_Transcript_${currentUser.studentId}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    logActivity('Downloaded CSV', `Downloaded academic course records CSV export.`);
+  };
+
+  const handleExport = () => {
+    if (exportFormat === 'csv') {
+      handleExportCsv();
+    } else {
+      handleGeneratePdf();
+    }
+  };
+
   const handlePrint = () => {
+    logActivity('Printed Report', `Sent transcript layout to local printer.`);
     window.print();
   };
 
@@ -362,6 +495,46 @@ export const TranscriptView: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setIsEmailModalOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
+          >
+            <Mail className="w-3.5 h-3.5 text-[#002366]" />
+            <span>Email Transcript</span>
+          </button>
+
+          <button
+            onClick={() => setIsSecureShareOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
+          >
+            <Lock className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Secure Share</span>
+          </button>
+
+          <button
+            onClick={() => setIsQrModalOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
+          >
+            <QrCode className="w-3.5 h-3.5 text-emerald-700" />
+            <span>QR Authenticator</span>
+          </button>
+
+          <button
+            onClick={() => setIsCreditEvaluatorOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
+          >
+            <ArrowRightLeft className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Credit Evaluator</span>
+          </button>
+
+          <button
+            onClick={() => setIsGradeAppealOpen(true)}
+            className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
+          >
+            <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
+            <span>Grade Appeal</span>
+          </button>
+
+          <button
             onClick={handlePrint}
             className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
           >
@@ -369,13 +542,25 @@ export const TranscriptView: React.FC = () => {
             <span>Print Layout</span>
           </button>
 
-          <button
-            onClick={handleGeneratePdf}
-            className="px-4 py-2 rounded-lg bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-2 transition-all active:scale-95"
-          >
-            <Download className="w-4 h-4 text-[#C5A059]" />
-            <span>Generate Official PDF</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <select
+              value={exportFormat}
+              onChange={(e) => setExportFormat(e.target.value as 'pdf' | 'csv')}
+              aria-label="Export Format"
+              className="py-2 px-2.5 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 shadow-xs focus:outline-none focus:ring-1 focus:ring-[#002366]"
+            >
+              <option value="pdf">Format: PDF Document</option>
+              <option value="csv">Format: CSV Spreadsheet</option>
+            </select>
+
+            <button
+              onClick={handleExport}
+              className="px-4 py-2 rounded-lg bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-2 transition-all active:scale-95"
+            >
+              <Download className="w-4 h-4 text-[#C5A059]" />
+              <span>{exportFormat === 'csv' ? 'Download CSV' : 'Generate Official PDF'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -512,6 +697,36 @@ export const TranscriptView: React.FC = () => {
               <span>Display Instructor Names</span>
             </label>
           </div>
+
+          {/* Dynamic Signatures Upload Section */}
+          <div className="pt-3 border-t border-slate-200">
+            <span className="font-bold text-slate-700 block mb-2 text-xs">
+              Upload Signatory Digital Signatures (Chancellor, Vice Chancellor, Registrar)
+            </span>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="bg-white p-2.5 rounded border border-slate-200 flex items-center justify-between gap-2">
+                <span className="font-semibold truncate">Chancellor Sig</span>
+                <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded cursor-pointer text-[11px] font-bold">
+                  {chancellorSigUrl ? 'Change' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSigUpload(e, setChancellorSigUrl)} />
+                </label>
+              </div>
+              <div className="bg-white p-2.5 rounded border border-slate-200 flex items-center justify-between gap-2">
+                <span className="font-semibold truncate">Vice Chancellor Sig</span>
+                <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded cursor-pointer text-[11px] font-bold">
+                  {deanSigUrl ? 'Change' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSigUpload(e, setDeanSigUrl)} />
+                </label>
+              </div>
+              <div className="bg-white p-2.5 rounded border border-slate-200 flex items-center justify-between gap-2">
+                <span className="font-semibold truncate">Registrar Sig</span>
+                <label className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded cursor-pointer text-[11px] font-bold">
+                  {registrarSigUrl ? 'Change' : 'Upload'}
+                  <input type="file" accept="image/*" className="hidden" onChange={(e) => handleSigUpload(e, setRegistrarSigUrl)} />
+                </label>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -592,6 +807,139 @@ export const TranscriptView: React.FC = () => {
               <Copy className="w-3 h-3" />
               <span>Copy Registry Ref</span>
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Transcript Performance Analysis Recharts Section */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6 no-print">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#002366] font-display">
+              <Sparkles className="w-4 h-4 text-[#C5A059]" />
+              <span>Transcript Performance Analysis</span>
+            </div>
+            <h2 className="text-lg font-bold font-display text-slate-900 mt-1">
+              Cumulative GPA Progression & Term Quality Analytics
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500 font-medium">
+              Evaluated across {compiledSemesters.length} academic semesters
+            </span>
+          </div>
+        </div>
+
+        {/* Recharts Area / Line Chart */}
+        <div className="h-72 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart
+              data={compiledSemesters}
+              margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
+            >
+              <defs>
+                <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#002366" stopOpacity={0.25} />
+                  <stop offset="95%" stopColor="#002366" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
+              <XAxis
+                dataKey="term"
+                stroke="#64748B"
+                fontSize={11}
+                tickLine={false}
+                axisLine={{ stroke: '#CBD5E1' }}
+              />
+              <YAxis
+                domain={[2.0, 4.0]}
+                ticks={[2.0, 2.5, 3.0, 3.5, 4.0]}
+                stroke="#64748B"
+                fontSize={11}
+                tickLine={false}
+                axisLine={{ stroke: '#CBD5E1' }}
+                tickFormatter={(val) => val.toFixed(2)}
+              />
+              <Tooltip
+                content={({ active, payload, label }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl border border-slate-700 space-y-1.5">
+                        <div className="font-bold text-[#C5A059] border-b border-slate-700 pb-1">
+                          {label}
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-300">Cumulative GPA:</span>
+                          <strong className="font-mono text-emerald-400">{data.runningGpa.toFixed(2)}</strong>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-300">Term GPA:</span>
+                          <strong className="font-mono text-blue-300">{data.termGpa.toFixed(2)}</strong>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-300">Term Credits:</span>
+                          <strong className="font-mono">{data.termCreditsAttempted} CR</strong>
+                        </div>
+                        <div className="flex justify-between gap-4">
+                          <span className="text-slate-300">Quality Points:</span>
+                          <strong className="font-mono">{data.termQualityPoints.toFixed(1)}</strong>
+                        </div>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              <ReferenceLine y={3.75} stroke="#059669" strokeDasharray="4 4" label={{ value: "Dean's List (3.75)", fill: '#059669', fontSize: 10, position: 'top' }} />
+              <ReferenceLine y={3.5} stroke="#2563EB" strokeDasharray="4 4" label={{ value: "Honors (3.50)", fill: '#2563EB', fontSize: 10, position: 'insideBottomRight' }} />
+              <Area
+                type="monotone"
+                dataKey="runningGpa"
+                name="Cumulative GPA"
+                stroke="#002366"
+                strokeWidth={3}
+                fillOpacity={1}
+                fill="url(#gpaGradient)"
+              />
+              <Line
+                type="monotone"
+                dataKey="termGpa"
+                name="Term GPA"
+                stroke="#C5A059"
+                strokeWidth={2}
+                dot={{ r: 4, fill: '#C5A059', stroke: '#fff', strokeWidth: 2 }}
+                activeDot={{ r: 6 }}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Chart Legend & Summary Stats */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-slate-100 text-xs">
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase font-bold text-slate-500">Starting Term GPA</div>
+            <div className="text-sm font-black font-display text-slate-900 mt-0.5">
+              {compiledSemesters[0]?.runningGpa.toFixed(2) || '4.00'}
+            </div>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase font-bold text-slate-500">Current Cumulative GPA</div>
+            <div className="text-sm font-black font-display text-[#002366] mt-0.5">
+              {compiledGpa.toFixed(2)}
+            </div>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase font-bold text-slate-500">Highest Term GPA</div>
+            <div className="text-sm font-black font-display text-emerald-700 mt-0.5">
+              {Math.max(...compiledSemesters.map(s => s.termGpa), compiledGpa).toFixed(2)}
+            </div>
+          </div>
+          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <div className="text-[10px] uppercase font-bold text-slate-500">Total Semesters</div>
+            <div className="text-sm font-black font-display text-slate-900 mt-0.5">
+              {compiledSemesters.length} Terms
+            </div>
           </div>
         </div>
       </div>
@@ -951,54 +1299,63 @@ export const TranscriptView: React.FC = () => {
               </div>
             )}
 
-            {/* Official Registrar Seal, Endorsements & Security Signatures */}
+            {/* Official Registrar Seal, Endorsements & Three Security Signatures */}
             {includeSignatures && (
               <div className="relative z-10 pt-4 border-t-2 border-[#002366] grid grid-cols-1 sm:grid-cols-3 gap-6 items-center text-xs">
-                {/* Official University Gold & Navy Embossed Seal */}
-                <div className="flex items-center gap-3">
-                  <div className="w-16 h-16 rounded-full border-4 border-[#C5A059] bg-[#002366] text-white flex flex-col items-center justify-center text-center shadow-md shrink-0 p-1 relative">
-                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-[#C5A059] border border-white" />
-                    <UniversityLogo size="sm" />
-                    <span className="text-[6px] font-black uppercase tracking-tighter text-[#C5A059] leading-tight mt-0.5">
-                      OFFICIAL SEAL
-                    </span>
+                {/* Chancellor Signature */}
+                <div className="space-y-1 text-center sm:text-left">
+                  <div className="h-10 flex items-end justify-center sm:justify-start border-b border-slate-300 pb-1">
+                    {chancellorSigUrl ? (
+                      <img src={chancellorSigUrl} alt="Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
+                    ) : (
+                      <span className="font-display italic text-sm text-[#002366] font-bold">
+                        Michael C. Sterling
+                      </span>
+                    )}
                   </div>
-                  <div>
-                    <div className="text-[10px] font-black uppercase tracking-wider text-[#002366] font-display">
-                      Institutional Embossed Seal
-                    </div>
-                    <div className="text-[9px] text-slate-500">
-                      Affixed under authority of the Board of Regents & University Senate.
-                    </div>
-                    <div className="text-[9px] font-mono text-emerald-700 font-bold mt-0.5">
-                      AUTHENTICITY GUARANTEED
-                    </div>
+                  <div className="text-[9px] font-bold uppercase text-slate-700">
+                    Dr. Michael C. Sterling, Th.D.
+                  </div>
+                  <div className="text-[9px] text-slate-500">
+                    Chancellor & President • Issued from Phoenix USA
                   </div>
                 </div>
 
-                {/* Vice Chancellor / Academic Dean Counter-Signature */}
+                {/* Vice Chancellor Signature */}
                 <div className="space-y-1 text-center">
-                  <div className="font-display italic text-sm text-[#002366] font-bold border-b border-slate-300 pb-1">
-                    Rev. Dr. Jonathan Vance, Th.D.
+                  <div className="h-10 flex items-end justify-center border-b border-slate-300 pb-1">
+                    {deanSigUrl ? (
+                      <img src={deanSigUrl} alt="Vice Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
+                    ) : (
+                      <span className="font-display italic text-sm text-[#002366] font-bold">
+                        Patrick Njuguna
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[9px] font-bold uppercase text-slate-500">
-                    Academic Dean & Senate Chair
+                  <div className="text-[9px] font-bold uppercase text-slate-700">
+                    Prof. Dr. Patrick Njuguna, Ph.D.
                   </div>
-                  <div className="text-[9px] text-slate-400">
-                    School of Theology & Apologetics
+                  <div className="text-[9px] text-slate-500">
+                    Vice Chancellor & Senate Chair
                   </div>
                 </div>
 
-                {/* Registrar Endorsement Signature */}
-                <div className="space-y-1 text-right">
-                  <div className="font-display italic text-sm text-[#002366] font-bold border-b border-slate-300 pb-1">
-                    Dr. Elizabeth Vance, Ph.D.
+                {/* Registrar Signature */}
+                <div className="space-y-1 text-center sm:text-right">
+                  <div className="h-10 flex items-end justify-center sm:justify-end border-b border-slate-300 pb-1">
+                    {registrarSigUrl ? (
+                      <img src={registrarSigUrl} alt="Registrar Signature" className="max-h-9 max-w-[130px] object-contain" />
+                    ) : (
+                      <span className="font-display italic text-sm text-[#002366] font-bold">
+                        Sarah M. Jenkins
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[9px] font-bold uppercase text-slate-500">
-                    University Registrar
+                  <div className="text-[9px] font-bold uppercase text-slate-700">
+                    Rev. Dr. Sarah M. Jenkins, Th.D.
                   </div>
-                  <div className="text-[9px] text-slate-400">
-                    Office of the Registrar, Phoenix, AZ
+                  <div className="text-[9px] text-slate-500">
+                    University Registrar • Phoenix, AZ
                   </div>
                 </div>
               </div>
@@ -1020,6 +1377,65 @@ export const TranscriptView: React.FC = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* Transcript Activity Audit Log Section */}
+      <div className="no-print bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4 mt-6">
+        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-[#002366]/10 text-[#002366] flex items-center justify-center border border-[#002366]/20">
+              <History className="w-5 h-5 text-[#C5A059]" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold font-display text-[#002366]">
+                Transcript Activity & Audit Log
+              </h3>
+              <p className="text-xs text-slate-500">
+                Immutable chronological ledger of transcript generations, email dispatches, downloads, and verifications.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
+            {activityLogs.length} Recorded Events
+          </div>
+        </div>
+
+        <div className="space-y-2.5">
+          {activityLogs.map((log) => (
+            <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/70 rounded-xl border border-slate-200 transition-colors">
+              <div className="flex items-start gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-[#002366] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                  {log.action === 'Generated PDF' ? <FileText className="w-4 h-4 text-blue-600" /> :
+                   log.action === 'Downloaded CSV' ? <Download className="w-4 h-4 text-amber-600" /> :
+                   log.action === 'Emailed Transcript' ? <Mail className="w-4 h-4 text-[#002366]" /> :
+                   log.action === 'Verified Document' ? <ShieldCheck className="w-4 h-4 text-emerald-600" /> :
+                   <Printer className="w-4 h-4 text-slate-600" />}
+                </div>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-slate-900">{log.action}</span>
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                      log.status === 'Success' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                      log.status === 'Verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      'bg-amber-50 text-amber-700 border-amber-200'
+                    }`}>
+                      {log.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 font-medium">{log.details}</p>
+                </div>
+              </div>
+
+              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center text-[11px] text-slate-400 font-mono gap-1 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
+                <span className="font-bold text-slate-600 flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-slate-400" />
+                  {log.timestamp}
+                </span>
+                <span>{log.ipAddress}</span>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Automated PDF Compilation & Progress Modal */}
@@ -1049,6 +1465,59 @@ export const TranscriptView: React.FC = () => {
         verificationHash={verificationHash}
         documentRef={documentRef}
         issueDate={issueDate}
+      />
+
+      {/* Email Official Transcript Modal */}
+      <EmailTranscriptModal
+        isOpen={isEmailModalOpen}
+        onClose={() => setIsEmailModalOpen(false)}
+        studentName={currentUser.name}
+        studentEmail={currentUser.email || 'student@bibu.university'}
+        studentId={currentUser.studentId}
+        programName={currentUser.programName}
+        cumulativeGpa={compiledGpa}
+        documentRef={documentRef}
+      />
+
+      {/* Secure Share Link Modal */}
+      <SecureShareModal
+        isOpen={isSecureShareOpen}
+        onClose={() => setIsSecureShareOpen(false)}
+        studentName={currentUser.name}
+        studentId={currentUser.studentId}
+        programName={currentUser.programName}
+        cumulativeGpa={compiledGpa}
+        onLogActivity={logActivity}
+      />
+
+      {/* Transcript QR Code Authenticator Modal */}
+      <TranscriptQrModal
+        isOpen={isQrModalOpen}
+        onClose={() => setIsQrModalOpen(false)}
+        studentName={currentUser.name}
+        studentId={currentUser.studentId}
+        documentRef={documentRef}
+        verificationHash={verificationHash}
+        onLogActivity={logActivity}
+      />
+
+      {/* Credit Transfer Evaluator Modal */}
+      <CreditTransferEvaluatorModal
+        isOpen={isCreditEvaluatorOpen}
+        onClose={() => setIsCreditEvaluatorOpen(false)}
+        studentName={currentUser.name}
+        studentId={currentUser.studentId}
+        onLogActivity={logActivity}
+      />
+
+      {/* Grade Appeal Modal */}
+      <GradeAppealModal
+        isOpen={isGradeAppealOpen}
+        onClose={() => setIsGradeAppealOpen(false)}
+        studentName={currentUser.name}
+        studentId={currentUser.studentId}
+        grades={grades}
+        onLogActivity={logActivity}
       />
     </div>
   );

@@ -37,7 +37,8 @@ import {
   Database,
   BookmarkCheck,
   BookmarkX,
-  XCircle
+  XCircle,
+  Archive
 } from 'lucide-react';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
@@ -45,6 +46,7 @@ import { AdministrativeBookletEditor } from './AdministrativeBookletEditor';
 import { Rpl2024MigrationUtility } from './Rpl2024MigrationUtility';
 import { GraduandsDataVisualization } from './GraduandsDataVisualization';
 import { GraduandApprovalWorkflowDashboard } from './GraduandApprovalWorkflowDashboard';
+import { BulkTranscriptExportModal } from './BulkTranscriptExportModal';
 
 export interface GraduationManagementProps {
   initialTab?: 'ceremonies' | 'candidates' | 'certificates' | 'booklet' | 'rpl-migration' | 'visualizations' | 'workflow-status';
@@ -195,6 +197,7 @@ export const GraduationManagement: React.FC<GraduationManagementProps> = ({ init
   // Bulk Selection & Booklet Flagging State
   const [selectedCandidateIds, setSelectedCandidateIds] = useState<Set<string>>(new Set());
   const [candidateBookletFilter, setCandidateBookletFilter] = useState<'All' | 'flagged' | 'unflagged'>('All');
+  const [isBulkExportOpen, setIsBulkExportOpen] = useState(false);
   const headerCheckboxRef = useRef<HTMLInputElement>(null);
 
   // Search and Filter states for Ceremonies
@@ -1439,6 +1442,14 @@ export const GraduationManagement: React.FC<GraduationManagementProps> = ({ init
                     <BookmarkX className="w-3.5 h-3.5 text-rose-300" />
                     <span>Exclude Selected</span>
                   </button>
+
+                  <button
+                    onClick={() => setIsBulkExportOpen(true)}
+                    className="px-3 py-1.5 rounded-lg bg-[#002366] hover:bg-[#001A4D] text-white font-bold text-[11px] flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                  >
+                    <Archive className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>Bulk Export Transcripts ({selectedCandidateIds.size})</span>
+                  </button>
                 </>
               ) : (
                 <div className="text-[11px] text-slate-500 italic">
@@ -2234,6 +2245,16 @@ export const GraduationManagement: React.FC<GraduationManagementProps> = ({ init
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bulk Transcript ZIP Export Modal */}
+      {isBulkExportOpen && (
+        <BulkTranscriptExportModal
+          isOpen={isBulkExportOpen}
+          onClose={() => setIsBulkExportOpen(false)}
+          selectedCandidates={graduationCandidates.filter((c) => selectedCandidateIds.has(c.id))}
+          allGrades={[]}
+        />
       )}
     </div>
   );

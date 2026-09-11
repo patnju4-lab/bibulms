@@ -16,13 +16,16 @@ import {
   Sparkles,
   Printer,
   ExternalLink,
-  Info
+  Info,
+  FileText
 } from 'lucide-react';
 import { AlumniDigitalCard } from '../graduation/AlumniDigitalCard';
+import { GraduateCertificateModal } from './GraduateCertificateModal';
 
 export const StudentGraduationSection: React.FC = () => {
-  const { currentUser, graduationCandidates, graduationCeremonies, graduationBooklets } = useApp();
+  const { currentUser, setCurrentView, graduationCandidates, graduationCeremonies, graduationBooklets } = useApp();
   const [showAlumniCard, setShowAlumniCard] = useState(false);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   // Match current logged in user with their candidate record
   const studentCandidate = useMemo(() => {
@@ -81,11 +84,25 @@ export const StudentGraduationSection: React.FC = () => {
 
         <div className="flex flex-col sm:flex-row items-center gap-3 relative z-10">
           <button
-            onClick={() => setShowAlumniCard(true)}
-            className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-[#002366] text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all"
+            onClick={() => setShowCertificateModal(true)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#C5A059] hover:bg-[#b08b46] text-[#002366] text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all"
           >
             <Award className="w-4 h-4 text-[#002366]" />
-            <span>View Digital Alumni Card</span>
+            <span>Generate Official Certificate</span>
+          </button>
+          <button
+            onClick={() => setCurrentView('student-transcript')}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold flex items-center justify-center gap-2 border border-white/20 transition-all"
+          >
+            <FileText className="w-4 h-4 text-[#C5A059]" />
+            <span>Official Transcript</span>
+          </button>
+          <button
+            onClick={() => setShowAlumniCard(true)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-[#002366] text-xs font-black flex items-center justify-center gap-2 shadow-md transition-all"
+          >
+            <Award className="w-4 h-4 text-[#002366]" />
+            <span>Digital Alumni Card</span>
           </button>
         </div>
       </div>
@@ -230,6 +247,15 @@ export const StudentGraduationSection: React.FC = () => {
       {/* Alumni ID Card Modal */}
       {showAlumniCard && (
         <AlumniDigitalCard candidate={studentCandidate} onClose={() => setShowAlumniCard(false)} />
+      )}
+
+      {/* Graduate Certificate Generator Modal */}
+      {showCertificateModal && (
+        <GraduateCertificateModal
+          isOpen={showCertificateModal}
+          onClose={() => setShowCertificateModal(false)}
+          candidate={studentCandidate}
+        />
       )}
     </div>
   );
