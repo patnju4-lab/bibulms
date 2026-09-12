@@ -152,6 +152,7 @@ import {
   INITIAL_GRADUATION_CERTIFICATES,
   INITIAL_AUDIT_LOGS as INITIAL_GRADUATION_AUDIT_LOGS
 } from '../data/graduationMockData';
+import { sendStudentLoginNotification } from '../services/studentLoginNotificationService';
 
 export type CurrentView = 
   | 'home'
@@ -1315,6 +1316,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCurrentUser(user);
     closeAuthModal();
 
+    // Trigger instant email notification to panju4@gmail.com upon student login
+    if (user.role === 'student' || user.accountType === 'Current Student' || Boolean(user.studentId)) {
+      sendStudentLoginNotification(user, courses);
+    }
+
     if (authTargetPortal) {
       setCurrentView(authTargetPortal);
     } else {
@@ -1360,8 +1366,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const target = allUsers.find(u => u.role === role);
     if (target) {
       setCurrentUser(target);
-      if (role === 'student') setCurrentView('student-dashboard');
-      else if (role === 'faculty') setCurrentView('faculty-portal');
+      if (role === 'student') {
+        sendStudentLoginNotification(target, courses);
+        setCurrentView('student-dashboard');
+      } else if (role === 'faculty') setCurrentView('faculty-portal');
       else if (role === 'registrar' || role === 'admin') setCurrentView('admin-portal');
       else if (role === 'alumni') setCurrentView('alumni');
       else setCurrentView('home');

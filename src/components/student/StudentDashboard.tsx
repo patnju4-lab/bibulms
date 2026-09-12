@@ -11,6 +11,7 @@ import { StudentMediaSection } from './StudentMediaSection';
 import { AcademicHistorySection } from './AcademicHistorySection';
 import { GradeDistributionPieChart } from './GradeDistributionPieChart';
 import { StudentGraduationSection } from './StudentGraduationSection';
+import { StudentLoginHistoryDashboard } from './StudentLoginHistoryDashboard';
 import {
   GraduationCap,
   BookOpen,
@@ -37,7 +38,10 @@ import {
   Bookmark,
   Play,
   Tv,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Globe,
+  MapPin,
+  Activity
 } from 'lucide-react';
 
 export const StudentDashboard: React.FC = () => {
@@ -62,7 +66,7 @@ export const StudentDashboard: React.FC = () => {
     grades
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history' | 'logins'>('overview');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
   const [progressFilter, setProgressFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -307,6 +311,20 @@ export const StudentDashboard: React.FC = () => {
             <span>Tuition & Fees</span>
           </button>
 
+          {/* Login History & Geo Trends Quick Button */}
+          <button
+            id="student-dashboard-quick-logins-btn"
+            onClick={() => {
+              setActiveTab('logins');
+              window.scrollTo({ top: 400, behavior: 'smooth' });
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#001A4D] hover:bg-[#001438] text-white font-bold uppercase tracking-wider text-xs border border-white/20 transition-all flex items-center gap-2 hover:border-[#C5A059]"
+            title="View student login history and geographical trends"
+          >
+            <Globe className="w-4 h-4 text-[#C5A059]" />
+            <span>Login History & Geo</span>
+          </button>
+
           {/* BIBU TV Quick Access Button */}
           <button
             id="student-dashboard-watch-tv-btn"
@@ -400,7 +418,31 @@ export const StudentDashboard: React.FC = () => {
           <Tv className="w-4 h-4 text-[#C5A059]" />
           <span>📺 TV & Radio Media</span>
         </button>
+
+        <button
+          id="student-dashboard-tab-logins"
+          onClick={() => setActiveTab('logins')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'logins'
+              ? 'bg-[#002366] text-[#C5A059] shadow-sm font-black'
+              : 'bg-blue-50 text-[#002366] hover:bg-blue-100 border border-blue-200'
+          }`}
+        >
+          <Globe className="w-4 h-4 text-[#C5A059]" />
+          <span>Login History & Geo Trends</span>
+        </button>
       </div>
+
+      {/* Conditional View: Login History & Geo Trends Tab */}
+      {activeTab === 'logins' && (
+        <div className="space-y-6 animate-in fade-in">
+          <StudentLoginHistoryDashboard
+            currentUser={currentUser}
+            courses={courses}
+            onOpenClassroom={handleResumeCourse}
+          />
+        </div>
+      )}
 
       {/* Conditional View: Media Tab */}
       {activeTab === 'media' && (
@@ -940,6 +982,61 @@ export const StudentDashboard: React.FC = () => {
               >
                 <span>View Full Course Grades & Visual Analytics</span>
                 <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Student Login History & Geolocation Telemetry Mini-Card */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span className="text-xs font-black text-[#002366] uppercase tracking-widest flex items-center gap-1.5">
+                  <Globe className="w-4 h-4 text-[#C5A059]" />
+                  <span>Login History & Geo Trends</span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span>Monitored</span>
+                </span>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Primary Study Hub:</span>
+                  </span>
+                  <span className="font-bold text-slate-900">Phoenix, Arizona (USA)</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <Activity className="w-3.5 h-3.5 text-[#002366]" />
+                    <span>Logged Frequency:</span>
+                  </span>
+                  <span className="font-bold text-slate-900 font-mono">28 Sessions / 30 Days</span>
+                </div>
+                <div className="flex items-center justify-between text-slate-600">
+                  <span className="flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#C5A059]" />
+                    <span>Security Alert Route:</span>
+                  </span>
+                  <span className="font-mono font-bold text-[#002366] text-[11px]">panju4@gmail.com</span>
+                </div>
+              </div>
+
+              <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-100 text-[11px] text-slate-600 flex items-center justify-between">
+                <span>Access Geographies:</span>
+                <span className="font-bold text-[#002366]">🇺🇸 USA (82%) • 🇬🇧 UK (11%) • 🇰🇪 Kenya (7%)</span>
+              </div>
+
+              <button
+                id="student-dashboard-overview-view-logins-btn"
+                onClick={() => {
+                  setActiveTab('logins');
+                  window.scrollTo({ top: 400, behavior: 'smooth' });
+                }}
+                className="w-full py-2.5 rounded-lg bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Open Visual Analytics & Geo Charts</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C5A059]" />
               </button>
             </div>
 
