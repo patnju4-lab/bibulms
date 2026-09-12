@@ -29,7 +29,9 @@ import {
   Clock,
   Lock,
   ArrowRightLeft,
-  MessageSquare
+  MessageSquare,
+  Calculator,
+  StickyNote
 } from 'lucide-react';
 import {
   exportTranscriptToPdf,
@@ -42,6 +44,13 @@ import { SecureShareModal } from './SecureShareModal';
 import { TranscriptQrModal } from './TranscriptQrModal';
 import { CreditTransferEvaluatorModal } from './CreditTransferEvaluatorModal';
 import { GradeAppealModal } from './GradeAppealModal';
+import { CreditProgressRadialChart } from './CreditProgressRadialChart';
+import { PredictiveGpaCalculator } from './PredictiveGpaCalculator';
+import { TranscriptRadialSummaryChart } from './TranscriptRadialSummaryChart';
+import {
+  PersonalCourseNotesModal,
+  StudentCourseNote
+} from './PersonalCourseNotesModal';
 import { GradeRecord } from '../../types';
 import {
   ResponsiveContainer,
@@ -71,9 +80,88 @@ export const TranscriptView: React.FC = () => {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isCreditEvaluatorOpen, setIsCreditEvaluatorOpen] = useState(false);
   const [isGradeAppealOpen, setIsGradeAppealOpen] = useState(false);
+  const [showGpaPredictor, setShowGpaPredictor] = useState(true);
   const [exportProgress, setExportProgress] = useState<TranscriptPdfProgress | null>(null);
   const [copiedRefToast, setCopiedRefToast] = useState(false);
   const [exportFormat, setExportFormat] = useState<'pdf' | 'csv'>('pdf');
+
+  // Personal Course Notes State & LocalStorage Persistence
+  const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [selectedCourseForNote, setSelectedCourseForNote] = useState<{
+    code: string;
+    title: string;
+    semester: string;
+    grade?: string;
+    credits?: number;
+    instructor?: string;
+  } | null>(null);
+
+  const [courseNotes, setCourseNotes] = useState<Record<string, StudentCourseNote>>(() => {
+    try {
+      const saved = localStorage.getItem(`bibu_transcript_notes_${currentUser.id || 'default'}`);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch {
+      // fallback
+    }
+    // Baseline sample notes for demonstration
+    return {
+      'BIB-101': {
+        courseCode: 'BIB-101',
+        courseTitle: 'Old Testament Survey: Law & Historical Books',
+        semester: 'Fall 2024',
+        noteText: 'Special focus on the Abrahamic Covenant (Genesis 12 & 15). Essential typology references for future Messianic theology lectures.',
+        category: 'Exegesis',
+        updatedAt: 'Sep 2, 2024, 10:15 AM'
+      },
+      'THE-201': {
+        courseCode: 'THE-201',
+        courseTitle: 'Systematic Theology I: Theology Proper, Christology & Pneumatology',
+        semester: 'Spring 2025',
+        noteText: 'Review Dr. Angelos notes regarding the Council of Nicaea (325 AD) vs Arianism. Key readings: Athanasius "On the Incarnation".',
+        category: 'Textbooks & Resources',
+        updatedAt: 'Feb 14, 2025, 03:40 PM'
+      }
+    };
+  });
+
+  const handleSaveCourseNote = (note: StudentCourseNote) => {
+    setCourseNotes((prev) => {
+      const updated = { ...prev, [note.courseCode]: note };
+      try {
+        localStorage.setItem(`bibu_transcript_notes_${currentUser.id || 'default'}`, JSON.stringify(updated));
+      } catch {
+        // storage quota fallback
+      }
+      return updated;
+    });
+  };
+
+  const handleDeleteCourseNote = (courseCode: string) => {
+    setCourseNotes((prev) => {
+      const updated = { ...prev };
+      delete updated[courseCode];
+      try {
+        localStorage.setItem(`bibu_transcript_notes_${currentUser.id || 'default'}`, JSON.stringify(updated));
+      } catch {
+        // fallback
+      }
+      return updated;
+    });
+  };
+
+  const openCourseNoteEditor = (course: {
+    code: string;
+    title: string;
+    semester: string;
+    grade?: string;
+    credits?: number;
+    instructor?: string;
+  }) => {
+    setSelectedCourseForNote(course);
+    setIsNotesModalOpen(true);
+  };
 
   // Configuration options for official transcript compilation
   const [showOptionsPanel, setShowOptionsPanel] = useState(false);
@@ -83,6 +171,8 @@ export const TranscriptView: React.FC = () => {
   const [includeGradingScale, setIncludeGradingScale] = useState(true);
   const [includeSecurityHash, setIncludeSecurityHash] = useState(true);
   const [includeInstructors, setIncludeInstructors] = useState(true);
+  const [includeRadialChart, setIncludeRadialChart] = useState(true);
+  const [showPrivateNotesOnScreen, setShowPrivateNotesOnScreen] = useState(true);
   const [transcriptPurpose, setTranscriptPurpose] = useState<string>('Official Registrar Copy');
   const [issueDate, setIssueDate] = useState<string>('September 10, 2026');
 
@@ -535,6 +625,33 @@ export const TranscriptView: React.FC = () => {
           </button>
 
           <button
+            onClick={() => setShowPrivateNotesOnScreen(!showPrivateNotesOnScreen)}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-xs border ${
+              showPrivateNotesOnScreen
+                ? 'bg-amber-50 text-amber-900 border-amber-300'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+            title="Toggle visibility of private course notes on transcript screen"
+          >
+            <StickyNote className="w-3.5 h-3.5 text-amber-600" />
+            <span>
+              Private Notes ({Object.keys(courseNotes).length})
+            </span>
+          </button>
+
+          <button
+            onClick={() => setShowGpaPredictor(!showGpaPredictor)}
+            className={`px-3.5 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-xs border ${
+              showGpaPredictor
+                ? 'bg-blue-50 text-[#002366] border-blue-300'
+                : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50'
+            }`}
+          >
+            <Calculator className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Predictive GPA</span>
+          </button>
+
+          <button
             onClick={handlePrint}
             className="px-3.5 py-2 rounded-lg text-xs font-bold bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 flex items-center gap-2 transition-all shadow-xs"
           >
@@ -696,6 +813,26 @@ export const TranscriptView: React.FC = () => {
               />
               <span>Display Instructor Names</span>
             </label>
+
+            <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={includeRadialChart}
+                onChange={(e) => setIncludeRadialChart(e.target.checked)}
+                className="rounded text-[#002366] focus:ring-[#002366]"
+              />
+              <span>Include Radial Progress Summary Chart in Official PDF</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={showPrivateNotesOnScreen}
+                onChange={(e) => setShowPrivateNotesOnScreen(e.target.checked)}
+                className="rounded text-[#002366] focus:ring-[#002366]"
+              />
+              <span>Show Personal Course Notes on Screen View</span>
+            </label>
           </div>
 
           {/* Dynamic Signatures Upload Section */}
@@ -810,6 +947,26 @@ export const TranscriptView: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Degree Program Credits Radial Bar Progress & Deficit Audit */}
+      <CreditProgressRadialChart
+        totalCreditsEarned={totalCreditsConferred}
+        totalCreditsRequired={totalDegreeCreditsRequired}
+        programName={currentUser.programName || 'Bachelor of Theology (B.Th.) in Pastoral Ministry'}
+        studentGrades={studentGrades}
+        onOpenCreditEvaluator={() => setIsCreditEvaluatorOpen(true)}
+      />
+
+      {/* Predictive GPA Calculator & Semester Performance Forecaster */}
+      {showGpaPredictor && (
+        <PredictiveGpaCalculator
+          currentCumulativeGpa={compiledGpa}
+          currentAttemptedCredits={totalAttemptedCredits}
+          currentEarnedCredits={totalEarnedCredits}
+          currentQualityPoints={totalQualityPoints}
+          studentGrades={studentGrades}
+        />
+      )}
 
       {/* Transcript Performance Analysis Recharts Section */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6 no-print">
@@ -1110,30 +1267,87 @@ export const TranscriptView: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 bg-white">
-                    {sem.courses.map((c, cIdx) => (
-                      <tr key={cIdx} className="hover:bg-slate-50/80 transition-colors">
-                        <td className="py-1.5 px-3 font-mono font-bold text-slate-800 text-[11px]">
-                          {c.code}
-                        </td>
-                        <td className="py-1.5 px-3 font-medium text-slate-900 text-xs">
-                          {c.title}
-                        </td>
-                        {includeInstructors && (
-                          <td className="py-1.5 px-3 text-slate-500 text-[11px] hidden sm:table-cell">
-                            {c.instructor}
-                          </td>
-                        )}
-                        <td className="py-1.5 px-3 text-center text-xs text-slate-700">
-                          {c.credits}
-                        </td>
-                        <td className="py-1.5 px-3 text-center font-bold text-[#002366] text-xs">
-                          {c.grade}
-                        </td>
-                        <td className="py-1.5 px-3 text-center font-mono font-semibold text-slate-900 text-xs">
-                          {c.qualityPoints.toFixed(1)}
-                        </td>
-                      </tr>
-                    ))}
+                    {sem.courses.map((c, cIdx) => {
+                      const note = courseNotes[c.code];
+                      return (
+                        <React.Fragment key={cIdx}>
+                          <tr className="hover:bg-slate-50/80 transition-colors group">
+                            <td className="py-2 px-3 font-mono font-bold text-slate-800 text-[11px] align-top">
+                              <div className="flex items-center gap-1.5">
+                                <span>{c.code}</span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    openCourseNoteEditor({
+                                      code: c.code,
+                                      title: c.title,
+                                      semester: sem.term,
+                                      grade: c.grade,
+                                      credits: c.credits,
+                                      instructor: c.instructor
+                                    })
+                                  }
+                                  title={note ? 'View or edit private note' : 'Add private personal note'}
+                                  className={`no-print p-1 rounded transition-colors ${
+                                    note
+                                      ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+                                      : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <StickyNote className="w-3 h-3" />
+                                </button>
+                              </div>
+                            </td>
+                            <td className="py-2 px-3 font-medium text-slate-900 text-xs align-top">
+                              <div>{c.title}</div>
+                              {/* Personal Note Callout (Screen-Only; excluded from official printed/downloaded transcript) */}
+                              {note && showPrivateNotesOnScreen && (
+                                <div
+                                  onClick={() =>
+                                    openCourseNoteEditor({
+                                      code: c.code,
+                                      title: c.title,
+                                      semester: sem.term,
+                                      grade: c.grade,
+                                      credits: c.credits,
+                                      instructor: c.instructor
+                                    })
+                                  }
+                                  className="no-print mt-1.5 p-2 bg-amber-50/70 border border-amber-200/80 rounded-lg text-[10.5px] text-slate-800 cursor-pointer hover:bg-amber-100/70 transition-colors shadow-2xs"
+                                >
+                                  <div className="flex items-center justify-between text-[9px] text-amber-800 font-bold mb-0.5">
+                                    <span className="flex items-center gap-1">
+                                      <Lock className="w-2.5 h-2.5" />
+                                      Private Note ({note.category || 'General'})
+                                    </span>
+                                    <span className="text-[8.5px] font-normal text-amber-700">
+                                      {note.updatedAt}
+                                    </span>
+                                  </div>
+                                  <p className="line-clamp-2 italic text-slate-700 font-serif leading-snug">
+                                    "{note.noteText}"
+                                  </p>
+                                </div>
+                              )}
+                            </td>
+                            {includeInstructors && (
+                              <td className="py-2 px-3 text-slate-500 text-[11px] hidden sm:table-cell align-top">
+                                {c.instructor}
+                              </td>
+                            )}
+                            <td className="py-2 px-3 text-center text-xs text-slate-700 align-top">
+                              {c.credits}
+                            </td>
+                            <td className="py-2 px-3 text-center font-bold text-[#002366] text-xs align-top">
+                              {c.grade}
+                            </td>
+                            <td className="py-2 px-3 text-center font-mono font-semibold text-slate-900 text-xs align-top">
+                              {c.qualityPoints.toFixed(1)}
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -1215,30 +1429,87 @@ export const TranscriptView: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 bg-white">
-                      {sem.courses.map((c, cIdx) => (
-                        <tr key={cIdx} className="hover:bg-slate-50/80 transition-colors">
-                          <td className="py-1.5 px-3 font-mono font-bold text-slate-800 text-[11px]">
-                            {c.code}
-                          </td>
-                          <td className="py-1.5 px-3 font-medium text-slate-900 text-xs">
-                            {c.title}
-                          </td>
-                          {includeInstructors && (
-                            <td className="py-1.5 px-3 text-slate-500 text-[11px] hidden sm:table-cell">
-                              {c.instructor}
-                            </td>
-                          )}
-                          <td className="py-1.5 px-3 text-center text-xs text-slate-700">
-                            {c.credits}
-                          </td>
-                          <td className="py-1.5 px-3 text-center font-bold text-[#002366] text-xs">
-                            {c.grade}
-                          </td>
-                          <td className="py-1.5 px-3 text-center font-mono font-semibold text-slate-900 text-xs">
-                            {c.qualityPoints.toFixed(1)}
-                          </td>
-                        </tr>
-                      ))}
+                      {sem.courses.map((c, cIdx) => {
+                        const note = courseNotes[c.code];
+                        return (
+                          <React.Fragment key={cIdx}>
+                            <tr className="hover:bg-slate-50/80 transition-colors group">
+                              <td className="py-2 px-3 font-mono font-bold text-slate-800 text-[11px] align-top">
+                                <div className="flex items-center gap-1.5">
+                                  <span>{c.code}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      openCourseNoteEditor({
+                                        code: c.code,
+                                        title: c.title,
+                                        semester: sem.term,
+                                        grade: c.grade,
+                                        credits: c.credits,
+                                        instructor: c.instructor
+                                      })
+                                    }
+                                    title={note ? 'View or edit private note' : 'Add private personal note'}
+                                    className={`no-print p-1 rounded transition-colors ${
+                                      note
+                                        ? 'text-amber-600 bg-amber-50 hover:bg-amber-100'
+                                        : 'text-slate-300 opacity-0 group-hover:opacity-100 hover:text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    <StickyNote className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-2 px-3 font-medium text-slate-900 text-xs align-top">
+                                <div>{c.title}</div>
+                                {/* Personal Note Callout (Screen-Only; excluded from official printed/downloaded transcript) */}
+                                {note && showPrivateNotesOnScreen && (
+                                  <div
+                                    onClick={() =>
+                                      openCourseNoteEditor({
+                                        code: c.code,
+                                        title: c.title,
+                                        semester: sem.term,
+                                        grade: c.grade,
+                                        credits: c.credits,
+                                        instructor: c.instructor
+                                      })
+                                    }
+                                    className="no-print mt-1.5 p-2 bg-amber-50/70 border border-amber-200/80 rounded-lg text-[10.5px] text-slate-800 cursor-pointer hover:bg-amber-100/70 transition-colors shadow-2xs"
+                                  >
+                                    <div className="flex items-center justify-between text-[9px] text-amber-800 font-bold mb-0.5">
+                                      <span className="flex items-center gap-1">
+                                        <Lock className="w-2.5 h-2.5" />
+                                        Private Note ({note.category || 'General'})
+                                      </span>
+                                      <span className="text-[8.5px] font-normal text-amber-700">
+                                        {note.updatedAt}
+                                      </span>
+                                    </div>
+                                    <p className="line-clamp-2 italic text-slate-700 font-serif leading-snug">
+                                      "{note.noteText}"
+                                    </p>
+                                  </div>
+                                )}
+                              </td>
+                              {includeInstructors && (
+                                <td className="py-2 px-3 text-slate-500 text-[11px] hidden sm:table-cell align-top">
+                                  {c.instructor}
+                                </td>
+                              )}
+                              <td className="py-2 px-3 text-center text-xs text-slate-700 align-top">
+                                {c.credits}
+                              </td>
+                              <td className="py-2 px-3 text-center font-bold text-[#002366] text-xs align-top">
+                                {c.grade}
+                              </td>
+                              <td className="py-2 px-3 text-center font-mono font-semibold text-slate-900 text-xs align-top">
+                                {c.qualityPoints.toFixed(1)}
+                              </td>
+                            </tr>
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1272,6 +1543,18 @@ export const TranscriptView: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            {/* Program Degree Progress Radial Bar Summary Chart (Printed in Official PDF) */}
+            {includeRadialChart && (
+              <div className="relative z-10">
+                <TranscriptRadialSummaryChart
+                  totalCreditsEarned={totalCreditsConferred}
+                  totalCreditsRequired={totalDegreeCreditsRequired}
+                  studentGrades={studentGrades}
+                  programName={currentUser.programName || 'Degree Program'}
+                />
+              </div>
+            )}
 
             {/* Official Registrar Grading Scale & Policy Legend */}
             {includeGradingScale && (
@@ -1518,6 +1801,19 @@ export const TranscriptView: React.FC = () => {
         studentId={currentUser.studentId}
         grades={grades}
         onLogActivity={logActivity}
+      />
+
+      {/* Student Personal Course Notes Modal */}
+      <PersonalCourseNotesModal
+        isOpen={isNotesModalOpen}
+        onClose={() => {
+          setIsNotesModalOpen(false);
+          setSelectedCourseForNote(null);
+        }}
+        course={selectedCourseForNote}
+        existingNote={selectedCourseForNote ? courseNotes[selectedCourseForNote.code] : null}
+        onSaveNote={handleSaveCourseNote}
+        onDeleteNote={handleDeleteCourseNote}
       />
     </div>
   );

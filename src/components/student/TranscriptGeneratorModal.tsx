@@ -49,9 +49,9 @@ export const TranscriptGeneratorModal: React.FC<TranscriptGeneratorModalProps> =
 
   const steps = [
     { label: 'Compiling student course roll & credit hours', threshold: 25 },
-    { label: 'Calculating term quality points & cumulative GPA', threshold: 50 },
-    { label: 'Applying registrar security seal & verification token', threshold: 75 },
-    { label: 'Rendering high-resolution vector PDF layout', threshold: 90 },
+    { label: 'Calculating term quality points & cumulative GPA', threshold: 45 },
+    { label: 'Formatting University crest, student credentials & D3 radial chart', threshold: 70 },
+    { label: 'Applying registrar security seal & verification token', threshold: 85 },
     { label: 'Compiling & initiating official document download', threshold: 100 }
   ];
 
