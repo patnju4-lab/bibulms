@@ -12,6 +12,7 @@ import { AcademicHistorySection } from './AcademicHistorySection';
 import { GradeDistributionPieChart } from './GradeDistributionPieChart';
 import { StudentGraduationSection } from './StudentGraduationSection';
 import { StudentLoginHistoryDashboard } from './StudentLoginHistoryDashboard';
+import { VisualCourseProgressTracker } from './VisualCourseProgressTracker';
 import {
   GraduationCap,
   BookOpen,
@@ -54,6 +55,7 @@ export const StudentDashboard: React.FC = () => {
     examinations,
     examAttempts,
     completedLessonIds,
+    markLessonComplete,
     bulletins,
     recordBulletinView,
     setCurrentView,
@@ -66,7 +68,8 @@ export const StudentDashboard: React.FC = () => {
     grades
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history' | 'logins'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history' | 'logins' | 'progress'>('overview');
+  const [selectedProgressCourseId, setSelectedProgressCourseId] = useState<string>('all');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
   const [progressFilter, setProgressFilter] = useState<'all' | 'in_progress' | 'completed' | 'not_started'>('all');
@@ -325,6 +328,20 @@ export const StudentDashboard: React.FC = () => {
             <span>Login History & Geo</span>
           </button>
 
+          {/* Visual Module Progress Tracker Quick Button */}
+          <button
+            id="student-dashboard-quick-progress-btn"
+            onClick={() => {
+              setActiveTab('progress');
+              window.scrollTo({ top: 400, behavior: 'smooth' });
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#001A4D] hover:bg-[#001438] text-white font-bold uppercase tracking-wider text-xs border border-white/20 transition-all flex items-center gap-2 hover:border-[#C5A059]"
+            title="View modular completion percentage across enrolled courses"
+          >
+            <Target className="w-4 h-4 text-[#C5A059]" />
+            <span>Module Progress</span>
+          </button>
+
           {/* BIBU TV Quick Access Button */}
           <button
             id="student-dashboard-watch-tv-btn"
@@ -431,7 +448,39 @@ export const StudentDashboard: React.FC = () => {
           <Globe className="w-4 h-4 text-[#C5A059]" />
           <span>Login History & Geo Trends</span>
         </button>
+
+        <button
+          id="student-dashboard-tab-progress"
+          onClick={() => setActiveTab('progress')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'progress'
+              ? 'bg-[#002366] text-[#C5A059] shadow-sm font-black'
+              : 'bg-emerald-50 text-[#002366] hover:bg-emerald-100 border border-emerald-200'
+          }`}
+        >
+          <Target className="w-4 h-4 text-[#C5A059]" />
+          <span>Module Progress Tracker</span>
+        </button>
       </div>
+
+      {/* Conditional View: Module Progress Tracker Tab */}
+      {activeTab === 'progress' && (
+        <div className="space-y-6 animate-in fade-in">
+          <VisualCourseProgressTracker
+            currentUser={currentUser}
+            courses={courses}
+            modules={modules}
+            completedLessonIds={completedLessonIds}
+            markLessonComplete={markLessonComplete}
+            assignments={assignments}
+            assignmentSubmissions={assignmentSubmissions}
+            examinations={examinations}
+            examAttempts={examAttempts}
+            onOpenClassroom={handleResumeCourse}
+            defaultCourseId={selectedProgressCourseId}
+          />
+        </div>
+      )}
 
       {/* Conditional View: Login History & Geo Trends Tab */}
       {activeTab === 'logins' && (
@@ -742,6 +791,19 @@ export const StudentDashboard: React.FC = () => {
 
                       <div className="flex items-center gap-2">
                         <button
+                          onClick={() => {
+                            setSelectedProgressCourseId(course.id);
+                            setActiveTab('progress');
+                            window.scrollTo({ top: 350, behavior: 'smooth' });
+                          }}
+                          className="w-full sm:w-auto px-4 py-2.5 rounded-xl border border-[#002366] text-[#002366] hover:bg-[#002366]/5 text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all"
+                          title="View module completion percentages for this course"
+                        >
+                          <Target className="w-3.5 h-3.5" />
+                          <span>Module Tracker</span>
+                        </button>
+
+                        <button
                           onClick={() => handleResumeCourse(course.id)}
                           className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider shadow-sm flex items-center justify-center gap-1.5 transition-all"
                         >
@@ -755,6 +817,20 @@ export const StudentDashboard: React.FC = () => {
                 ))
               )}
             </div>
+
+            {/* VISUAL ENROLLED MODULE PROGRESS TRACKER */}
+            <VisualCourseProgressTracker
+              currentUser={currentUser}
+              courses={courses}
+              modules={modules}
+              completedLessonIds={completedLessonIds}
+              markLessonComplete={markLessonComplete}
+              assignments={assignments}
+              assignmentSubmissions={assignmentSubmissions}
+              examinations={examinations}
+              examAttempts={examAttempts}
+              onOpenClassroom={handleResumeCourse}
+            />
 
             {/* Other Courses in University Catalog */}
             {otherCourses.length > 0 && (
