@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Award, CheckCircle2, Clock, FileText, Plus, ShieldCheck, Sparkles, User, ArrowRight, BookOpen, FolderOpen } from 'lucide-react';
+import { Award, CheckCircle2, Clock, FileText, Plus, ShieldCheck, Sparkles, User, ArrowRight, BookOpen, FolderOpen, Target } from 'lucide-react';
 import { RPLApplicationRecord, RPLMinistryPosition, RPLEvidenceItem, RPLCompetencyItem } from '../../types/rpl';
 import { RplSlideDeck } from '../rpl/RplSlideDeck';
 import { RplPortfolioEvidenceBinder } from '../rpl/RplPortfolioEvidenceBinder';
+import { RplAssessmentBank } from './RplAssessmentBank';
 
 export const RplStudentModule: React.FC = () => {
   const { currentUser, rplRecords, submitDetailedRPLApplication, submitRPLAppeal, programs } = useApp();
 
-  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript' | 'slides' | 'binder'>('overview');
+  const [activeView, setActiveView] = useState<'overview' | 'apply' | 'portfolio' | 'transcript' | 'slides' | 'binder' | 'assessment-bank'>('assessment-bank');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   // New Application Form State
@@ -190,7 +191,21 @@ export const RplStudentModule: React.FC = () => {
           <FolderOpen className="w-3.5 h-3.5 text-[#C5A059]" />
           <span>📁 POE & e-Portfolio Binder</span>
         </button>
+        <button
+          id="tab-rpl-assessment-bank"
+          onClick={() => setActiveView('assessment-bank')}
+          className={`px-4 py-2 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1.5 ${activeView === 'assessment-bank' ? 'bg-[#002366] text-white shadow-xs' : 'bg-white text-slate-600 hover:bg-slate-100'}`}
+        >
+          <Target className="w-3.5 h-3.5 text-[#C5A059]" />
+          <span>🎯 Assessment Question Bank</span>
+        </button>
       </div>
+
+      {activeView === 'assessment-bank' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplAssessmentBank onClose={() => setActiveView('overview')} />
+        </div>
+      )}
 
       {activeView === 'slides' && (
         <div className="space-y-6 animate-in fade-in">

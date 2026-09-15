@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { RPLApplicationRecord, RPLEvidenceItem } from '../../types/rpl';
+import { ChristianMinistryRplBank } from './ChristianMinistryRplBank';
 import {
   FolderOpen,
   FileText,
@@ -17,7 +18,8 @@ import {
   X,
   AlertCircle,
   FileCheck2,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Target
 } from 'lucide-react';
 
 export interface RplPortfolioEvidenceBinderProps {
@@ -32,7 +34,7 @@ export const RplPortfolioEvidenceBinder: React.FC<RplPortfolioEvidenceBinderProp
   const { rplRecords, currentUser } = useApp();
   const record = rplRecord || rplRecords[0];
 
-  const [activeSection, setActiveSection] = useState<'cover' | 'toc' | 'admission' | 'cat-assessments' | 'attachment' | 'verifier' | 'center'>('toc');
+  const [activeSection, setActiveSection] = useState<'cover' | 'toc' | 'admission' | 'cat-assessments' | 'attachment' | 'verifier' | 'center' | 'ministry-rpl-bank'>('ministry-rpl-bank');
   const [selectedUnitCode, setSelectedUnitCode] = useState<string>('SWL-601');
   const [successNotice, setSuccessNotice] = useState<string | null>(null);
 
@@ -185,11 +187,34 @@ export const RplPortfolioEvidenceBinder: React.FC<RplPortfolioEvidenceBinderProp
               <span>Label E: Assessment Center Records</span>
               <span className="text-[10px] font-mono opacity-80">Section E</span>
             </button>
+
+            <button
+              onClick={() => setActiveSection('ministry-rpl-bank')}
+              className={`w-full text-left px-3.5 py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer shadow-xs ${
+                activeSection === 'ministry-rpl-bank'
+                  ? 'bg-[#002366] text-[#C5A059] border-l-4 border-[#C5A059]'
+                  : 'bg-gradient-to-r from-blue-50 to-amber-50/30 text-[#002366] hover:bg-blue-100 border border-blue-200'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-[#C5A059]" />
+                <span className="font-bold">Ministry Level 4 Assessment Bank</span>
+              </div>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#C5A059] text-[#002366] font-black">
+                NEW
+              </span>
+            </button>
           </div>
         </div>
 
         {/* Right Main Content Area */}
         <div className="lg:col-span-8 space-y-6">
+          {/* SECTION: CHRISTIAN MINISTRY LEVEL 4 RPL ASSESSMENT BANK */}
+          {activeSection === 'ministry-rpl-bank' && (
+            <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-hidden">
+              <ChristianMinistryRplBank onClose={() => setActiveSection('toc')} />
+            </div>
+          )}
           {/* SECTION: COVER & SPINE */}
           {activeSection === 'cover' && (
             <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs space-y-5">

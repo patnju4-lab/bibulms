@@ -7,6 +7,7 @@ import { BulletinDetailModal } from '../public/BulletinDetailModal';
 import { Notifications } from './Notifications';
 import { CourseCatalogBrowser } from './CourseCatalogBrowser';
 import { RplStudentModule } from './RplStudentModule';
+import { RplAssessmentBank } from './RplAssessmentBank';
 import { StudentMediaSection } from './StudentMediaSection';
 import { AcademicHistorySection } from './AcademicHistorySection';
 import { GradeDistributionPieChart } from './GradeDistributionPieChart';
@@ -68,7 +69,7 @@ export const StudentDashboard: React.FC = () => {
     grades
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history' | 'logins' | 'progress'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'courses' | 'rpl' | 'media' | 'history' | 'logins' | 'progress' | 'assessment-bank'>('overview');
   const [selectedProgressCourseId, setSelectedProgressCourseId] = useState<string>('all');
   const [activeBulletinModal, setActiveBulletinModal] = useState<Bulletin | null>(null);
   const [requestedCourseFeedback, setRequestedCourseFeedback] = useState<{ [courseId: string]: string }>({});
@@ -425,6 +426,19 @@ export const StudentDashboard: React.FC = () => {
         </button>
 
         <button
+          id="student-dashboard-tab-assessment-bank"
+          onClick={() => setActiveTab('assessment-bank')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
+            activeTab === 'assessment-bank'
+              ? 'bg-[#002366] text-[#C5A059] shadow-sm font-black'
+              : 'bg-amber-50 text-[#002366] hover:bg-amber-100 border border-amber-200'
+          }`}
+        >
+          <Target className="w-4 h-4 text-[#C5A059]" />
+          <span>🎯 RPL Assessment Bank</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('media')}
           className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 ${
             activeTab === 'media'
@@ -511,6 +525,13 @@ export const StudentDashboard: React.FC = () => {
       {activeTab === 'rpl' && (
         <div className="space-y-6 animate-in fade-in">
           <RplStudentModule />
+        </div>
+      )}
+
+      {/* Conditional View: RPL Assessment Bank Tab */}
+      {activeTab === 'assessment-bank' && (
+        <div className="space-y-6 animate-in fade-in">
+          <RplAssessmentBank onClose={() => setActiveTab('rpl')} />
         </div>
       )}
 
@@ -935,6 +956,36 @@ export const StudentDashboard: React.FC = () => {
                 </button>
               </div>
             )}
+
+            {/* RPL Assessment Bank Quick Dashboard Card */}
+            <div className="bg-gradient-to-br from-[#002366] to-[#001233] text-white rounded-2xl p-5 sm:p-6 shadow-md space-y-4 border border-blue-900/50">
+              <div className="flex items-center justify-between border-b border-blue-900/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <span className="p-2 rounded-xl bg-[#C5A059] text-[#002366]">
+                    <Target className="w-4 h-4" />
+                  </span>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-[#C5A059]">RPL Assessment Pathway</h4>
+                </div>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-slate-200">
+                  Level 4 TVET
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="text-sm font-bold font-display text-white">
+                  Christian Ministry Oral & Practical Question Bank
+                </h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Access 6 core competency modules, oral practice questions, practical task checklists, and PoE self-preparation.
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveTab('assessment-bank')}
+                className="w-full py-2.5 rounded-xl bg-[#C5A059] hover:bg-[#b28d4a] text-[#002366] font-black uppercase tracking-wider text-xs shadow transition-all flex items-center justify-center gap-2"
+              >
+                <span>Open Assessment Bank</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
             {/* Quick Academic Alerts Mini-Card */}
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-xs space-y-3">
