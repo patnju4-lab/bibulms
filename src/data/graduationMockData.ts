@@ -18,12 +18,22 @@ import {
   RPL_2024_BOOKLET,
   RPL_2024_CERTIFICATES
 } from './graduationRPL2024Data';
+import {
+  CEREMONY_2025_KENYA,
+  KENYA_2025_CANDIDATES,
+  KENYA_2025_BOOKLET,
+  KENYA_2025_CERTIFICATES
+} from './graduationKenya2025Data';
 
 export {
   CEREMONY_2024_RPL,
   RPL_2024_CANDIDATES,
   RPL_2024_BOOKLET,
-  RPL_2024_CERTIFICATES
+  RPL_2024_CERTIFICATES,
+  CEREMONY_2025_KENYA,
+  KENYA_2025_CANDIDATES,
+  KENYA_2025_BOOKLET,
+  KENYA_2025_CERTIFICATES
 };
 
 export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
@@ -109,6 +119,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
     createdAt: '2025-01-10T08:00:00Z',
     updatedAt: '2025-11-01T15:00:00Z'
   },
+  CEREMONY_2025_KENYA,
   CEREMONY_2024_DEC,
   CEREMONY_2024_RPL,
   {
@@ -186,6 +197,7 @@ export const INITIAL_GRADUATION_CEREMONIES: GraduationCeremony[] = [
 ];
 
 export const INITIAL_GRADUATION_CANDIDATES: GraduationCandidate[] = [
+  ...KENYA_2025_CANDIDATES,
   ...DECEMBER_2024_CANDIDATES,
   ...RPL_2024_CANDIDATES,
   {
@@ -690,7 +702,8 @@ export const INITIAL_ACADEMIC_AWARDS: AcademicAwardWinner[] = [
     citation: 'For passionate grass-roots evangelism, planting 5 outreach mission posts during her course of study, and exemplary heart for vulnerable orphans.',
     presentedBy: 'Bishop Dr. William K. Tuimising (Dean of Theology)',
     ceremonyId: 'ceremony-2026-15th'
-  }
+  },
+  ...(KENYA_2025_BOOKLET.awards || [])
 ];
 
 export const INITIAL_GRADUATION_BOOKLET: GraduationBooklet = {
@@ -790,11 +803,13 @@ export const INITIAL_GRADUATION_BOOKLET: GraduationBooklet = {
 
 export const INITIAL_GRADUATION_BOOKLETS: GraduationBooklet[] = [
   INITIAL_GRADUATION_BOOKLET,
+  KENYA_2025_BOOKLET,
   DECEMBER_2024_BOOKLET,
   RPL_2024_BOOKLET
 ];
 
 export const INITIAL_GRADUATION_CERTIFICATES: GraduationCertificateRecord[] = [
+  ...KENYA_2025_CERTIFICATES,
   ...DECEMBER_2024_CERTIFICATES,
   ...RPL_2024_CERTIFICATES,
   {

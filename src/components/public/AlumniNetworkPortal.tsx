@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { AlumniDirectory } from './AlumniDirectory';
 import { AlumniStoriesSection } from './AlumniStoriesSection';
 import { AlumniAdminManager } from '../admin/AlumniAdminManager';
+import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
 import { Alumni } from '../../types/alumni';
 import {
   COUNTRIES_50_PLUS,
@@ -22,6 +23,7 @@ import {
   CheckCircle2,
   Award,
   BookOpen,
+  FileText,
   MapPin,
   Mail,
   Building,
@@ -54,7 +56,7 @@ export const AlumniNetworkPortal: React.FC = () => {
 
   // Navigation Sub-tab
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'directory' | 'countries' | 'years' | 'programs' | 'distinguished' | 'chapters' | 'stories' | 'verify' | 'admin'
+    'overview' | 'directory' | 'countries' | 'years' | 'programs' | 'distinguished' | 'chapters' | 'stories' | 'booklets' | 'verify' | 'admin'
   >('overview');
 
   // Filter pass-through states when clicking on a Country, Year, or Program
@@ -317,6 +319,19 @@ export const AlumniNetworkPortal: React.FC = () => {
           </button>
 
           <button
+            id="tab-btn-booklets"
+            onClick={() => setActiveTab('booklets')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
+              activeTab === 'booklets'
+                ? 'bg-[#002366] text-[#C5A059] shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <FileText className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Graduation Booklets</span>
+          </button>
+
+          <button
             id="tab-btn-verify"
             onClick={() => setActiveTab('verify')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 ${
@@ -389,6 +404,40 @@ export const AlumniNetworkPortal: React.FC = () => {
         {/* ======================================================== */}
         {activeTab === 'overview' && (
           <div className="space-y-12">
+            {/* Kenya 2025 Graduation Booklet Spotlight Banner */}
+            <div className="bg-gradient-to-r from-[#001A4D] via-[#002366] to-[#0A328C] rounded-3xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden border border-[#C5A059]/30">
+              <div className="absolute -right-8 -bottom-8 w-48 h-48 bg-[#C5A059]/10 rounded-full blur-2xl pointer-events-none" />
+              <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2 max-w-2xl">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-amber-200 text-xs font-bold uppercase tracking-wider">
+                    <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                    <span>Official 2025 Kenya Graduation Roster Published</span>
+                  </div>
+                  <h2 className="text-2xl sm:text-3xl font-display font-black text-white leading-tight">
+                    Kenya Students Class of 2025 Convocation Booklet
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-200 leading-relaxed">
+                    Celebrating 77 conferred graduates across Certificates & Diplomas in Counseling Psychology and Theological Studies, including the Makueni County regional cohort. Read the official commemorative booklet with leadership addresses and full graduate roll.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => setActiveTab('booklets')}
+                    className="px-5 py-3 rounded-xl bg-[#C5A059] hover:bg-[#D4AF37] text-[#001A4D] text-xs font-black uppercase tracking-wider transition-all shadow-sm flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>Open 2025 Kenya Booklet</span>
+                  </button>
+                  <button
+                    onClick={() => handleYearClick(2025)}
+                    className="px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                  >
+                    <span>View 2025 Roster</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
             {/* Quick Country Explorer Strip */}
             <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
@@ -833,6 +882,32 @@ export const AlumniNetworkPortal: React.FC = () => {
         {/* TAB: ALUMNI STORIES */}
         {/* ======================================================== */}
         {activeTab === 'stories' && <AlumniStoriesSection />}
+
+        {/* ======================================================== */}
+        {/* TAB: GRADUATION BOOKLETS */}
+        {/* ======================================================== */}
+        {activeTab === 'booklets' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#002366]/10 text-[#002366] text-xs font-bold uppercase tracking-wider mb-1">
+                  <FileText className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span>Official Alumni Convocation Booklets</span>
+                </div>
+                <h2 className="text-xl sm:text-2xl font-display font-black text-[#002366]">
+                  Commemorative Graduation Booklets & Gazette Roster
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Browse official convocation booklets, university senate registers, leadership addresses, and conferred graduating classes including the Kenya 2025 cohort.
+                </p>
+              </div>
+            </div>
+
+            <GraduationBookletGenerator
+              initialCeremonyId="ceremony-2025-kenya"
+            />
+          </div>
+        )}
 
         {/* ======================================================== */}
         {/* TAB: VERIFY GRADUATE */}
