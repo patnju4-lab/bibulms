@@ -4,6 +4,7 @@ import { AlumniDirectory } from './AlumniDirectory';
 import { AlumniStoriesSection } from './AlumniStoriesSection';
 import { AlumniAdminManager } from '../admin/AlumniAdminManager';
 import { GraduationBookletGenerator } from '../graduation/GraduationBookletGenerator';
+import { GraduationExportModule } from '../graduation/GraduationExportModule';
 import { Alumni } from '../../types/alumni';
 import {
   COUNTRIES_50_PLUS,
@@ -63,6 +64,7 @@ export const AlumniNetworkPortal: React.FC = () => {
   const [filterCountryParam, setFilterCountryParam] = useState<string>('All');
   const [filterYearParam, setFilterYearParam] = useState<number | 'All'>('All');
   const [filterProgramParam, setFilterProgramParam] = useState<string>('All');
+  const [bookletDisplayMode, setBookletDisplayMode] = useState<'export_print' | 'interactive'>('export_print');
 
   // Direct Verification state
   const [verifyQuery, setVerifyQuery] = useState('');
@@ -901,11 +903,41 @@ export const AlumniNetworkPortal: React.FC = () => {
                   Browse official convocation booklets, university senate registers, leadership addresses, and conferred graduating classes including the Kenya 2025 cohort.
                 </p>
               </div>
+
+              {/* View Switcher */}
+              <div className="flex items-center gap-1 bg-slate-100 p-1.5 rounded-2xl shrink-0">
+                <button
+                  onClick={() => setBookletDisplayMode('export_print')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    bookletDisplayMode === 'export_print'
+                      ? 'bg-[#002366] text-[#C5A059] shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  <span>Formal Printable Ceremony Booklet (Kenya 2025)</span>
+                </button>
+                <button
+                  onClick={() => setBookletDisplayMode('interactive')}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    bookletDisplayMode === 'interactive'
+                      ? 'bg-[#002366] text-[#C5A059] shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <BookOpen className="w-3.5 h-3.5" />
+                  <span>Interactive Digital Reader</span>
+                </button>
+              </div>
             </div>
 
-            <GraduationBookletGenerator
-              initialCeremonyId="ceremony-2025-kenya"
-            />
+            {bookletDisplayMode === 'export_print' ? (
+              <GraduationExportModule />
+            ) : (
+              <GraduationBookletGenerator
+                initialCeremonyId="ceremony-2025-kenya"
+              />
+            )}
           </div>
         )}
 

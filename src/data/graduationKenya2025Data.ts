@@ -53,7 +53,7 @@ export const CEREMONY_2025_KENYA: GraduationCeremony = {
 // =========================================================================
 // RAW KENYA STUDENTS DATA (PROVIDED LIST)
 // =========================================================================
-interface RawKenyaGradStudent {
+export interface RawKenyaGradStudent {
   rawNum: number;
   fullName: string;
   firstName: string;
@@ -65,7 +65,7 @@ interface RawKenyaGradStudent {
   isMakueniChapter?: boolean;
 }
 
-const RAW_KENYA_2025_STUDENTS: RawKenyaGradStudent[] = [
+export const RAW_KENYA_2025_STUDENTS: RawKenyaGradStudent[] = [
   // -------------------------------------------------------------
   // Certificate in Counseling Psychology (2 students)
   // -------------------------------------------------------------

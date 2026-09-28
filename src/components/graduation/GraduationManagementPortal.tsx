@@ -13,6 +13,8 @@ import {
 import { Alumni } from '../../types/alumni';
 import { GraduationBookletViewer } from './GraduationBookletViewer';
 import { GraduationBookletGenerator } from './GraduationBookletGenerator';
+import { GraduationExportModule } from './GraduationExportModule';
+import { OfficialTranscriptsModule } from './OfficialTranscriptsModule';
 import { GraduationCandidateModal } from './GraduationCandidateModal';
 import { AlumniDigitalCard } from './AlumniDigitalCard';
 import {
@@ -21,6 +23,7 @@ import {
   Users,
   Award,
   BookOpen,
+  FileText,
   FileCheck2,
   ShieldCheck,
   Search,
@@ -74,7 +77,7 @@ export const GraduationManagementPortal: React.FC = () => {
 
   // Navigation Sub-tab
   const [activeTab, setActiveTab] = useState<
-    'ceremonies' | 'candidates' | 'clearance' | 'booklet' | 'certificates' | 'awards' | 'alumni' | 'reports' | 'audit'
+    'ceremonies' | 'candidates' | 'clearance' | 'booklet' | 'export' | 'transcripts' | 'certificates' | 'awards' | 'alumni' | 'reports' | 'audit'
   >('candidates');
 
   // Candidate Filters & Search
@@ -325,6 +328,32 @@ export const GraduationManagementPortal: React.FC = () => {
         </button>
 
         <button
+          id="tab-btn-ceremony-export"
+          onClick={() => setActiveTab('export')}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'export'
+              ? 'bg-[#002366] text-[#C5A059] border border-[#C5A059] shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <Printer className="w-4 h-4 text-[#C5A059]" />
+          <span>Ceremony Booklet Export</span>
+        </button>
+
+        <button
+          id="tab-btn-official-transcripts"
+          onClick={() => setActiveTab('transcripts')}
+          className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
+            activeTab === 'transcripts'
+              ? 'bg-[#002366] text-[#C5A059] border border-[#C5A059] shadow-xs'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <FileText className="w-4 h-4 text-[#C5A059]" />
+          <span>Official Transcripts (All Graduates)</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('certificates')}
           className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
             activeTab === 'certificates'
@@ -443,6 +472,15 @@ export const GraduationManagementPortal: React.FC = () => {
 
             {/* Action Buttons: Add, Import, Export */}
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('export')}
+                className="px-3 py-2 rounded-lg border border-[#C5A059]/60 bg-[#002366] hover:bg-[#001A4D] text-[#C5A059] text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
+                title="Open Printable 2025 Kenya Ceremony Booklet & Gazette"
+              >
+                <Printer className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Print Ceremony Booklet</span>
+              </button>
+
               <button
                 onClick={handleExportCSV}
                 className="px-3 py-2 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-1.5 shadow-xs transition-colors"
@@ -799,6 +837,20 @@ export const GraduationManagementPortal: React.FC = () => {
           <GraduationBookletGenerator
             initialCeremonyId={selectedCeremonyFilter !== 'All' ? selectedCeremonyFilter : currentCeremony?.id}
           />
+        </div>
+      )}
+
+      {/* TAB CONTENT 4B: FORMAL CEREMONY BOOKLET EXPORT & PRINT MODULE */}
+      {activeTab === 'export' && (
+        <div className="space-y-6">
+          <GraduationExportModule />
+        </div>
+      )}
+
+      {/* TAB CONTENT 4C: OFFICIAL ACADEMIC TRANSCRIPTS (ALBERT KIHARA & ALL GRADUATES) */}
+      {activeTab === 'transcripts' && (
+        <div className="space-y-6">
+          <OfficialTranscriptsModule />
         </div>
       )}
 
