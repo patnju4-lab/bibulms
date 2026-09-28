@@ -52,6 +52,15 @@ import {
   StudentCourseNote
 } from './PersonalCourseNotesModal';
 import { AcademicRegistrarStamp } from './AcademicRegistrarStamp';
+import { TranscriptQrCodeBadge } from './TranscriptQrCodeBadge';
+import { RegistrarSignature } from './RegistrarSignature';
+import { CreditHoursDistributionChart } from './CreditHoursDistributionChart';
+import { AcademicPerformanceOverview } from './AcademicPerformanceOverview';
+import {
+  AcademicHistoryLog,
+  AcademicHistoryLogEntry,
+  AcademicStatusChangeType
+} from './AcademicHistoryLog';
 import { GradeRecord } from '../../types';
 import {
   ResponsiveContainer,
@@ -173,9 +182,30 @@ export const TranscriptView: React.FC = () => {
   const [includeSecurityHash, setIncludeSecurityHash] = useState(true);
   const [includeInstructors, setIncludeInstructors] = useState(true);
   const [includeRadialChart, setIncludeRadialChart] = useState(true);
+  const [includeCreditDistributionChart, setIncludeCreditDistributionChart] = useState(true);
   const [showPrivateNotesOnScreen, setShowPrivateNotesOnScreen] = useState(true);
   const [transcriptPurpose, setTranscriptPurpose] = useState<string>('Official Registrar Copy');
   const [issueDate, setIssueDate] = useState<string>('September 10, 2026');
+
+  // Official Transcript Status & Associated Verification Timestamp
+  // Note: The visual 'Registrar Signature' component appears ONLY when transcriptStatus === 'Verified'
+  const [transcriptStatus, setTranscriptStatus] = useState<'Verified' | 'Pending Verification' | 'Draft' | 'Official'>('Verified');
+  const [verificationTimestamp, setVerificationTimestamp] = useState<string>('September 28, 2026, 08:53:10 UTC');
+
+  const handleMarkAsVerified = () => {
+    const nowStamp = new Date().toLocaleString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZoneName: 'short'
+    });
+    setTranscriptStatus('Verified');
+    setVerificationTimestamp(nowStamp);
+    logActivity('Verified Document', `Transcript status marked as 'Verified' with Registrar Digital Signature stamped at ${nowStamp}.`);
+  };
 
   interface TranscriptActivityLogItem {
     id: string;
@@ -185,6 +215,61 @@ export const TranscriptView: React.FC = () => {
     status: 'Success' | 'Verified' | 'Dispatched';
     details: string;
   }
+
+  // Academic History Log - Chronological list of major status changes for the transcript
+  const [academicHistoryLogs, setAcademicHistoryLogs] = useState<AcademicHistoryLogEntry[]>([
+    {
+      id: 'ahl-5',
+      timestamp: 'Today, 08:35 AM',
+      statusChange: 'PDF Downloaded',
+      category: 'Export',
+      actor: 'Student Portal (Self-Service)',
+      ipAddress: '192.168.1.45 (Phoenix, AZ)',
+      documentRef: 'BIBU-TRN-2026-048',
+      details: 'Official Registrar Copy compiled with high-resolution seal, QR verification matrix, and cryptographic hash.',
+      isLatest: true
+    },
+    {
+      id: 'ahl-4',
+      timestamp: 'Yesterday, 04:12 PM',
+      statusChange: 'Verified',
+      category: 'Authentication',
+      actor: 'Rev. Dr. Sarah M. Jenkins, Th.D. (Registrar)',
+      ipAddress: '172.56.21.90 (Central Registry)',
+      documentRef: 'BIBU-TRN-2026-048',
+      details: 'Transcript authenticity validated against central registrar ledger. Cryptographic hash check passed successfully.'
+    },
+    {
+      id: 'ahl-3',
+      timestamp: 'September 10, 2026, 10:15 AM',
+      statusChange: 'Transcript Stamped',
+      category: 'Authentication',
+      actor: 'Office of the Academic Registrar',
+      ipAddress: '10.0.4.12 (Internal Server)',
+      documentRef: 'BIBU-TRN-2026-048',
+      details: 'Official university seal stamped with registrar wax motif and unique 2D verification QR code activated.'
+    },
+    {
+      id: 'ahl-2',
+      timestamp: 'May 20, 2025, 02:30 PM',
+      statusChange: 'Grades Moderated',
+      category: 'Senate Review',
+      actor: 'University Academic Senate (Prof. Dr. Patrick Njuguna)',
+      ipAddress: 'Senate Executive Office',
+      documentRef: 'BIBU-TRN-2026-048',
+      details: 'Faculty Examination Board completed bi-annual course moderation; confirmed 3.88 Cumulative GPA.'
+    },
+    {
+      id: 'ahl-1',
+      timestamp: 'August 15, 2024, 09:00 AM',
+      statusChange: 'Record Created',
+      category: 'Milestone',
+      actor: 'Office of Admissions & Records',
+      ipAddress: 'Student Information System (SIS)',
+      documentRef: 'BIBU-TRN-2026-048',
+      details: 'Candidate matriculation record initiated and academic ledger established for Bachelor of Arts in Theology.'
+    }
+  ]);
 
   const [activityLogs, setActivityLogs] = useState<TranscriptActivityLogItem[]>([
     {
@@ -223,6 +308,37 @@ export const TranscriptView: React.FC = () => {
       details
     };
     setActivityLogs(prev => [newLog, ...prev]);
+
+    // Map to major status change in Academic History Log
+    let statusChange: AcademicStatusChangeType = 'Record Created';
+    let category: AcademicHistoryLogEntry['category'] = 'Milestone';
+
+    if (action === 'Generated PDF' || action === 'Printed Report') {
+      statusChange = 'PDF Downloaded';
+      category = 'Export';
+    } else if (action === 'Verified Document') {
+      statusChange = 'Verified';
+      category = 'Authentication';
+    } else if (action === 'Emailed Transcript') {
+      statusChange = 'Emailed';
+      category = 'Export';
+    } else if (action === 'Downloaded CSV') {
+      statusChange = 'PDF Downloaded';
+      category = 'Export';
+    }
+
+    const newHistoryEntry: AcademicHistoryLogEntry = {
+      id: `ahl-${Date.now()}`,
+      timestamp: 'Just now',
+      statusChange,
+      category,
+      actor: action === 'Verified Document' ? 'Rev. Dr. Sarah M. Jenkins, Th.D. (Registrar)' : 'Student Portal (Current Session)',
+      ipAddress: '192.168.1.45 (Current Session)',
+      documentRef,
+      details,
+      isLatest: true
+    };
+    setAcademicHistoryLogs(prev => [newHistoryEntry, ...prev.map(p => ({ ...p, isLatest: false }))]);
   };
 
   // Digital Signatures State
@@ -552,6 +668,229 @@ export const TranscriptView: React.FC = () => {
   const page1Semesters = compiledSemesters.slice(0, 2);
   const page2Semesters = compiledSemesters.slice(2);
 
+  // Reusable official transcript footer with cumulative summary, grading regulations, signatures,
+  // Academic Registrar Digital Signature & Stylized Stamp (validating metadata), Unique Verification QR Code, and security hash
+  const renderOfficialTranscriptFooter = () => (
+    <div className="space-y-6 pt-2">
+      {/* Official Academic Cumulative Summary Box */}
+      <div className="relative z-10 p-5 bg-[#002366] text-white rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-[#002366] shadow-sm">
+        <div className="space-y-1.5">
+          <div className="text-xs uppercase tracking-wider text-[#C5A059] font-black font-display flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-[#C5A059]" />
+            <span>Cumulative Academic Standing & Record</span>
+          </div>
+          <div className="text-xs text-slate-200">
+            Total Credits Attempted: <strong className="text-white">{totalAttemptedCredits}</strong> •
+            Credits Earned / Conferred: <strong className="text-white">{totalCreditsConferred}</strong> •
+            Quality Points: <strong className="text-white">{totalQualityPoints.toFixed(1)}</strong>
+          </div>
+          <div className="text-[11px] text-[#C5A059] font-bold">
+            Academic Classification: {academicStandingInfo.latinHonors}
+          </div>
+        </div>
+
+        <div className="text-center sm:text-right bg-white/10 sm:bg-transparent px-4 py-2 sm:p-0 rounded-lg sm:rounded-none w-full sm:w-auto">
+          <div className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
+            Cumulative Grade Point Average
+          </div>
+          <div className="text-3xl sm:text-4xl font-black font-display text-[#C5A059]">
+            {compiledGpa.toFixed(2)}{' '}
+            <span className="text-xs text-slate-300 font-normal">/ 4.00</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Program Degree Progress Radial Bar Summary Chart (Printed in Official PDF) */}
+      {includeRadialChart && (
+        <div className="relative z-10">
+          <TranscriptRadialSummaryChart
+            totalCreditsEarned={totalCreditsConferred}
+            totalCreditsRequired={totalDegreeCreditsRequired}
+            studentGrades={studentGrades}
+            programName={currentUser.programName || 'Degree Program'}
+          />
+        </div>
+      )}
+
+      {/* Structured Credit Hours Distribution Chart (Completed Modules, Electives, and Thesis Credits) */}
+      {includeCreditDistributionChart && (
+        <div className="relative z-10">
+          <CreditHoursDistributionChart
+            studentGrades={studentGrades}
+            totalCreditsEarned={totalCreditsConferred}
+            totalCreditsRequired={totalDegreeCreditsRequired}
+            programName={currentUser.programName || 'Bachelor of Arts in Theology & Biblical Studies'}
+          />
+        </div>
+      )}
+
+      {/* Official Registrar Grading Scale & Policy Legend */}
+      {includeGradingScale && (
+        <div className="relative z-10 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 space-y-2 text-[10px] leading-relaxed">
+          <div className="font-bold uppercase tracking-wider text-[#002366] font-display text-[11px] flex items-center justify-between">
+            <span>Registrar Grading System & Academic Regulations</span>
+            <span className="text-slate-400 font-mono text-[9px]">REG-STD-2026</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 font-mono text-[10px] bg-white p-2 rounded border border-slate-200 text-center">
+            <div><strong className="text-[#002366]">A:</strong> 4.00 (95-100%)</div>
+            <div><strong className="text-[#002366]">A-:</strong> 3.70 (90-94%)</div>
+            <div><strong className="text-[#002366]">B+:</strong> 3.30 (85-89%)</div>
+            <div><strong className="text-[#002366]">B:</strong> 3.00 (80-84%)</div>
+            <div><strong className="text-[#002366]">B-:</strong> 2.70 (77-79%)</div>
+            <div><strong className="text-[#002366]">C+:</strong> 2.30 (74-76%)</div>
+            <div><strong className="text-[#002366]">C:</strong> 2.00 (70-73%)</div>
+            <div><strong className="text-[#002366]">F:</strong> 0.00 (Fail)</div>
+          </div>
+
+          <p className="text-slate-500 text-[10px]">
+            <strong>Credit Hour Standard:</strong> One semester credit corresponds to 15 hours of classroom or online faculty-directed theological instruction and 30 hours of guided research.
+            <strong> Honors Thresholds:</strong> Summa Cum Laude (3.90–4.00), Magna Cum Laude (3.75–3.89), Cum Laude (3.50–3.74). Good Academic Standing requires a minimum GPA of 2.00.
+          </p>
+        </div>
+      )}
+
+      {/* Official Registrar Seal, Endorsements & Three Security Signatures */}
+      {includeSignatures && (
+        <div className="relative z-10 pt-4 border-t-2 border-[#002366] grid grid-cols-1 sm:grid-cols-3 gap-6 items-center text-xs">
+          {/* Chancellor Signature */}
+          <div className="space-y-1 text-center sm:text-left">
+            <div className="h-10 flex items-end justify-center sm:justify-start border-b border-slate-300 pb-1">
+              {chancellorSigUrl ? (
+                <img src={chancellorSigUrl} alt="Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
+              ) : (
+                <span className="font-display italic text-sm text-[#002366] font-bold">
+                  Michael C. Sterling
+                </span>
+              )}
+            </div>
+            <div className="text-[9px] font-bold uppercase text-slate-700">
+              Dr. Michael C. Sterling, Th.D.
+            </div>
+            <div className="text-[9px] text-slate-500">
+              Chancellor & President • Issued from Phoenix USA
+            </div>
+          </div>
+
+          {/* Vice Chancellor Signature */}
+          <div className="space-y-1 text-center">
+            <div className="h-10 flex items-end justify-center border-b border-slate-300 pb-1">
+              {deanSigUrl ? (
+                <img src={deanSigUrl} alt="Vice Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
+              ) : (
+                <span className="font-display italic text-sm text-[#002366] font-bold">
+                  Patrick Njuguna
+                </span>
+              )}
+            </div>
+            <div className="text-[9px] font-bold uppercase text-slate-700">
+              Prof. Dr. Patrick Njuguna, Ph.D.
+            </div>
+            <div className="text-[9px] text-slate-500">
+              Vice Chancellor & Senate Chair
+            </div>
+          </div>
+
+          {/* Registrar Signature - Appears verified with stylized overlay and timestamp when status === 'Verified' */}
+          {transcriptStatus === 'Verified' ? (
+            <RegistrarSignature
+              variant="inline"
+              status={transcriptStatus}
+              timestamp={verificationTimestamp}
+              registrarName="Rev. Dr. Sarah M. Jenkins, Th.D."
+              registrarTitle="University Registrar & Chief Academic Records Officer"
+              verificationSerial={documentRef}
+              securityHash={verificationHash}
+              customSignatureUrl={registrarSigUrl}
+            />
+          ) : (
+            <div className="space-y-1 text-center sm:text-right">
+              <div className="h-14 sm:h-16 flex items-end justify-center sm:justify-end border-b-2 border-dashed border-amber-300 pb-1.5">
+                <span className="text-[9.5px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block font-semibold">
+                  [ Signature Pending — Status: {transcriptStatus} ]
+                </span>
+              </div>
+              <div className="text-[10px] font-black uppercase text-slate-500 font-display">
+                Rev. Dr. Sarah M. Jenkins, Th.D.
+              </div>
+              <div className="text-[9px] text-slate-400 font-medium">
+                University Registrar (Unsigned)
+              </div>
+              <button
+                type="button"
+                onClick={handleMarkAsVerified}
+                className="no-print text-[8.5px] text-emerald-700 font-mono hover:underline cursor-pointer font-bold inline-block"
+              >
+                Mark as Verified & Apply Signature
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Visual 'Registrar Signature' Component - Appears ONLY when transcript status is marked as 'Verified' */}
+      <RegistrarSignature
+        variant="compact"
+        status={transcriptStatus}
+        timestamp={verificationTimestamp}
+        registrarName="Rev. Dr. Sarah M. Jenkins, Th.D."
+        registrarTitle="University Registrar & Chief Academic Records Officer"
+        institutionName="Breakthrough International Bible University"
+        verificationSerial={documentRef}
+        securityHash={verificationHash}
+        customSignatureUrl={registrarSigUrl}
+      />
+
+      {/* Academic Registrar Digital Signature & Stylized Stamp Component validating metadata */}
+      <div className="relative z-10">
+        <AcademicRegistrarStamp
+          registrarName="Rev. Dr. Sarah M. Jenkins, Th.D."
+          registrarTitle="University Registrar & Chief Academic Records Officer"
+          verificationCode={documentRef}
+          securityHash={verificationHash}
+          issueDate={issueDate || currentUser.graduationDate || 'September 10, 2026'}
+          studentName={currentUser.name}
+          studentId={currentUser.studentId}
+          programName={currentUser.programName || 'Degree Program'}
+          cumulativeGpa={compiledGpa}
+          creditsConferred={totalCreditsConferred}
+          academicStanding={academicStandingInfo.latinHonors}
+          onVerifyClick={() => setIsVerificationOpen(true)}
+        />
+      </div>
+
+      {/* Unique QR Code Linking to Secure Certificate Verification Endpoint */}
+      <div className="relative z-10">
+        <TranscriptQrCodeBadge
+          documentRef={documentRef}
+          verificationHash={verificationHash}
+          studentId={currentUser.studentId}
+          studentName={currentUser.name}
+          programName={currentUser.programName || 'Degree Program'}
+          cumulativeGpa={compiledGpa}
+          issueDate={issueDate || currentUser.graduationDate || 'September 10, 2026'}
+          onOpenVerification={() => setIsVerificationOpen(true)}
+          onOpenQrModal={() => setIsQrModalOpen(true)}
+        />
+      </div>
+
+      {/* Cryptographic Verification Footer */}
+      {includeSecurityHash && (
+        <div className="relative z-10 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[9px] font-mono text-slate-500">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span className="truncate max-w-md">Digital Record Verification Hash: <strong className="text-slate-700">{verificationHash}</strong></span>
+          </div>
+          <div className="shrink-0 flex items-center gap-2">
+            <span>Document Serial: <strong className="text-[#002366]">{documentRef}</strong></span>
+            <span>•</span>
+            <span>Online Verification: bibu.university/verify</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-5xl mx-auto px-3 sm:px-6 py-6 space-y-6">
       {/* Top Action & Navigation Bar */}
@@ -715,7 +1054,52 @@ export const TranscriptView: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+            {/* Transcript Status (Controls Registrar Signature Component) */}
+            <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200 shadow-2xs">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-700 block">Transcript Status</label>
+                <span
+                  className={`text-[8.5px] px-1.5 py-0.5 rounded font-bold uppercase ${
+                    transcriptStatus === 'Verified'
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-amber-100 text-amber-800 border border-amber-300'
+                  }`}
+                >
+                  {transcriptStatus}
+                </span>
+              </div>
+              <select
+                value={transcriptStatus}
+                onChange={(e) => {
+                  const val = e.target.value as 'Verified' | 'Pending Verification' | 'Draft' | 'Official';
+                  setTranscriptStatus(val);
+                  if (val === 'Verified') {
+                    const now = new Date().toLocaleString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      second: '2-digit',
+                      timeZoneName: 'short'
+                    });
+                    setVerificationTimestamp(now);
+                    logActivity('Verified Document', `Status set to 'Verified' with Registrar Digital Signature applied.`);
+                  }
+                }}
+                className="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded text-[11px] font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#002366]"
+              >
+                <option value="Verified">Verified (Registrar Signature Active)</option>
+                <option value="Pending Verification">Pending Verification (Unsigned)</option>
+                <option value="Draft">Draft (Unofficial Student Copy)</option>
+                <option value="Official">Official (Standard Archival)</option>
+              </select>
+              <p className="text-[9px] text-slate-500 italic leading-snug">
+                * Registrar Signature & stylized overlay appear only when status is 'Verified'.
+              </p>
+            </div>
+
             {/* Sort Order */}
             <div className="space-y-1.5 bg-white p-3 rounded-lg border border-slate-200">
               <label className="font-bold text-slate-700 block">Course History Sorting</label>
@@ -769,31 +1153,6 @@ export const TranscriptView: React.FC = () => {
                 className="w-full py-1.5 px-2 bg-slate-50 border border-slate-200 rounded text-[11px] font-medium text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#002366]"
               />
             </div>
-
-            {/* Feature Toggles */}
-            <div className="space-y-2 bg-white p-3 rounded-lg border border-slate-200">
-              <span className="font-bold text-slate-700 block">Security Features</span>
-              <div className="space-y-1.5 text-[11px]">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeWatermark}
-                    onChange={(e) => setIncludeWatermark(e.target.checked)}
-                    className="rounded text-[#002366] focus:ring-[#002366]"
-                  />
-                  <span>Official Watermark</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={includeSignatures}
-                    onChange={(e) => setIncludeSignatures(e.target.checked)}
-                    className="rounded text-[#002366] focus:ring-[#002366]"
-                  />
-                  <span>Registrar Seal & Signature</span>
-                </label>
-              </div>
-            </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-4 text-xs pt-1">
@@ -835,6 +1194,16 @@ export const TranscriptView: React.FC = () => {
                 className="rounded text-[#002366] focus:ring-[#002366]"
               />
               <span>Include Radial Progress Summary Chart in Official PDF</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
+              <input
+                type="checkbox"
+                checked={includeCreditDistributionChart}
+                onChange={(e) => setIncludeCreditDistributionChart(e.target.checked)}
+                className="rounded text-[#002366] focus:ring-[#002366]"
+              />
+              <span>Include Credit Hours Distribution Chart (Modules, Electives & Thesis)</span>
             </label>
 
             <label className="flex items-center gap-2 cursor-pointer font-medium text-slate-700">
@@ -970,6 +1339,17 @@ export const TranscriptView: React.FC = () => {
         onOpenCreditEvaluator={() => setIsCreditEvaluatorOpen(true)}
       />
 
+      {/* On-Screen Structured Credit Hours Distribution Breakdown (Completed Modules, Electives & Thesis) */}
+      <div className="no-print">
+        <CreditHoursDistributionChart
+          studentGrades={studentGrades}
+          totalCreditsEarned={totalCreditsConferred}
+          totalCreditsRequired={totalDegreeCreditsRequired}
+          programName={currentUser.programName || 'Bachelor of Arts in Theology & Biblical Studies'}
+          variant="dashboard"
+        />
+      </div>
+
       {/* Predictive GPA Calculator & Semester Performance Forecaster */}
       {showGpaPredictor && (
         <PredictiveGpaCalculator
@@ -981,137 +1361,15 @@ export const TranscriptView: React.FC = () => {
         />
       )}
 
-      {/* Transcript Performance Analysis Recharts Section */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-6 no-print">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-[#002366] font-display">
-              <Sparkles className="w-4 h-4 text-[#C5A059]" />
-              <span>Transcript Performance Analysis</span>
-            </div>
-            <h2 className="text-lg font-bold font-display text-slate-900 mt-1">
-              Cumulative GPA Progression & Term Quality Analytics
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">
-              Evaluated across {compiledSemesters.length} academic semesters
-            </span>
-          </div>
-        </div>
-
-        {/* Recharts Area / Line Chart */}
-        <div className="h-72 w-full pt-2">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={compiledSemesters}
-              margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="gpaGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#002366" stopOpacity={0.25} />
-                  <stop offset="95%" stopColor="#002366" stopOpacity={0.0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" vertical={false} />
-              <XAxis
-                dataKey="term"
-                stroke="#64748B"
-                fontSize={11}
-                tickLine={false}
-                axisLine={{ stroke: '#CBD5E1' }}
-              />
-              <YAxis
-                domain={[2.0, 4.0]}
-                ticks={[2.0, 2.5, 3.0, 3.5, 4.0]}
-                stroke="#64748B"
-                fontSize={11}
-                tickLine={false}
-                axisLine={{ stroke: '#CBD5E1' }}
-                tickFormatter={(val) => val.toFixed(2)}
-              />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    const data = payload[0].payload;
-                    return (
-                      <div className="bg-slate-900 text-white text-xs p-3 rounded-xl shadow-xl border border-slate-700 space-y-1.5">
-                        <div className="font-bold text-[#C5A059] border-b border-slate-700 pb-1">
-                          {label}
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <span className="text-slate-300">Cumulative GPA:</span>
-                          <strong className="font-mono text-emerald-400">{data.runningGpa.toFixed(2)}</strong>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <span className="text-slate-300">Term GPA:</span>
-                          <strong className="font-mono text-blue-300">{data.termGpa.toFixed(2)}</strong>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <span className="text-slate-300">Term Credits:</span>
-                          <strong className="font-mono">{data.termCreditsAttempted} CR</strong>
-                        </div>
-                        <div className="flex justify-between gap-4">
-                          <span className="text-slate-300">Quality Points:</span>
-                          <strong className="font-mono">{data.termQualityPoints.toFixed(1)}</strong>
-                        </div>
-                      </div>
-                    );
-                  }
-                  return null;
-                }}
-              />
-              <ReferenceLine y={3.75} stroke="#059669" strokeDasharray="4 4" label={{ value: "Dean's List (3.75)", fill: '#059669', fontSize: 10, position: 'top' }} />
-              <ReferenceLine y={3.5} stroke="#2563EB" strokeDasharray="4 4" label={{ value: "Honors (3.50)", fill: '#2563EB', fontSize: 10, position: 'insideBottomRight' }} />
-              <Area
-                type="monotone"
-                dataKey="runningGpa"
-                name="Cumulative GPA"
-                stroke="#002366"
-                strokeWidth={3}
-                fillOpacity={1}
-                fill="url(#gpaGradient)"
-              />
-              <Line
-                type="monotone"
-                dataKey="termGpa"
-                name="Term GPA"
-                stroke="#C5A059"
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#C5A059', stroke: '#fff', strokeWidth: 2 }}
-                activeDot={{ r: 6 }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Chart Legend & Summary Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-2 border-t border-slate-100 text-xs">
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div className="text-[10px] uppercase font-bold text-slate-500">Starting Term GPA</div>
-            <div className="text-sm font-black font-display text-slate-900 mt-0.5">
-              {compiledSemesters[0]?.runningGpa.toFixed(2) || '4.00'}
-            </div>
-          </div>
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div className="text-[10px] uppercase font-bold text-slate-500">Current Cumulative GPA</div>
-            <div className="text-sm font-black font-display text-[#002366] mt-0.5">
-              {compiledGpa.toFixed(2)}
-            </div>
-          </div>
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div className="text-[10px] uppercase font-bold text-slate-500">Highest Term GPA</div>
-            <div className="text-sm font-black font-display text-emerald-700 mt-0.5">
-              {Math.max(...compiledSemesters.map(s => s.termGpa), compiledGpa).toFixed(2)}
-            </div>
-          </div>
-          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <div className="text-[10px] uppercase font-bold text-slate-500">Total Semesters</div>
-            <div className="text-sm font-black font-display text-slate-900 mt-0.5">
-              {compiledSemesters.length} Terms
-            </div>
-          </div>
-        </div>
+      {/* Academic Performance Overview Section - Recharts Visualization of Grade Trends & Cumulative GPA Progression */}
+      <div className="no-print">
+        <AcademicPerformanceOverview
+          compiledSemesters={compiledSemesters}
+          cumulativeGpa={compiledGpa}
+          totalAttemptedCredits={totalAttemptedCredits}
+          totalEarnedCredits={totalCreditsConferred}
+          studentGrades={studentGrades}
+        />
       </div>
 
       {/* Document Action Banner & Print Optimization Notice */}
@@ -1123,9 +1381,26 @@ export const TranscriptView: React.FC = () => {
           <div>
             <div className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
               <span>Official Academic Transcript Document</span>
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                Sealed Registry Copy
+              <span
+                className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                  transcriptStatus === 'Verified'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                }`}
+              >
+                ● Status: {transcriptStatus}
               </span>
+              {transcriptStatus !== 'Verified' && (
+                <button
+                  type="button"
+                  onClick={handleMarkAsVerified}
+                  className="text-[10px] bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-2.5 py-0.5 rounded-md shadow transition-all flex items-center gap-1 cursor-pointer"
+                  title="Mark status as Verified to activate the Registrar Digital Signature"
+                >
+                  <ShieldCheck className="w-3 h-3 text-[#C5A059]" />
+                  <span>Mark as Verified (Apply Registrar Signature)</span>
+                </button>
+              )}
               <span className="text-[10px] bg-[#C5A059]/20 text-[#C5A059] font-bold px-2 py-0.5 rounded-full border border-[#C5A059]/30">
                 A4 Vector Print Ready
               </span>
@@ -1211,7 +1486,7 @@ export const TranscriptView: React.FC = () => {
             </div>
             <div className="flex items-center gap-4 text-slate-600">
               <span>Date of Issue: <strong className="text-slate-900">{issueDate}</strong></span>
-              <span>Registry Status: <strong className="text-emerald-700">CERTIFIED ARCHIVE</strong></span>
+              <span>Registry Status: <strong className={transcriptStatus === 'Verified' ? 'text-emerald-700' : 'text-amber-700'}>{transcriptStatus.toUpperCase()}</strong></span>
             </div>
           </div>
 
@@ -1402,9 +1677,16 @@ export const TranscriptView: React.FC = () => {
             ))}
           </div>
 
+          {/* Render official transcript footer (Summary, Signatures, Registrar Stamp & QR Code) on Page 1 if no Page 2 */}
+          {page2Semesters.length === 0 && renderOfficialTranscriptFooter()}
+
           {/* Page 1 Bottom Archival Note */}
           <div className="relative z-10 pt-4 border-t border-slate-200 flex items-center justify-between text-[9px] font-mono text-slate-400">
-            <span>OFFICE OF THE REGISTRAR • PHOENIX, AZ • OFFICIAL TRANSCRIPT CONTINUED ON PAGE 2</span>
+            <span>
+              {page2Semesters.length > 0
+                ? 'OFFICE OF THE REGISTRAR • PHOENIX, AZ • OFFICIAL TRANSCRIPT CONTINUED ON PAGE 2 (PAGE 1 OF 2)'
+                : 'OFFICE OF THE REGISTRAR • PHOENIX, AZ • OFFICIAL COMPLETE ACADEMIC TRANSCRIPT (PAGE 1 OF 1)'}
+            </span>
             <span>VERIFY AT BIBU.UNIVERSITY/VERIFY • REF: {documentRef}</span>
           </div>
         </div>
@@ -1564,243 +1846,27 @@ export const TranscriptView: React.FC = () => {
               ))}
             </div>
 
-            {/* Official Academic Cumulative Summary Box */}
-            <div className="relative z-10 p-5 bg-[#002366] text-white rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4 border border-[#002366] shadow-sm">
-              <div className="space-y-1.5">
-                <div className="text-xs uppercase tracking-wider text-[#C5A059] font-black font-display flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-[#C5A059]" />
-                  <span>Cumulative Academic Standing & Record</span>
-                </div>
-                <div className="text-xs text-slate-200">
-                  Total Credits Attempted: <strong className="text-white">{totalAttemptedCredits}</strong> •
-                  Credits Earned / Conferred: <strong className="text-white">{totalCreditsConferred}</strong> •
-                  Quality Points: <strong className="text-white">{totalQualityPoints.toFixed(1)}</strong>
-                </div>
-                <div className="text-[11px] text-[#C5A059] font-bold">
-                  Academic Classification: {academicStandingInfo.latinHonors}
-                </div>
-              </div>
+            {/* Reusable Official Closing: Cumulative Summary, Regulations, Signatures, Registrar Stamp & QR Code */}
+            {renderOfficialTranscriptFooter()}
 
-              <div className="text-center sm:text-right bg-white/10 sm:bg-transparent px-4 py-2 sm:p-0 rounded-lg sm:rounded-none w-full sm:w-auto">
-                <div className="text-[10px] uppercase tracking-wider text-slate-300 font-bold">
-                  Cumulative Grade Point Average
-                </div>
-                <div className="text-3xl sm:text-4xl font-black font-display text-[#C5A059]">
-                  {compiledGpa.toFixed(2)}{' '}
-                  <span className="text-xs text-slate-300 font-normal">/ 4.00</span>
-                </div>
-              </div>
+            {/* Page 2 Bottom Archival Note */}
+            <div className="relative z-10 pt-4 border-t border-slate-200 flex items-center justify-between text-[9px] font-mono text-slate-400">
+              <span>OFFICE OF THE REGISTRAR • PHOENIX, AZ • OFFICIAL COMPLETE ACADEMIC TRANSCRIPT (PAGE 2 OF 2)</span>
+              <span>VERIFY AT BIBU.UNIVERSITY/VERIFY • REF: {documentRef}</span>
             </div>
-
-            {/* Program Degree Progress Radial Bar Summary Chart (Printed in Official PDF) */}
-            {includeRadialChart && (
-              <div className="relative z-10">
-                <TranscriptRadialSummaryChart
-                  totalCreditsEarned={totalCreditsConferred}
-                  totalCreditsRequired={totalDegreeCreditsRequired}
-                  studentGrades={studentGrades}
-                  programName={currentUser.programName || 'Degree Program'}
-                />
-              </div>
-            )}
-
-            {/* Official Registrar Grading Scale & Policy Legend */}
-            {includeGradingScale && (
-              <div className="relative z-10 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-slate-700 space-y-2 text-[10px] leading-relaxed">
-                <div className="font-bold uppercase tracking-wider text-[#002366] font-display text-[11px] flex items-center justify-between">
-                  <span>Registrar Grading System & Academic Regulations</span>
-                  <span className="text-slate-400 font-mono text-[9px]">REG-STD-2026</span>
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-2 font-mono text-[10px] bg-white p-2 rounded border border-slate-200 text-center">
-                  <div><strong className="text-[#002366]">A:</strong> 4.00 (95-100%)</div>
-                  <div><strong className="text-[#002366]">A-:</strong> 3.70 (90-94%)</div>
-                  <div><strong className="text-[#002366]">B+:</strong> 3.30 (85-89%)</div>
-                  <div><strong className="text-[#002366]">B:</strong> 3.00 (80-84%)</div>
-                  <div><strong className="text-[#002366]">B-:</strong> 2.70 (77-79%)</div>
-                  <div><strong className="text-[#002366]">C+:</strong> 2.30 (74-76%)</div>
-                  <div><strong className="text-[#002366]">C:</strong> 2.00 (70-73%)</div>
-                  <div><strong className="text-[#002366]">F:</strong> 0.00 (Fail)</div>
-                </div>
-
-                <p className="text-slate-500 text-[10px]">
-                  <strong>Credit Hour Standard:</strong> One semester credit corresponds to 15 hours of classroom or online faculty-directed theological instruction and 30 hours of guided research.
-                  <strong> Honors Thresholds:</strong> Summa Cum Laude (3.90–4.00), Magna Cum Laude (3.75–3.89), Cum Laude (3.50–3.74). Good Academic Standing requires a minimum GPA of 2.00.
-                </p>
-              </div>
-            )}
-
-            {/* Official Registrar Seal, Endorsements & Three Security Signatures */}
-            {includeSignatures && (
-              <div className="relative z-10 pt-4 border-t-2 border-[#002366] grid grid-cols-1 sm:grid-cols-3 gap-6 items-center text-xs">
-                {/* Chancellor Signature */}
-                <div className="space-y-1 text-center sm:text-left">
-                  <div className="h-10 flex items-end justify-center sm:justify-start border-b border-slate-300 pb-1">
-                    {chancellorSigUrl ? (
-                      <img src={chancellorSigUrl} alt="Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
-                    ) : (
-                      <span className="font-display italic text-sm text-[#002366] font-bold">
-                        Michael C. Sterling
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[9px] font-bold uppercase text-slate-700">
-                    Dr. Michael C. Sterling, Th.D.
-                  </div>
-                  <div className="text-[9px] text-slate-500">
-                    Chancellor & President • Issued from Phoenix USA
-                  </div>
-                </div>
-
-                {/* Vice Chancellor Signature */}
-                <div className="space-y-1 text-center">
-                  <div className="h-10 flex items-end justify-center border-b border-slate-300 pb-1">
-                    {deanSigUrl ? (
-                      <img src={deanSigUrl} alt="Vice Chancellor Signature" className="max-h-9 max-w-[130px] object-contain" />
-                    ) : (
-                      <span className="font-display italic text-sm text-[#002366] font-bold">
-                        Patrick Njuguna
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[9px] font-bold uppercase text-slate-700">
-                    Prof. Dr. Patrick Njuguna, Ph.D.
-                  </div>
-                  <div className="text-[9px] text-slate-500">
-                    Vice Chancellor & Senate Chair
-                  </div>
-                </div>
-
-                {/* Registrar Signature */}
-                <div className="space-y-1 text-center sm:text-right">
-                  <div className="h-10 flex items-end justify-center sm:justify-end border-b border-slate-300 pb-1">
-                    {registrarSigUrl ? (
-                      <img src={registrarSigUrl} alt="Registrar Signature" className="max-h-9 max-w-[130px] object-contain" />
-                    ) : (
-                      <span className="font-display italic text-sm text-[#002366] font-bold">
-                        Sarah M. Jenkins
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-[9px] font-bold uppercase text-slate-700">
-                    Rev. Dr. Sarah M. Jenkins, Th.D.
-                  </div>
-                  <div className="text-[9px] text-slate-500">
-                    University Registrar • Phoenix, AZ
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Academic Registrar Digital Signature & Stylized Stamp Component */}
-            <div className="relative z-10">
-              <AcademicRegistrarStamp
-                verificationCode={documentRef}
-                securityHash={verificationHash}
-                issueDate={currentUser.graduationDate || '2026-10-24'}
-              />
-            </div>
-
-            {/* Digital Verification Seal & QR Code Authenticator Stamp */}
-            <div className="relative z-10 p-3 bg-emerald-50/80 border border-emerald-300 rounded-xl flex items-center justify-between gap-4 text-xs">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <ShieldCheck className="w-6 h-6 text-[#C5A059]" />
-                </div>
-                <div>
-                  <div className="font-bold text-emerald-900 uppercase font-display text-[11px] flex items-center gap-1.5">
-                    <span>OFFICIAL REGISTRAR DIGITAL VERIFICATION SEAL</span>
-                    <span className="bg-emerald-200 text-emerald-900 text-[9px] px-1.5 py-0.2 rounded font-mono">SECURE QR CODE</span>
-                  </div>
-                  <p className="text-[10px] text-emerald-800 leading-snug">
-                    This official academic transcript is cryptographically signed and sealed by Breakthrough International Bible University Registrar. Scan QR or visit <strong className="font-mono">bibu.university/verify</strong> with Serial <strong className="font-mono">{documentRef}</strong>.
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-emerald-200 shadow-2xs">
-                <QrCode className="w-8 h-8 text-emerald-800" />
-                <div className="text-right font-mono text-[9px]">
-                  <div className="font-bold text-[#002366]">{documentRef}</div>
-                  <div className="text-emerald-700">VERIFIED VALID</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Cryptographic Verification Footer */}
-            {includeSecurityHash && (
-              <div className="relative z-10 pt-3 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-2 text-[9px] font-mono text-slate-500">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  <span className="truncate max-w-md">Digital Record Verification Hash: <strong className="text-slate-700">{verificationHash}</strong></span>
-                </div>
-                <div className="shrink-0 flex items-center gap-2">
-                  <span>Document Serial: <strong className="text-[#002366]">{documentRef}</strong></span>
-                  <span>•</span>
-                  <span>Online Verification: bibu.university/verify</span>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>
 
-      {/* Transcript Activity Audit Log Section */}
-      <div className="no-print bg-white rounded-2xl border border-slate-200 p-6 shadow-sm space-y-4 mt-6">
-        <div className="flex items-center justify-between border-b border-slate-200 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#002366]/10 text-[#002366] flex items-center justify-center border border-[#002366]/20">
-              <History className="w-5 h-5 text-[#C5A059]" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold font-display text-[#002366]">
-                Transcript Activity & Audit Log
-              </h3>
-              <p className="text-xs text-slate-500">
-                Immutable chronological ledger of transcript generations, email dispatches, downloads, and verifications.
-              </p>
-            </div>
-          </div>
-          <div className="text-xs font-mono font-bold bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg border border-slate-200">
-            {activityLogs.length} Recorded Events
-          </div>
-        </div>
-
-        <div className="space-y-2.5">
-          {activityLogs.map((log) => (
-            <div key={log.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-50 hover:bg-slate-100/70 rounded-xl border border-slate-200 transition-colors">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 text-[#002366] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                  {log.action === 'Generated PDF' ? <FileText className="w-4 h-4 text-blue-600" /> :
-                   log.action === 'Downloaded CSV' ? <Download className="w-4 h-4 text-amber-600" /> :
-                   log.action === 'Emailed Transcript' ? <Mail className="w-4 h-4 text-[#002366]" /> :
-                   log.action === 'Verified Document' ? <ShieldCheck className="w-4 h-4 text-emerald-600" /> :
-                   <Printer className="w-4 h-4 text-slate-600" />}
-                </div>
-                <div className="space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-slate-900">{log.action}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                      log.status === 'Success' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                      log.status === 'Verified' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      'bg-amber-50 text-amber-700 border-amber-200'
-                    }`}>
-                      {log.status}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 font-medium">{log.details}</p>
-                </div>
-              </div>
-
-              <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center text-[11px] text-slate-400 font-mono gap-1 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-200">
-                <span className="font-bold text-slate-600 flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  {log.timestamp}
-                </span>
-                <span>{log.ipAddress}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Academic History Log Section: Chronological list of major status changes */}
+      <div className="mt-6">
+        <AcademicHistoryLog
+          logs={academicHistoryLogs}
+          currentStatus={transcriptStatus}
+          documentRef={documentRef}
+          studentName={currentUser.name}
+          studentId={currentUser.studentId}
+        />
       </div>
 
       {/* Automated PDF Compilation & Progress Modal */}
