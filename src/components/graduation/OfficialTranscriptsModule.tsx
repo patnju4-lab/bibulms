@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { UniversityLogo } from '../common/UniversityLogo';
 import { RAW_2020_GRADUATES, Raw2020GraduateRecord } from '../../data/rawGraduates2020';
 import { KENYA_2025_CANDIDATES } from '../../data/graduationKenya2025Data';
+import { KERICHO_2026_CANDIDATES } from '../../data/graduationKericho2026Data';
 import { exportTranscriptToPdf, TranscriptPdfProgress } from '../../utils/academicTranscriptPdfExport';
 import {
   FileText,
@@ -72,15 +73,22 @@ interface GraduateTranscriptData {
 
 export const OfficialTranscriptsModule: React.FC<OfficialTranscriptsModuleProps> = ({
   onClose,
-  defaultGraduateId = 'BIBU-ALM-2020-048'
+  defaultGraduateId = 'cand-2026-krc-001'
 }) => {
   const { alumniList } = useApp();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCohort, setSelectedCohort] = useState<'all' | '2020' | '2025' | 'all-alumni'>('2020');
+  const [selectedCohort, setSelectedCohort] = useState<'all' | '2026' | '2025' | '2020' | 'all-alumni'>('2026');
   const [selectedGraduateId, setSelectedGraduateId] = useState<string>(defaultGraduateId);
   const [isExportingPdf, setIsExportingPdf] = useState(false);
   const [exportProgress, setExportProgress] = useState<TranscriptPdfProgress | null>(null);
   const [copiedToast, setCopiedToast] = useState(false);
+
+  // Sync selectedGraduateId if prop changes
+  React.useEffect(() => {
+    if (defaultGraduateId) {
+      setSelectedGraduateId(defaultGraduateId);
+    }
+  }, [defaultGraduateId]);
 
   const transcriptRef = useRef<HTMLDivElement>(null);
 
@@ -218,6 +226,217 @@ export const OfficialTranscriptsModule: React.FC<OfficialTranscriptsModuleProps>
       });
     });
 
+    // Helper to generate realistic courses for 2026 students
+    const getCoursesFor2026 = (program: string, awardLevel: string): CourseGradeItem[] => {
+      if (program.includes('Counseling')) {
+        const list: CourseGradeItem[] = [
+          { code: 'CNS-101', title: 'Foundations of Christian Counseling Psychology', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'CNS-102', title: 'Developmental Psychology & Christian Formation', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 1 - Semester I' },
+          { code: 'CNS-201', title: 'Crisis Intervention, Grief & Trauma Counseling', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester II' }
+        ];
+        if (awardLevel === 'Diploma' || awardLevel === 'Bachelor') {
+          list.push(
+            { code: 'CNS-202', title: 'Marriage, Family Therapy & Pastoral Care Ethics', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester I' },
+            { code: 'CNS-203', title: 'Addiction Recovery & Community Mental Health', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 2 - Semester II' }
+          );
+        }
+        return list;
+      }
+
+      if (program.includes('Bible and Theology') || awardLevel === 'Bachelor') {
+        return [
+          { code: 'BIB-101', title: 'Old Testament Survey & Covenant Theology', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'THE-102', title: 'Systematic Theology & Trinitarian Doctrine', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'MIN-103', title: 'Spiritual Formation & Devotional Life', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'BIB-105', title: 'New Testament Exegesis & Gospels', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 1 - Semester II' },
+          { code: 'MIN-201', title: 'Homiletics & Expository Preaching', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester I' },
+          { code: 'THE-202', title: 'Christian Ethics & Pastoral Leadership', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester I' },
+          { code: 'RES-203', title: 'Theological Hermeneutics & Senior Thesis', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester II' }
+        ];
+      }
+
+      if (program.includes('Christian Ministry')) {
+        return [
+          { code: 'MIN-101', title: 'Foundations of Christian Ministry & Discipleship', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'BIB-102', title: 'New Testament Survey & Apostolic Acts', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+          { code: 'MIS-201', title: 'Evangelism, Church Planting & Global Missions', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 1 - Semester II' },
+          { code: 'LEA-202', title: 'Strategic Church Administration & Leadership', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester I' },
+          { code: 'MIN-203', title: 'Pastoral Counseling & Compassionate Outreach', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester II' }
+        ];
+      }
+
+      const defaultList: CourseGradeItem[] = [
+        { code: 'BIB-101', title: 'Old Testament Survey & Covenant History', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester I' },
+        { code: 'THE-102', title: 'New Testament Epistles & Hermeneutics', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 1 - Semester I' },
+        { code: 'MIN-201', title: 'Christian Ethics & Ministerial Leadership', credits: 3, grade: 'A', points: 4.0, semester: 'Year 1 - Semester II' }
+      ];
+      if (awardLevel === 'Diploma') {
+        defaultList.push(
+          { code: 'THE-202', title: 'Homiletics & Biblical Preaching', credits: 3, grade: 'A-', points: 3.7, semester: 'Year 2 - Semester I' },
+          { code: 'MIN-203', title: 'Pastoral Theology & Church Administration', credits: 3, grade: 'A', points: 4.0, semester: 'Year 2 - Semester II' }
+        );
+      }
+      return defaultList;
+    };
+
+    // 4. Add Kericho 2026 Graduands (BITC Kericho Study Centre)
+    KERICHO_2026_CANDIDATES.forEach((c, index) => {
+      const id = c.id;
+      const alumniId = `BIBU-ALM-2026-KRC-${String(index + 1).padStart(3, '0')}`;
+      const courses2026 = getCoursesFor2026(c.programName, c.awardLevel);
+      const totalCredits = courses2026.reduce((acc, crs) => acc + crs.credits, 0);
+
+      list.push({
+        id,
+        alumniId,
+        studentId: c.admissionNumber,
+        certificateRef: c.certificateNumber || `BITC-CERT-2026-KRC-${String(index + 1).padStart(3, '0')}`,
+        fullName: c.fullName,
+        firstName: c.firstName,
+        middleName: (c as any).middleName,
+        lastName: c.lastName,
+        email: c.email || `${c.firstName.toLowerCase()}.${c.lastName.toLowerCase()}@alumni.bibu.university`,
+        phone: c.phone || '+254 722 100 035',
+        qualificationLevel: c.awardLevel,
+        programName: c.programName,
+        graduationYear: 2026,
+        graduationDate: '2026-11-28',
+        studyCentre: 'BITC Kericho Centre • Green Highlands Bible College',
+        studyMode: c.studyMode,
+        country: c.country,
+        county: 'Kericho County',
+        supervisor: 'Rev. Kenneth Kipkorir Bett & Kericho Directorate',
+        courses: courses2026,
+        cumulativeGpa: c.finalGpa,
+        totalCredits,
+        honors: (c.academicHonors as string) || 'Distinction / Conferred Graduate',
+        ledgerHash: `BITC-TRN-2026-KRC-${c.admissionNumber}-VERIFIED`
+      });
+    });
+
+    // 5. Add Global 15th Congregation 2026 Candidates
+    const global2026Candidates = [
+      {
+        id: 'cand-2026-001',
+        studentId: 'BIBU-2024-ST-7492',
+        fullName: 'Pastor David Emmanuel',
+        firstName: 'David',
+        lastName: 'Emmanuel',
+        email: 'david.emmanuel@student.bibu-edu.org',
+        phone: '+1 (602) 555-0192',
+        qualificationLevel: 'Bachelor',
+        programName: 'Bachelor of Theology (B.Th)',
+        gpa: 3.84,
+        honors: 'Summa Cum Laude / Valedictorian',
+        certRef: 'BIBU-CERT-2026-BTH-0842',
+        centre: 'Phoenix Main / Global Campus'
+      },
+      {
+        id: 'cand-2026-002',
+        studentId: 'BIBU-2023-ST-8831',
+        fullName: 'Rev. Grace Mwangi Wambui',
+        firstName: 'Grace',
+        lastName: 'Mwangi',
+        email: 'grace.mwangi@alumni.bibu-edu.org',
+        phone: '+254 712 345 678',
+        qualificationLevel: 'Master',
+        programName: 'Master of Divinity (M.Div)',
+        gpa: 3.92,
+        honors: 'Summa Cum Laude',
+        certRef: 'BIBU-CERT-2026-MDIV-0319',
+        centre: 'Nairobi Examination Centre & Distance Learning'
+      },
+      {
+        id: 'cand-2026-003',
+        studentId: 'BIBU-2022-DOC-1104',
+        fullName: 'Bishop Peter Ochieng Otieno',
+        firstName: 'Peter',
+        lastName: 'Ochieng Otieno',
+        email: 'peter.ochieng@fellowship.bibu-edu.org',
+        phone: '+254 722 998 811',
+        qualificationLevel: 'Doctorate',
+        programName: 'Doctor of Theology (Th.D)',
+        gpa: 3.96,
+        honors: 'Summa Cum Laude',
+        certRef: 'BIBU-CERT-2026-THD-0045',
+        centre: 'Kisumu Centre / Phoenix Main'
+      },
+      {
+        id: 'cand-2026-004',
+        studentId: 'BIBU-2024-ST-9912',
+        fullName: 'Pastor John Mark Kiptoo',
+        firstName: 'John Mark',
+        lastName: 'Kiptoo',
+        email: 'john.kiptoo@student.bibu-edu.org',
+        phone: '+254 733 112 233',
+        qualificationLevel: 'Bachelor',
+        programName: 'Bachelor of Arts in Christian Counseling (B.A.CC)',
+        gpa: 3.65,
+        honors: 'Second Class Upper Division',
+        certRef: 'BIBU-CERT-2026-BACC-0182',
+        centre: 'Eldoret Examination Centre'
+      },
+      {
+        id: 'cand-2026-005',
+        studentId: 'BIBU-2024-DIP-5542',
+        fullName: 'Evangelist Mary Achieng Odhiambo',
+        firstName: 'Mary',
+        lastName: 'Odhiambo',
+        email: 'mary.odhiambo@bibu-edu.org',
+        phone: '+256 701 445 566',
+        qualificationLevel: 'Diploma',
+        programName: 'Diploma in Christian Ministry',
+        gpa: 3.78,
+        honors: 'Distinction',
+        certRef: 'BIBU-CERT-2026-DIP-0542',
+        centre: 'Kampala Centre'
+      },
+      {
+        id: 'cand-2026-006',
+        studentId: 'BIBU-2025-HON-0091',
+        fullName: 'Archbishop Arthur Kitonga',
+        firstName: 'Arthur',
+        lastName: 'Kitonga',
+        email: 'arthur.kitonga@bibu-edu.org',
+        phone: '+254 720 000 001',
+        qualificationLevel: 'Honorary Doctorate',
+        programName: 'Doctor of Divinity (D.D. Honoris Causa)',
+        gpa: 4.00,
+        honors: 'Honoris Causa Summa Cum Laude',
+        certRef: 'BIBU-CERT-2026-HON-0001',
+        centre: 'Global Convocation Main'
+      }
+    ];
+
+    global2026Candidates.forEach((g) => {
+      const courses = getCoursesFor2026(g.programName, g.qualificationLevel);
+      list.push({
+        id: g.id,
+        alumniId: `BIBU-ALM-2026-${g.id.replace('cand-2026-', '')}`,
+        studentId: g.studentId,
+        certificateRef: g.certRef,
+        fullName: g.fullName,
+        firstName: g.firstName,
+        lastName: g.lastName,
+        email: g.email,
+        phone: g.phone,
+        qualificationLevel: g.qualificationLevel,
+        programName: g.programName,
+        graduationYear: 2026,
+        graduationDate: '2026-10-24',
+        studyCentre: g.centre,
+        studyMode: 'Hybrid Academic Track',
+        country: g.centre.includes('Phoenix') ? 'United States' : 'Kenya',
+        county: 'International / Transnational',
+        supervisor: 'University Senate & Academic Board',
+        courses,
+        cumulativeGpa: g.gpa,
+        totalCredits: courses.reduce((a, b) => a + b.credits, 0),
+        honors: g.honors,
+        ledgerHash: `BIBU-TRN-2026-${g.studentId}-VERIFIED`
+      });
+    });
+
     return list;
   }, []);
 
@@ -229,10 +448,12 @@ export const OfficialTranscriptsModule: React.FC<OfficialTranscriptsModuleProps>
   // Filtered list for sidebar search
   const filteredGraduates = useMemo(() => {
     let list = masterTranscriptList;
-    if (selectedCohort === '2020') {
-      list = list.filter((t) => t.graduationYear === 2020);
+    if (selectedCohort === '2026') {
+      list = list.filter((t) => t.graduationYear === 2026);
     } else if (selectedCohort === '2025') {
       list = list.filter((t) => t.graduationYear === 2025);
+    } else if (selectedCohort === '2020') {
+      list = list.filter((t) => t.graduationYear === 2020);
     }
 
     if (!searchQuery.trim()) return list;
@@ -381,6 +602,19 @@ export const OfficialTranscriptsModule: React.FC<OfficialTranscriptsModuleProps>
 
           <div className="md:col-span-6 flex items-center justify-between gap-2 overflow-x-auto pb-1">
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+              <button
+                onClick={() => {
+                  setSelectedCohort('2026');
+                  setSelectedGraduateId('cand-2026-krc-001');
+                }}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  selectedCohort === '2026'
+                    ? 'bg-[#002366] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Class of 2026 (BITC Kericho & Convocation)
+              </button>
               <button
                 onClick={() => {
                   setSelectedCohort('2020');

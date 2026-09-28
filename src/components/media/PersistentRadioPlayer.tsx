@@ -39,7 +39,7 @@ export const PersistentRadioPlayer: React.FC = () => {
   const currentProgram = radioPrograms.find(p => p.dayOfWeek === today) || radioPrograms[0];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#001844] text-white border-t-2 border-[#C5A059] shadow-2xl transition-all duration-300">
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-[#001844] text-white border-t-2 border-[#C5A059] shadow-2xl transition-all duration-300 no-print radio-player-bar">
       <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
         {/* Left: Station branding & animated equalizer */}
         <div className="flex items-center gap-3 min-w-0">

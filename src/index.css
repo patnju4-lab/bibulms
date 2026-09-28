@@ -28,6 +28,10 @@ body {
   letter-spacing: 0.15em;
 }
 
+.print-only {
+  display: none;
+}
+
 /* Print Utilities for PDF & Booklet Generation */
 @media print {
   body {
@@ -37,7 +41,12 @@ body {
     print-color-adjust: exact !important;
   }
 
-  nav, footer, .no-print, header, #navbar, #footer, #role-switcher, [role="navigation"] {
+  *, *::before, *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  nav, footer, .no-print, header, #navbar, #footer, #role-switcher, [role="navigation"], .radio-player-bar {
     display: none !important;
   }
 
@@ -48,6 +57,11 @@ body {
   .page-break {
     page-break-after: always !important;
     break-after: page !important;
+  }
+
+  .page-break:last-child {
+    page-break-after: auto !important;
+    break-after: auto !important;
   }
 
   .avoid-break {

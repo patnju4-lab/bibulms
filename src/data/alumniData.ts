@@ -2,6 +2,7 @@ import { Alumni, AlumniChapter, AlumniStory, AlumniEvent } from '../types/alumni
 import { NAKURU_2022_HONORARY_GRADUATES } from './nakuru2022GraduatesData';
 import { CONVOCATION_2020_GRADUATES } from './convocation2020GraduatesData';
 import { KENYA_2025_ALUMNI, MAKUENI_ALUMNI_CHAPTER } from './graduationKenya2025Data';
+import { KERICHO_2026_ALUMNI, KERICHO_ALUMNI_CHAPTER } from './graduationKericho2026Data';
 
 export interface CountryInfo {
   name: string;
@@ -119,6 +120,7 @@ export const OFFICIAL_BIBU_PROGRAMS = [
 
 // Initial Demo Alumni Records distributed across 2017-2026 & 50+ countries
 export const INITIAL_ALUMNI_DATABASE: Alumni[] = [
+  ...KERICHO_2026_ALUMNI,
   ...KENYA_2025_ALUMNI,
   // 1. Kenya - PhD (Verified Demonstration Record)
   {
@@ -1317,6 +1319,7 @@ export const INITIAL_ALUMNI_DATABASE: Alumni[] = [
 
 // Global Alumni Chapters
 export const GLOBAL_ALUMNI_CHAPTERS: AlumniChapter[] = [
+  KERICHO_ALUMNI_CHAPTER,
   MAKUENI_ALUMNI_CHAPTER,
   {
     id: 'ch-nakuru-mothers',

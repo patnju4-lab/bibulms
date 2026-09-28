@@ -51,6 +51,7 @@ import {
   PersonalCourseNotesModal,
   StudentCourseNote
 } from './PersonalCourseNotesModal';
+import { AcademicRegistrarStamp } from './AcademicRegistrarStamp';
 import { GradeRecord } from '../../types';
 import {
   ResponsiveContainer,
@@ -659,6 +660,18 @@ export const TranscriptView: React.FC = () => {
             <span>Print Layout</span>
           </button>
 
+          <button
+            onClick={() => {
+              logActivity('Printed Report', `Triggered print dialog for official PDF transcript download.`);
+              window.print();
+            }}
+            className="px-4 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold uppercase tracking-wider shadow-md flex items-center gap-2 transition-all active:scale-95"
+            title="Triggers browser print dialog optimized with @media print styles for saving as official PDF"
+          >
+            <Printer className="w-4 h-4 text-[#C5A059]" />
+            <span>Download Official Transcript (PDF)</span>
+          </button>
+
           <div className="flex items-center gap-2">
             <select
               value={exportFormat}
@@ -1099,6 +1112,41 @@ export const TranscriptView: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Document Action Banner & Print Optimization Notice */}
+      <div className="no-print bg-gradient-to-r from-[#002366] to-[#001740] rounded-xl p-4 sm:p-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-md border border-[#002366]">
+        <div className="flex items-center gap-3.5">
+          <div className="w-11 h-11 rounded-xl bg-white/10 flex items-center justify-center border border-white/20 shrink-0">
+            <FileText className="w-6 h-6 text-[#C5A059]" />
+          </div>
+          <div>
+            <div className="text-sm font-bold text-white flex flex-wrap items-center gap-2">
+              <span>Official Academic Transcript Document</span>
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
+                Sealed Registry Copy
+              </span>
+              <span className="text-[10px] bg-[#C5A059]/20 text-[#C5A059] font-bold px-2 py-0.5 rounded-full border border-[#C5A059]/30">
+                A4 Vector Print Ready
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-0.5">
+              Certified document with university seal, Senate signatures, and ledger hash. Select &quot;Save as PDF&quot; in the print dialog.
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => {
+            logActivity('Generated PDF', 'Triggered browser print dialog for Official Transcript PDF download (Save as PDF).');
+            window.print();
+          }}
+          className="w-full sm:w-auto px-5 py-2.5 bg-[#C5A059] hover:bg-[#b08d47] active:scale-95 text-[#002366] font-bold text-xs rounded-lg shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0 font-sans"
+          title="Download Official Transcript as PDF using browser print dialog (Save as PDF)"
+        >
+          <Download className="w-4 h-4 text-[#002366]" />
+          <span>Download Official Transcript (PDF)</span>
+        </button>
       </div>
 
       {/* 
@@ -1643,6 +1691,40 @@ export const TranscriptView: React.FC = () => {
                 </div>
               </div>
             )}
+
+            {/* Academic Registrar Digital Signature & Stylized Stamp Component */}
+            <div className="relative z-10">
+              <AcademicRegistrarStamp
+                verificationCode={documentRef}
+                securityHash={verificationHash}
+                issueDate={currentUser.graduationDate || '2026-10-24'}
+              />
+            </div>
+
+            {/* Digital Verification Seal & QR Code Authenticator Stamp */}
+            <div className="relative z-10 p-3 bg-emerald-50/80 border border-emerald-300 rounded-xl flex items-center justify-between gap-4 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs">
+                  <ShieldCheck className="w-6 h-6 text-[#C5A059]" />
+                </div>
+                <div>
+                  <div className="font-bold text-emerald-900 uppercase font-display text-[11px] flex items-center gap-1.5">
+                    <span>OFFICIAL REGISTRAR DIGITAL VERIFICATION SEAL</span>
+                    <span className="bg-emerald-200 text-emerald-900 text-[9px] px-1.5 py-0.2 rounded font-mono">SECURE QR CODE</span>
+                  </div>
+                  <p className="text-[10px] text-emerald-800 leading-snug">
+                    This official academic transcript is cryptographically signed and sealed by Breakthrough International Bible University Registrar. Scan QR or visit <strong className="font-mono">bibu.university/verify</strong> with Serial <strong className="font-mono">{documentRef}</strong>.
+                  </p>
+                </div>
+              </div>
+              <div className="shrink-0 flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-emerald-200 shadow-2xs">
+                <QrCode className="w-8 h-8 text-emerald-800" />
+                <div className="text-right font-mono text-[9px]">
+                  <div className="font-bold text-[#002366]">{documentRef}</div>
+                  <div className="text-emerald-700">VERIFIED VALID</div>
+                </div>
+              </div>
+            </div>
 
             {/* Cryptographic Verification Footer */}
             {includeSecurityHash && (
