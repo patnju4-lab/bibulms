@@ -630,6 +630,21 @@ export const Navbar: React.FC = () => {
                     {isGuest && <Lock className="w-3 h-3 text-slate-400" />}
                   </button>
 
+                  {/* PhD Final Comprehensive Exam (BIBU-LMS) */}
+                  <button
+                    onClick={() => handlePortalAccess('phd-exam', ['student', 'admin', 'registrar', 'examiner'], 'PhD Final Comprehensive Exam')}
+                    className="w-full text-left px-3.5 py-2 hover:bg-amber-50 text-xs font-bold text-[#002366] flex items-center justify-between bg-amber-50/40 border-y border-amber-100/70"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Award className="w-4 h-4 text-[#C5A059]" />
+                      <div>
+                        <div className="text-[#002366] font-display">PhD Final Exam (BIBU-LMS)</div>
+                        <div className="text-[10px] font-normal text-slate-500">Doctoral Comprehensive Examination</div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] font-mono font-bold text-amber-900 bg-amber-200/80 px-1.5 py-0.5 rounded">4-HR</span>
+                  </button>
+
                   {/* Faculty Portal */}
                   <button
                     onClick={() => handlePortalAccess('faculty-portal', ['faculty', 'admin'], 'Faculty Portal')}

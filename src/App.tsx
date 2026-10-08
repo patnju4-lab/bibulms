@@ -37,6 +37,7 @@ import { BulletinDetailPage } from './components/public/BulletinDetailPage';
 import { StudentDashboard } from './components/student/StudentDashboard';
 import { OnlineClassroom } from './components/student/OnlineClassroom';
 import { ExamTaker } from './components/student/ExamTaker';
+import { PhDFinalComprehensiveExam } from './components/student/PhDFinalComprehensiveExam';
 import { TranscriptView } from './components/student/TranscriptView';
 import { FinancePortal } from './components/student/FinancePortal';
 
@@ -153,6 +154,17 @@ const MainContent: React.FC = () => {
             targetView="exam-taker"
           >
             <ExamTaker />
+          </ProtectedPortalWrapper>
+        );
+      case 'phd-exam':
+      case 'phd-comprehensive-exam':
+        return (
+          <ProtectedPortalWrapper
+            portalKey="student"
+            portalName="PhD Final Comprehensive Examination (BIBU-LMS)"
+            targetView="phd-exam"
+          >
+            <PhDFinalComprehensiveExam />
           </ProtectedPortalWrapper>
         );
       case 'transcript':

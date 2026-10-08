@@ -174,6 +174,8 @@ export type CurrentView =
   | 'student-dashboard'
   | 'classroom'
   | 'exam-taker'
+  | 'phd-exam'
+  | 'phd-comprehensive-exam'
   | 'transcript'
   | 'finance'
   | 'faculty-portal'

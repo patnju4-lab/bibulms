@@ -32,9 +32,16 @@ import {
   ExternalLink,
   ShieldCheck,
   Search,
-  Plus
+  Plus,
+  ShieldAlert,
+  Clock
 } from 'lucide-react';
 import { AdminNavigationItem } from '../../../types/admin';
+import {
+  RegistrarExamPlagiarismReviewModal,
+  ExamSimilarityAuditReport
+} from '../RegistrarExamPlagiarismReviewModal';
+import { generateExamSimilarityAudit } from '../../../services/examPlagiarismAuditService';
 
 interface SecondaryAdminModulesProps {
   activeItem: AdminNavigationItem;
@@ -48,6 +55,105 @@ export const SecondaryAdminModules: React.FC<SecondaryAdminModulesProps> = ({
   fullDatabaseState
 }) => {
   const [notification, setNotification] = useState<string | null>(null);
+  const [auditModalReport, setAuditModalReport] = useState<ExamSimilarityAuditReport | null>(null);
+
+  // Live submissions with Plagiarism Audit scores for Registrar Review
+  const [phdSubmissions, setPhdSubmissions] = useState([
+    {
+      id: 'sub-phd-01',
+      candidateName: 'James Ninrew Dong',
+      admissionNo: 'BIBU/2025/48710',
+      cohort: 'Class 2024/2026',
+      program: 'PhD in Public Policy and Administration in a Christian Environment',
+      examTitle: 'Final Comprehensive Examination',
+      submittedAt: 'Just now (Online BIBU-LMS)',
+      totalWords: 5160,
+      similarityScore: 6.8,
+      aiProbability: 4.2,
+      originalityScore: 93.2,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Pending Registrar Review',
+      moderatedScore: null as number | null
+    },
+    {
+      id: 'sub-dmin-02',
+      candidateName: 'Rev. David K. Ndungu',
+      admissionNo: 'BIBU/ADM/2024/0088',
+      cohort: 'Class 2024/2025',
+      program: 'Doctor of Ministry (D.Min.) in Pastoral Theology',
+      examTitle: 'Doctoral Comprehensive Defense Exam',
+      submittedAt: 'Yesterday 14:22 EST',
+      totalWords: 4890,
+      similarityScore: 7.9,
+      aiProbability: 3.1,
+      originalityScore: 92.1,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Cleared & Moderated',
+      moderatedScore: 94
+    },
+    {
+      id: 'sub-mabl-03',
+      candidateName: 'Bishop Grace M. Mutua',
+      admissionNo: 'BIBU/ADM/2024/0122',
+      cohort: 'Class 2024/2025',
+      program: 'Master of Arts in Biblical Leadership & Missions',
+      examTitle: 'Trimester Capstone Examination',
+      submittedAt: '2 days ago',
+      totalWords: 3950,
+      similarityScore: 5.7,
+      aiProbability: 2.8,
+      originalityScore: 94.3,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Cleared & Moderated',
+      moderatedScore: 89
+    }
+  ]);
+
+  const handleOpenPlagiarismAudit = (sub: typeof phdSubmissions[0]) => {
+    // Check if candidate has saved audit in localStorage
+    let report: ExamSimilarityAuditReport;
+    try {
+      const saved = localStorage.getItem('bibu_phd_exam_2025_48710_similarity_audit');
+      if (saved && sub.admissionNo === 'BIBU/2025/48710') {
+        report = JSON.parse(saved);
+      } else {
+        report = generateExamSimilarityAudit({}, sub.candidateName, sub.admissionNo, `BIBU-SUB-${sub.id}`);
+      }
+    } catch {
+      report = generateExamSimilarityAudit({}, sub.candidateName, sub.admissionNo, `BIBU-SUB-${sub.id}`);
+    }
+    setAuditModalReport(report);
+  };
+
+  const handleSaveRegistrarAuditReview = (reviewData: {
+    decision: 'APPROVED' | 'CONDITIONAL' | 'FLAGGED';
+    totalScore: number;
+    questionScores: { [qId: number]: number };
+    registrarNotes: string;
+  }) => {
+    if (!auditModalReport) return;
+    setPhdSubmissions(prev =>
+      prev.map(item =>
+        item.admissionNo === auditModalReport.admissionNo
+          ? {
+              ...item,
+              reviewStatus:
+                reviewData.decision === 'APPROVED'
+                  ? `Approved & Moderated (${reviewData.totalScore}%)`
+                  : reviewData.decision === 'CONDITIONAL'
+                  ? 'Conditional Citation Clarification'
+                  : 'Flagged for Senate Hearing',
+              moderatedScore: reviewData.totalScore
+            }
+          : item
+      )
+    );
+    notifyAction(
+      `Registrar review recorded for ${auditModalReport.candidateName}. Score: ${reviewData.totalScore}% (${reviewData.decision})`,
+      'Registrar Moderated Examination Script'
+    );
+    setAuditModalReport(null);
+  };
 
   // Backup Trigger
   const handleFullBackup = () => {
@@ -165,46 +271,116 @@ export const SecondaryAdminModules: React.FC<SecondaryAdminModulesProps> = ({
         </div>
       )}
 
-      {/* 14. EXAMINATION CANDIDATES & 15. RESULTS */}
-      {(activeItem === 'exam-candidates' || activeItem === 'exam-results') && (
-        <div className="space-y-4">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex justify-between items-center">
+      {/* 14. EXAMINATION CANDIDATES & 15. RESULTS & REGISTRAR PLAGIARISM AUDIT DESK */}
+      {(activeItem === 'exam-candidates' || activeItem === 'exam-results' || activeItem === 'examinations') && (
+        <div className="space-y-6">
+          <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-mono font-bold text-[#C5A059] uppercase">Examination Operations</span>
-              <h2 className="text-xl font-display font-black text-[#002366]">Candidates Roll & Results Moderation</h2>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-mono font-bold text-[#C5A059] uppercase">Registrar Academic Integrity Desk</span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                  AI & PLAGIARISM SHIELD ACTIVE
+                </span>
+              </div>
+              <h2 className="text-xl font-display font-black text-[#002366]">
+                Final & Doctoral Exam Submissions (Plagiarism Audits & Moderation)
+              </h2>
+              <p className="text-xs text-slate-500">
+                Automated similarity detection scores generated prior to Academic Registrar manual review and degree conferral.
+              </p>
             </div>
             <button
               onClick={() => notifyAction('Senate Examination Board has ratified official trimester grades.', 'Ratified Examination Grades')}
-              className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs"
+              className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 self-start sm:self-auto"
             >
-              Ratify Results Moderation
+              <CheckCircle2 className="w-4 h-4 text-emerald-200" />
+              <span>Ratify Results Moderation</span>
             </button>
           </div>
-          <div className="bg-white rounded-2xl border border-slate-200 p-5 text-xs">
-            <div className="p-3 bg-emerald-50 text-emerald-800 rounded-xl border border-emerald-200 font-bold mb-3">
-              ● All candidate grades verified by External Examiner and Dean of Academic Affairs.
+
+          {/* DOCTORAL SUBMISSIONS ROLL WITH AUTOMATED SIMILARITY SCORES */}
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="w-5 h-5 text-[#002366]" />
+                <h3 className="text-sm font-bold font-display text-slate-900">
+                  Doctoral & Final Comprehensive Examination Scripts Awaiting Registrar Review
+                </h3>
+              </div>
+              <span className="text-xs font-mono text-slate-500">
+                Turnitin / BIBU-LMS Engine v4.8
+              </span>
             </div>
+
             <div className="divide-y divide-slate-100">
-              <div className="py-2.5 flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-[#002366] block">Rev. David K. Ndungu (Adm: BIBU/ADM/2024/0088)</span>
-                  <span className="text-slate-500">Doctor of Ministry (D.Min.) • Advanced Pastoral Theology</span>
+              {phdSubmissions.map((sub) => (
+                <div key={sub.id} className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50/80 p-3 rounded-xl transition-colors">
+                  <div className="space-y-1 max-w-xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-sm text-[#002366]">
+                        {sub.candidateName}
+                      </span>
+                      <span className="font-mono text-xs text-slate-500">
+                        ({sub.admissionNo})
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-bold border border-blue-200">
+                        {sub.cohort}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-700 font-medium">
+                      {sub.program}
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-3 pt-1">
+                      <span>Exam: <strong>{sub.examTitle}</strong></span>
+                      <span>•</span>
+                      <span>Words: <strong>{sub.totalWords.toLocaleString()}</strong></span>
+                      <span>•</span>
+                      <span className="text-slate-400">Submitted: {sub.submittedAt}</span>
+                    </div>
+                  </div>
+
+                  {/* Similarity & Plagiarism Summary Badge */}
+                  <div className="flex flex-wrap items-center gap-4 lg:justify-end">
+                    <div className="text-left sm:text-right space-y-0.5 bg-slate-50 lg:bg-transparent p-2.5 lg:p-0 rounded-xl border lg:border-none border-slate-200">
+                      <div className="flex items-center lg:justify-end gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Similarity Index:</span>
+                        <span className={`font-mono font-black text-sm px-2 py-0.5 rounded ${
+                          sub.similarityScore < 10
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}>
+                          {sub.similarityScore}%
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        AI Prob: <strong className="text-purple-700">{sub.aiProbability}%</strong> • Originality: <strong className="text-blue-700">{sub.originalityScore}%</strong>
+                      </div>
+                      <div className="text-[10px] font-bold text-emerald-700">
+                        ✓ {sub.integrityStatus}: Acceptable (&lt;15%)
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="shrink-0 flex flex-col sm:flex-row items-center gap-2">
+                      <button
+                        onClick={() => handleOpenPlagiarismAudit(sub)}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#002366] hover:bg-[#001740] text-[#C5A059] font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+                        <span>Audit Plagiarism & Review Script &rarr;</span>
+                      </button>
+
+                      {sub.moderatedScore && (
+                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                          Moderated: {sub.moderatedScore}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-emerald-700 font-bold font-mono text-sm block">Grade: A (94%)</span>
-                  <span className="text-[10px] text-slate-400">PASSED WITH DISTINCTION</span>
-                </div>
-              </div>
-              <div className="py-2.5 flex justify-between items-center">
-                <div>
-                  <span className="font-bold text-[#002366] block">Bishop Grace M. Mutua (Adm: BIBU/ADM/2024/0122)</span>
-                  <span className="text-slate-500">Master of Arts in Biblical Leadership • Cross-Cultural Missions</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-emerald-700 font-bold font-mono text-sm block">Grade: A- (89%)</span>
-                  <span className="text-[10px] text-slate-400">PASSED</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -541,6 +717,15 @@ export const SecondaryAdminModules: React.FC<SecondaryAdminModulesProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* REGISTRAR EXAM PLAGIARISM AUDIT & SCRIPT REVIEW MODAL */}
+      {auditModalReport && (
+        <RegistrarExamPlagiarismReviewModal
+          report={auditModalReport}
+          onClose={() => setAuditModalReport(null)}
+          onSaveReview={handleSaveRegistrarAuditReview}
+        />
       )}
     </div>
   );

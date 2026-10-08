@@ -199,6 +199,40 @@ export const ExamTaker: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      {/* PhD Comprehensive Exam Alert / Switcher Banner */}
+      <div className="bg-gradient-to-r from-[#002366] via-[#001740] to-[#00102b] rounded-2xl p-4 sm:p-5 border-2 border-[#C5A059] shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#C5A059] text-[#002366] flex items-center justify-center shrink-0">
+            <Award className="w-5 h-5 text-[#002366]" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-[#C5A059]">
+                Doctoral Examinations Division
+              </span>
+              <span className="text-[9px] font-mono px-2 py-0.2 rounded bg-white/10 text-slate-300">
+                4-HOUR COMPREHENSIVE
+              </span>
+            </div>
+            <h4 className="text-xs sm:text-sm font-bold text-white font-display">
+              PhD in Public Policy and Administration in a Christian Environment
+            </h4>
+            <p className="text-[11px] text-slate-300">
+              Candidate: <strong>James Ninrew Dong</strong> (BIBU/2025/48710) • Final Comprehensive Examination
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => {
+            setCurrentView('phd-exam');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="shrink-0 px-4 py-2.5 rounded-xl bg-[#C5A059] hover:bg-[#b59048] text-[#002366] font-black uppercase tracking-wider text-xs shadow-sm transition-all flex items-center gap-1.5"
+        >
+          <span>Launch PhD Exam Room →</span>
+        </button>
+      </div>
+
       {/* Top Proctored Exam Header with Automated Timer */}
       <div
         className={`rounded-2xl p-5 sm:p-6 shadow-md transition-all border ${

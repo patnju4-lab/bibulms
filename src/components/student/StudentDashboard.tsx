@@ -925,6 +925,45 @@ export const StudentDashboard: React.FC = () => {
 
           {/* Right Col (4): Examination Notice, Academic Alerts & Financial Balance */}
           <div className="lg:col-span-4 space-y-6">
+            {/* BIBU-LMS DOCTORAL FINAL COMPREHENSIVE EXAMINATION CARD */}
+            <div className="bg-gradient-to-br from-[#002366] via-[#001740] to-[#00102b] text-white rounded-2xl p-6 shadow-lg border-2 border-[#C5A059] space-y-4 relative overflow-hidden">
+              <div className="flex items-center justify-between border-b border-[#C5A059]/40 pb-3">
+                <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded bg-[#C5A059] text-[#002366]">
+                  PhD Comprehensive Exam
+                </span>
+                <span className="text-xs font-mono font-bold text-[#C5A059]">⏱️ 4 Hours (240 Mins)</span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-[10px] font-bold text-[#C5A059] uppercase tracking-wider">
+                  Doctor of Philosophy (PhD)
+                </div>
+                <h3 className="text-sm sm:text-base font-display font-black text-white leading-snug">
+                  Public Policy and Administration in a Christian Environment
+                </h3>
+                <div className="text-xs text-slate-300 space-y-0.5 pt-1.5 font-sans">
+                  <div>Candidate: <strong className="text-white">James Ninrew Dong</strong></div>
+                  <div>Admission No: <strong className="text-white font-mono">BIBU/2025/48710</strong></div>
+                  <div>Cohort: <strong className="text-white">Class 2024/2026</strong> • Total Marks: <strong>100</strong></div>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                4-Hour proctored online final examination. Section A compulsory (20 Marks) plus any 3 questions from Section B (60 Marks).
+              </p>
+
+              <button
+                onClick={() => {
+                  setCurrentView('phd-exam');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#C5A059] to-[#d6b36c] hover:from-[#b38e46] hover:to-[#c5a059] text-[#002366] font-black uppercase tracking-wider text-xs shadow-md transition-all flex items-center justify-center gap-2"
+              >
+                <GraduationCap className="w-4 h-4 text-[#002366]" />
+                <span>Launch PhD Final Examination →</span>
+              </button>
+            </div>
+
             {/* Active Examination Box */}
             {nextExam && (
               <div className="bg-[#002366] text-white rounded-xl p-6 shadow-md border-t-4 border-[#C5A059] space-y-4">

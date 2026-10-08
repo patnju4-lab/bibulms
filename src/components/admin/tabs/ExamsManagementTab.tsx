@@ -1,15 +1,117 @@
 import React, { useState } from 'react';
 import { useApp } from '../../../context/AppContext';
-import { FileQuestion, Plus, Edit2, Trash2, CheckCircle2, X, Clock, Award, HelpCircle } from 'lucide-react';
+import { FileQuestion, Plus, Edit2, Trash2, CheckCircle2, X, Clock, Award, HelpCircle, ShieldCheck, ShieldAlert, BookOpen } from 'lucide-react';
 import { Exam, ExamQuestion } from '../../../types';
+import {
+  RegistrarExamPlagiarismReviewModal,
+  ExamSimilarityAuditReport
+} from '../RegistrarExamPlagiarismReviewModal';
+import { generateExamSimilarityAudit } from '../../../services/examPlagiarismAuditService';
 
 export const ExamsManagementTab: React.FC = () => {
   const { exams, courses, addExam, updateExam, deleteExam, addExamQuestion, deleteExamQuestion } = useApp();
+  const [activeSubTab, setActiveSubTab] = useState<'questions' | 'submissions'>('questions');
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const [isCreatingExam, setIsCreatingExam] = useState(false);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [auditModalReport, setAuditModalReport] = useState<ExamSimilarityAuditReport | null>(null);
+
+  // Submissions with similarity & plagiarism scores
+  const [candidateSubmissions, setCandidateSubmissions] = useState([
+    {
+      id: 'sub-phd-01',
+      candidateName: 'James Ninrew Dong',
+      admissionNo: 'BIBU/2025/48710',
+      cohort: 'Class 2024/2026',
+      program: 'PhD in Public Policy and Administration in a Christian Environment',
+      examTitle: 'Final Comprehensive Examination',
+      submittedAt: 'Just now (Online BIBU-LMS)',
+      totalWords: 5160,
+      similarityScore: 6.8,
+      aiProbability: 4.2,
+      originalityScore: 93.2,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Pending Registrar Review',
+      moderatedScore: null as number | null
+    },
+    {
+      id: 'sub-dmin-02',
+      candidateName: 'Rev. David K. Ndungu',
+      admissionNo: 'BIBU/ADM/2024/0088',
+      cohort: 'Class 2024/2025',
+      program: 'Doctor of Ministry (D.Min.) in Pastoral Theology',
+      examTitle: 'Doctoral Comprehensive Defense Exam',
+      submittedAt: 'Yesterday 14:22 EST',
+      totalWords: 4890,
+      similarityScore: 7.9,
+      aiProbability: 3.1,
+      originalityScore: 92.1,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Cleared & Moderated (94%)',
+      moderatedScore: 94
+    },
+    {
+      id: 'sub-mabl-03',
+      candidateName: 'Bishop Grace M. Mutua',
+      admissionNo: 'BIBU/ADM/2024/0122',
+      cohort: 'Class 2024/2025',
+      program: 'Master of Arts in Biblical Leadership & Missions',
+      examTitle: 'Trimester Capstone Examination',
+      submittedAt: '2 days ago',
+      totalWords: 3950,
+      similarityScore: 5.7,
+      aiProbability: 2.8,
+      originalityScore: 94.3,
+      integrityStatus: 'CLEARED' as const,
+      reviewStatus: 'Cleared & Moderated (89%)',
+      moderatedScore: 89
+    }
+  ]);
+
+  const handleOpenPlagiarismAudit = (sub: typeof candidateSubmissions[0]) => {
+    let report: ExamSimilarityAuditReport;
+    try {
+      const saved = localStorage.getItem('bibu_phd_exam_2025_48710_similarity_audit');
+      if (saved && sub.admissionNo === 'BIBU/2025/48710') {
+        report = JSON.parse(saved);
+      } else {
+        report = generateExamSimilarityAudit({}, sub.candidateName, sub.admissionNo, `BIBU-SUB-${sub.id}`);
+      }
+    } catch {
+      report = generateExamSimilarityAudit({}, sub.candidateName, sub.admissionNo, `BIBU-SUB-${sub.id}`);
+    }
+    setAuditModalReport(report);
+  };
+
+  const handleSaveRegistrarAuditReview = (reviewData: {
+    decision: 'APPROVED' | 'CONDITIONAL' | 'FLAGGED';
+    totalScore: number;
+    questionScores: { [qId: number]: number };
+    registrarNotes: string;
+  }) => {
+    if (!auditModalReport) return;
+    setCandidateSubmissions(prev =>
+      prev.map(item =>
+        item.admissionNo === auditModalReport.admissionNo
+          ? {
+              ...item,
+              reviewStatus:
+                reviewData.decision === 'APPROVED'
+                  ? `Approved & Moderated (${reviewData.totalScore}%)`
+                  : reviewData.decision === 'CONDITIONAL'
+                  ? 'Conditional Citation Clarification'
+                  : 'Flagged for Senate Hearing',
+              moderatedScore: reviewData.totalScore
+            }
+          : item
+      )
+    );
+    setNotification(`Registrar audit decision recorded for ${auditModalReport.candidateName} (${reviewData.totalScore}%)`);
+    setTimeout(() => setNotification(null), 3500);
+    setAuditModalReport(null);
+  };
 
   // Exam Form
   const [courseCode, setCourseCode] = useState(courses[0]?.code || 'THEO-101');
@@ -119,19 +221,51 @@ export const ExamsManagementTab: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[#002366] flex items-center gap-2">
             <FileQuestion className="w-5 h-5 text-[#C5A059]" />
-            <span>Examinations & Question Bank ({exams.length})</span>
+            <span>Examinations & Registrar Academic Integrity Desk</span>
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Configure proctored mid-terms, final exams, question banks, passing thresholds, and doctrinal explanations.
+            Configure proctored mid-terms, final exams, question banks, and audit doctoral plagiarism & similarity detection scores before conferral.
           </p>
         </div>
 
+        {activeSubTab === 'questions' && (
+          <button
+            onClick={startCreateExam}
+            className="px-4 py-2 rounded-xl bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider border-2 border-[#C5A059] shadow flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4 text-[#C5A059]" />
+            <span>Create Examination</span>
+          </button>
+        )}
+      </div>
+
+      {/* Sub-tab Navigation */}
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 pb-2">
         <button
-          onClick={startCreateExam}
-          className="px-4 py-2 rounded-xl bg-[#002366] hover:bg-[#001A4D] text-white text-xs font-bold uppercase tracking-wider border-2 border-[#C5A059] shadow flex items-center gap-2"
+          onClick={() => setActiveSubTab('questions')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeSubTab === 'questions'
+              ? 'bg-[#002366] text-white shadow-xs'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
         >
-          <Plus className="w-4 h-4 text-[#C5A059]" />
-          <span>Create Examination</span>
+          <FileQuestion className="w-4 h-4 text-[#C5A059]" />
+          <span>Examinations & Question Bank ({exams.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('submissions')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+            activeSubTab === 'submissions'
+              ? 'bg-[#002366] text-white shadow-xs'
+              : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+          }`}
+        >
+          <ShieldAlert className="w-4 h-4 text-emerald-400" />
+          <span>Doctoral Submissions & Plagiarism Audits ({candidateSubmissions.length})</span>
+          <span className="text-[10px] font-mono font-bold bg-[#C5A059] text-[#002366] px-1.5 py-0.2 rounded-full">
+            1 Pending
+          </span>
         </button>
       </div>
 
@@ -141,6 +275,102 @@ export const ExamsManagementTab: React.FC = () => {
           <span>{notification}</span>
         </div>
       )}
+
+      {/* DOCTORAL SUBMISSIONS & PLAGIARISM AUDIT TAB */}
+      {activeSubTab === 'submissions' && (
+        <div className="space-y-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-sm font-bold font-display text-slate-900">
+                  Doctoral & Final Comprehensive Examination Scripts (Registrar Moderation Roll)
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Automated similarity detection scores generated prior to Academic Registrar manual review and degree conferral.
+                </p>
+              </div>
+              <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-800">
+                Turnitin / BIBU-LMS v4.8 Active
+              </span>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {candidateSubmissions.map((sub) => (
+                <div key={sub.id} className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:bg-slate-50 p-3 rounded-xl transition-colors">
+                  <div className="space-y-1 max-w-xl">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-bold text-sm text-[#002366]">
+                        {sub.candidateName}
+                      </span>
+                      <span className="font-mono text-xs text-slate-500">
+                        ({sub.admissionNo})
+                      </span>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-50 text-blue-800 font-bold border border-blue-200">
+                        {sub.cohort}
+                      </span>
+                    </div>
+
+                    <div className="text-xs text-slate-700 font-medium">
+                      {sub.program}
+                    </div>
+
+                    <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-3 pt-1">
+                      <span>Exam: <strong>{sub.examTitle}</strong></span>
+                      <span>•</span>
+                      <span>Words: <strong>{sub.totalWords.toLocaleString()}</strong></span>
+                      <span>•</span>
+                      <span className="text-slate-400">Submitted: {sub.submittedAt}</span>
+                    </div>
+                  </div>
+
+                  {/* Similarity & Plagiarism Summary Badge */}
+                  <div className="flex flex-wrap items-center gap-4 lg:justify-end">
+                    <div className="text-left sm:text-right space-y-0.5 bg-slate-50 lg:bg-transparent p-2.5 lg:p-0 rounded-xl border lg:border-none border-slate-200">
+                      <div className="flex items-center lg:justify-end gap-1.5">
+                        <span className="text-[10px] font-bold uppercase text-slate-400">Similarity Index:</span>
+                        <span className={`font-mono font-black text-sm px-2 py-0.5 rounded ${
+                          sub.similarityScore < 10
+                            ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            : 'bg-amber-100 text-amber-800 border border-amber-300'
+                        }`}>
+                          {sub.similarityScore}%
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500">
+                        AI Prob: <strong className="text-purple-700">{sub.aiProbability}%</strong> • Originality: <strong className="text-blue-700">{sub.originalityScore}%</strong>
+                      </div>
+                      <div className="text-[10px] font-bold text-emerald-700">
+                        ✓ {sub.integrityStatus}: Acceptable (&lt;15%)
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="shrink-0 flex flex-col sm:flex-row items-center gap-2">
+                      <button
+                        onClick={() => handleOpenPlagiarismAudit(sub)}
+                        className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-[#002366] hover:bg-[#001740] text-[#C5A059] font-bold text-xs uppercase tracking-wider shadow-sm transition-all flex items-center justify-center gap-1.5"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#C5A059]" />
+                        <span>Audit Plagiarism & Review Script &rarr;</span>
+                      </button>
+
+                      {sub.moderatedScore && (
+                        <span className="text-xs font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded border border-emerald-200">
+                          Moderated: {sub.moderatedScore}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QUESTION BANK TAB (Default) */}
+      {activeSubTab === 'questions' && (
+        <div className="space-y-6">
 
       {/* Create / Edit Exam Form */}
       {(isCreatingExam || editingExam) && (
@@ -474,6 +704,17 @@ export const ExamsManagementTab: React.FC = () => {
           )}
         </div>
       </div>
+        </div>
+      )}
+
+      {/* REGISTRAR EXAM PLAGIARISM AUDIT & SCRIPT REVIEW MODAL */}
+      {auditModalReport && (
+        <RegistrarExamPlagiarismReviewModal
+          report={auditModalReport}
+          onClose={() => setAuditModalReport(null)}
+          onSaveReview={handleSaveRegistrarAuditReview}
+        />
+      )}
     </div>
   );
 };
