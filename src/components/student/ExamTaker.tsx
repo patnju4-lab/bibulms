@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { ExamCountdownTimer } from './ExamCountdownTimer';
 import {
   Clock,
   Award,
@@ -199,6 +200,28 @@ export const ExamTaker: React.FC = () => {
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-6">
+      {/* Auto-Submission Toast Notification Banner */}
+      {(isAutoSubmitting || wasAutoSubmitted) && (
+        <div className="bg-rose-600 text-white p-4 rounded-2xl shadow-xl border-2 border-rose-400 flex items-center justify-between gap-4 animate-bounce">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-white/20">
+              <Clock className="w-6 h-6 text-white animate-spin" />
+            </div>
+            <div>
+              <h4 className="text-xs font-black uppercase tracking-widest">
+                EXAMINATION TIME EXPIRED — AUTO-SUBMITTING
+              </h4>
+              <p className="text-xs text-rose-100">
+                The countdown timer reached zero (00:00:00). Your examination answers are automatically being submitted to BIBU Central Examination System.
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-mono font-bold bg-white/20 px-3 py-1 rounded-lg">
+            Processing...
+          </span>
+        </div>
+      )}
+
       {/* PhD Comprehensive Exam Alert / Switcher Banner */}
       <div className="bg-gradient-to-r from-[#002366] via-[#001740] to-[#00102b] rounded-2xl p-4 sm:p-5 border-2 border-[#C5A059] shadow-md flex flex-col sm:flex-row items-center justify-between gap-4 text-white">
         <div className="flex items-center gap-3">
@@ -271,48 +294,14 @@ export const ExamTaker: React.FC = () => {
             </div>
           </div>
 
-          {/* Automated Timer Display */}
+          {/* Automated Timer Component Display */}
           {!isCompleted && (
-            <div className="flex items-center gap-3 shrink-0">
-              <div
-                className={`p-3.5 rounded-xl text-center min-w-[150px] border shadow-inner transition-all ${
-                  isCriticalState
-                    ? 'bg-rose-900/90 border-rose-500 text-white'
-                    : isWarningState
-                    ? 'bg-amber-950/80 border-amber-400 text-amber-300'
-                    : 'bg-[#001A4D] border-[#002366]/60 text-white'
-                }`}
-              >
-                <div className="text-[10px] uppercase font-black tracking-widest flex items-center justify-center gap-1.5 opacity-90">
-                  <Clock className={`w-3.5 h-3.5 ${isCriticalState ? 'text-rose-400 animate-spin' : 'text-[#C5A059]'}`} />
-                  <span>Time Remaining</span>
-                </div>
-                <div
-                  className={`text-2xl sm:text-3xl font-black font-mono tracking-wider mt-0.5 ${
-                    isCriticalState
-                      ? 'text-white drop-shadow-[0_0_8px_rgba(244,63,94,0.8)]'
-                      : isWarningState
-                      ? 'text-amber-300 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]'
-                      : 'text-[#C5A059]'
-                  }`}
-                >
-                  {formatTime(timeLeftSeconds)}
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full h-1.5 bg-black/40 rounded-full mt-2 overflow-hidden">
-                  <div
-                    className={`h-full transition-all duration-1000 ${
-                      isCriticalState
-                        ? 'bg-rose-500'
-                        : isWarningState
-                        ? 'bg-amber-400'
-                        : 'bg-[#C5A059]'
-                    }`}
-                    style={{ width: `${timeProgressPercent}%` }}
-                  />
-                </div>
-              </div>
+            <div className="shrink-0 w-full md:w-auto min-w-[280px]">
+              <ExamCountdownTimer
+                timeLeftSeconds={timeLeftSeconds}
+                totalDurationSeconds={totalDurationSeconds}
+                isCompleted={isCompleted}
+              />
             </div>
           )}
         </div>
